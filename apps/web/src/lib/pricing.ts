@@ -1,8 +1,8 @@
-import { DIGITAL_PRICE_USD, FINISHED_EXTRA_USD, type ProductForm } from '@/config/catalog'
-import { TIERS, type TierId } from '@/config/site'
+import type { ProductForm } from '@/config/catalog'
+import { getTier, type TierId } from '@/config/site'
 
-/** Placeholder pricing until real prices live in Shopify. */
+/** Price in USD (placeholders until real prices live in Shopify). The printable pattern is free. */
 export function priceOf(form: ProductForm, tier: TierId) {
-  const base = TIERS.find((x) => x.id === tier)!.priceUsd
-  return form === 'digital' ? DIGITAL_PRICE_USD : form === 'finished' ? base + FINISHED_EXTRA_USD : base
+  const t = getTier(tier)
+  return form === 'digital' ? 0 : form === 'finished' ? t.finishedPriceUsd : t.priceUsd
 }

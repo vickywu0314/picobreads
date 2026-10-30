@@ -11,16 +11,16 @@ Beads 拼豆                                 /beads
   ├─ 上传自己的照片 → 开始定制              /create
   └─ 社区作品                              /beads/community
        ├─ 作品详情 → 做同款（作者授权时）    /beads/community/detail?id=
-       └─ 投稿（审核后发布）                /beads/community/share
+       └─ 申请精选（一期：发邮件给我们）     /beads/community/share
 定制流程（6 步）
   ① 上传 ② 裁剪调整                         /create
   ③ 选择规格                               /create/settings
   ④ 查看预览（可保存到我的作品）             /create/preview
-  ⑤ 选择购买形式                            /create/product
-  ⑥ 确认并加入购物袋                        /create/confirm
+  ⑤ 选择购买形式（免费电子图纸 / 材料包 / 成品） /create/product
+  ⑥ 确认：电子图纸填邮箱直接发送；材料包、成品加入购物袋  /create/confirm
 Storybooks 定制绘本（Coming Soon + 上线通知）  /storybooks
 账户
-  ├─ 登录 / 注册 / 忘记密码                 /account/login
+  ├─ 登录（邮箱验证码，无密码）            /account/login
   ├─ 我的定制作品                           /account?tab=designs
   ├─ 我的订单                               /account?tab=orders
   └─ 地址与账户设置                         /account?tab=settings
@@ -35,10 +35,12 @@ Storybooks 定制绘本（Coming Soon + 上线通知）  /storybooks
 | 部分 | 正式版 |
 |---|---|
 | 购物袋、结账、支付、税费、订单、发货通知 | Shopify（Storefront API 创建购物车，line item attributes 带 `pattern_id`、产品形式、档位、豆子尺寸、色卡；跳转 Shopify Checkout） |
-| 登录 / 注册、我的订单、地址 | Shopify 客户账户（Customer Account API） |
-| 产品与价格（电子图纸 / 材料包 / 成品 × 三档） | Shopify 商品与变体 |
-| 图案库内容 | Shopify metaobject（或我们后端），图纸由引擎生成 |
+| 登录（邮箱验证码，无密码）、我的订单、地址 | Shopify 新版客户账户（Customer Account API） |
+| 产品与价格（材料包 / 成品 × 三档） | Shopify 商品与变体 |
+| 免费电子图纸 | 不经过 Shopify 结账：收集邮箱后由我们的后端生成 PDF 并发邮件（邮箱可同步到 Shopify 客户 / 邮件营销） |
+| 图案库内容 | Shopify metaobject，图纸由引擎生成 |
 | 图纸生成、在线拼、灯箱、预览 | 自研（浏览器内） |
 | 我的定制作品（保存 / 再编辑 / 再次购买） | 自研后端，关联 Shopify 客户 ID |
-| 社区投稿与审核、绘本上线通知 | 自研后端（通知名单可同步到邮件营销服务） |
+| 社区作品 | 一期写死固定案例；以后需要投稿审核时再做后端 |
+| 绘本上线通知 | 收集邮箱（可同步到邮件营销服务） |
 | 语言 | 网站 en-US / zh-CN；Shopify 结账页语言需在 Shopify 后台开启对应语言 |

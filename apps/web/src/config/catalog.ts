@@ -54,9 +54,10 @@ export const COMMUNITY: CommunityPost[] = [
 
 export const getCommunityPost = (id: string | null) => COMMUNITY.find((p) => p.id === id)
 
-/** Purchase forms offered at step 5. Prices are placeholders. */
+/**
+ * Purchase forms offered at step 5.
+ * digital: free printable pattern, emailed (collects the email for marketing opt-in).
+ * kit / finished: paid, priced per size tier (see TIERS in site.ts).
+ */
 export type ProductForm = 'digital' | 'kit' | 'finished'
 export const PRODUCT_FORMS: ProductForm[] = ['digital', 'kit', 'finished']
-export const DIGITAL_PRICE_USD = 9
-/** Extra for "we bead and iron it for you". */
-export const FINISHED_EXTRA_USD = 35

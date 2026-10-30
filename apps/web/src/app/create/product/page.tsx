@@ -9,7 +9,7 @@ import { Ironed } from '@/components/Ironed'
 import { NoPattern } from '@/components/NoPattern'
 import { Segmented, Stepper } from '@/components/ui'
 import { ASSEMBLED_VARIANT_ENABLED, KIT_PALETTE_IDS, TIERS, gridSize, isKitBrand, type TierId } from '@/config/site'
-import { DIGITAL_PRICE_USD, PRODUCT_FORMS, type ProductForm } from '@/config/catalog'
+import { PRODUCT_FORMS, type ProductForm } from '@/config/catalog'
 import { priceOf } from '@/lib/pricing'
 import { useT } from '@/i18n'
 import { aspectValue, useHydrated, useStore } from '@/lib/store'
@@ -84,7 +84,7 @@ export default function ProductStep() {
                 <span className="mt-3 font-serif text-xl">{t.flow.forms[f].title}</span>
                 <span className="mt-1 flex-1 text-sm text-muted">{t.flow.forms[f].body}</span>
                 <span className="mt-3 flex items-center justify-between text-sm">
-                  <span className="font-bold">{f === 'digital' ? `$${DIGITAL_PRICE_USD}` : t.flow.from(priceOf(f, 'small'))}</span>
+                  <span className="font-bold">{f === 'digital' ? t.flow.free : t.flow.from(priceOf(f, 'small'))}</span>
                   <span className="text-xs text-muted">{t.flow.forms[f].time}</span>
                 </span>
               </button>
@@ -146,7 +146,7 @@ export default function ProductStep() {
                     {size.width} × {size.height} · ≈ {fin.cm} cm
                   </p>
                   <p className="text-xs text-muted">{p ? t.common.colors(legendOf(p).length) : '…'}</p>
-                  <p className="mt-1 font-bold">${priceOf(form, tr.id)}</p>
+                  <p className="mt-1 font-bold">{form === 'digital' ? t.flow.free : `$${priceOf(form, tr.id)}`}</p>
                 </div>
               </button>
             )
@@ -166,7 +166,7 @@ export default function ProductStep() {
               {t.flow.forms[form].title} · {t.tiers[tier]}
             </p>
             <p className="text-sm text-muted">
-              ${priceOf(form, tier)} · {brand}
+              {form === 'digital' ? t.flow.free : `$${priceOf(form, tier)}`} · {brand}
             </p>
           </div>
           <button

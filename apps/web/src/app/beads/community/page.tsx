@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { Star } from 'lucide-react'
 import { SiteFooter, SiteHeader } from '@/components/SiteHeader'
 import { ProtoTag } from '@/components/PrototypeBanner'
 import { Ironed } from '@/components/Ironed'
@@ -37,8 +37,8 @@ export default function CommunityPage() {
             <h1 className="font-serif text-4xl">{t.community.title}</h1>
             <p className="mt-2 max-w-2xl text-muted">{t.community.body}</p>
           </div>
-          <Link href="/beads/community/share/" className="btn-primary">
-            <Plus className="h-5 w-5" aria-hidden /> {t.community.share}
+          <Link href="/beads/community/share/" className="btn-secondary">
+            <Star className="h-5 w-5" aria-hidden /> {t.community.share}
           </Link>
         </div>
         <p className="mt-3 flex items-center gap-2 text-xs text-muted">

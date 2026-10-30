@@ -26,14 +26,16 @@ export interface Tier {
   name: string
   /** Cells on the long side. Short side follows the crop aspect ratio. */
   longSide: number
-  /** TODO: placeholder price in USD, not decided yet. */
+  /** TODO: placeholder DIY kit price in USD, not decided yet. */
   priceUsd: number
+  /** TODO: placeholder price for the finished (we bead & iron it) piece. */
+  finishedPriceUsd: number
 }
 
 export const TIERS: Tier[] = [
-  { id: 'small', name: 'Small', longSide: 29, priceUsd: 24 },
-  { id: 'standard', name: 'Standard', longSide: 52, priceUsd: 39 },
-  { id: 'large', name: 'Large', longSide: 78, priceUsd: 59 },
+  { id: 'small', name: 'Small', longSide: 29, priceUsd: 24, finishedPriceUsd: 69 },
+  { id: 'standard', name: 'Standard', longSide: 52, priceUsd: 39, finishedPriceUsd: 119 },
+  { id: 'large', name: 'Large', longSide: 78, priceUsd: 59, finishedPriceUsd: 179 },
 ]
 
 export const getTier = (id: TierId) => TIERS.find((t) => t.id === id) ?? TIERS[1]
@@ -55,7 +57,7 @@ export const PICKING = {
 
 export const FREE_PREVIEWS_PER_DAY = 10
 export const PHOTO_RETENTION_DAYS = 90
-export const ASSEMBLED_VARIANT_ENABLED = false
+export const ASSEMBLED_VARIANT_ENABLED = true
 
 /** Crop aspect presets (width / height). */
 export const ASPECTS = [
