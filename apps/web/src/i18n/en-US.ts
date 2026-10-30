@@ -4,7 +4,7 @@ const plural = (n: number, one: string, many = one + 's') => `${n.toLocaleString
 export const enUS = {
   common: {
     prototype: 'Prototype',
-    prototypeBanner: 'Prototype — sample data, nothing is sent to a server.',
+    prototypeBanner: 'Prototype — patterns are real; orders, emails and admin use sample data.',
     prototypeFake: 'Not wired up yet in the prototype',
     back: 'Back',
     next: 'Next',
@@ -115,7 +115,7 @@ export const enUS = {
     livePreview: 'Live preview',
     generate: 'Generate pattern',
     generating: 'Generating in your browser…',
-    sampleNote: 'Prototype: preview shows a sample pattern, not your photo yet.',
+    sampleNote: 'Generated right in your browser — your photo is not uploaded.',
   },
   pattern: {
     title: 'Your pattern',
@@ -129,7 +129,7 @@ export const enUS = {
     download: 'Download PDF',
     downloadPng: 'Download PNG',
     edit: 'Adjust settings',
-    sampleNote: 'Prototype: this is a sample pattern. Real photo-to-pattern arrives in milestone 1.',
+    sampleNote: 'Not happy with a spot? Use “Fix colors” in the online editor to change single beads.',
     specialtyNote: 'Glow, glitter and transparent beads are not used automatically.',
   },
   emailGate: {

@@ -11,7 +11,7 @@ import { PICKING } from '@/config/site'
 import { useT } from '@/i18n'
 import { legendOf } from '@/lib/pattern'
 import { STATUS_STYLE, mockOrders, type OrderStatus } from '@/mock/orders'
-import { SAMPLE_PHOTO_SVG } from '@/mock/samplePattern'
+import { SAMPLE_PHOTO_URL } from '@/lib/generate'
 
 function OrderDetail() {
   const t = useT()
@@ -75,7 +75,7 @@ function OrderDetail() {
           <div className="card p-3">
             <p className="mb-2 text-sm font-semibold">{t.admin.photo}</p>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={SAMPLE_PHOTO_SVG} alt={t.admin.photoAlt} className="w-full rounded-xl" />
+            <img src={SAMPLE_PHOTO_URL} alt={t.admin.photoAlt} className="w-full rounded-xl" />
           </div>
         </div>
 

@@ -182,19 +182,3 @@ export function generateSamplePattern(o: SampleOptions): Pattern {
     cells: kind.map(resolve),
   }
 }
-
-/** An SVG "photo" for the "use a sample photo" button. */
-export const SAMPLE_PHOTO_SVG = `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
-<defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe3f5"/><stop offset=".55" stop-color="#c7b6e6"/><stop offset="1" stop-color="#fbe4c0"/></linearGradient>
-<radialGradient id="f" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#f6a24f"/><stop offset="1" stop-color="#d9702a"/></radialGradient></defs>
-<rect width="800" height="800" fill="url(#s)"/>
-<path d="M170 380 L200 110 L360 290Z M630 380 L600 110 L440 290Z" fill="url(#f)" stroke="#3e2a20" stroke-width="10"/>
-<path d="M215 340 L225 180 L320 290Z M585 340 L575 180 L480 290Z" fill="#e9849f"/>
-<ellipse cx="400" cy="480" rx="265" ry="225" fill="url(#f)" stroke="#3e2a20" stroke-width="10"/>
-<ellipse cx="400" cy="570" rx="95" ry="65" fill="#f7f7f2"/>
-<ellipse cx="305" cy="455" rx="40" ry="48" fill="#1e1e1e"/><ellipse cx="495" cy="455" rx="40" ry="48" fill="#1e1e1e"/>
-<circle cx="292" cy="440" r="13" fill="#fff"/><circle cx="482" cy="440" r="13" fill="#fff"/>
-<ellipse cx="400" cy="532" rx="28" ry="18" fill="#e9849f"/>
-<path d="M376 552 q24 30 24 0 q0 30 24 0" fill="none" stroke="#3e2a20" stroke-width="7"/>
-<ellipse cx="250" cy="545" rx="44" ry="28" fill="#f4a9a0" opacity=".8"/><ellipse cx="550" cy="545" rx="44" ry="28" fill="#f4a9a0" opacity=".8"/>
-</svg>`)}`

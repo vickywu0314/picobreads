@@ -5,7 +5,7 @@ const n = (v: number) => v.toLocaleString('zh-CN')
 export const zhCN: Messages = {
   common: {
     prototype: '原型',
-    prototypeBanner: '原型演示 · 示例数据，不会向服务器发送任何内容',
+    prototypeBanner: '原型演示 · 图纸是真实生成的；下单、邮件、后台为示例数据',
     prototypeFake: '原型中尚未接通',
     back: '返回',
     next: '下一步',
@@ -114,7 +114,7 @@ export const zhCN: Messages = {
     livePreview: '实时预览',
     generate: '生成图纸',
     generating: '正在你的浏览器里生成…',
-    sampleNote: '原型：预览显示的是示例图纸，还不是你的照片。',
+    sampleNote: '在你的浏览器里生成，照片不会上传。',
   },
   pattern: {
     title: '你的图纸',
@@ -128,7 +128,7 @@ export const zhCN: Messages = {
     download: '下载 PDF',
     downloadPng: '下载 PNG',
     edit: '调整参数',
-    sampleNote: '原型：这是示例图纸，照片转图纸将在里程碑 1 实现。',
+    sampleNote: '有地方不满意？在线拼里用「改颜色」可以单独改某颗豆。',
     specialtyNote: '夜光、闪粉、透明等特殊豆不会自动使用。',
   },
   emailGate: {

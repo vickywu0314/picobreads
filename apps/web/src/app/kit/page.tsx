@@ -1,17 +1,19 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useMemo, useState } from 'react'
-import { Check, Info, ShoppingBag } from 'lucide-react'
+import { useState } from 'react'
+import { Check, Info, Loader2, ShoppingBag } from 'lucide-react'
 import { getPalette, type BeadSize } from '@picobreads/pattern-engine'
 import { SiteFooter, SiteHeader } from '@/components/SiteHeader'
 import { ProtoTag } from '@/components/PrototypeBanner'
 import { PatternThumb } from '@/components/PatternThumb'
 import { NoPattern } from '@/components/NoPattern'
 import { Segmented, Toggle } from '@/components/ui'
-import { ASSEMBLED_VARIANT_ENABLED, KIT_PALETTE_IDS, TIERS, isKitBrand, type TierId } from '@/config/site'
+import { ASSEMBLED_VARIANT_ENABLED, KIT_PALETTE_IDS, TIERS, gridSize, isKitBrand, type TierId } from '@/config/site'
 import { useT } from '@/i18n'
-import { buildPattern, useHydrated, useStore } from '@/lib/store'
+import { aspectValue, useHydrated, useStore } from '@/lib/store'
+import { generateFromPhoto } from '@/lib/generate'
+import { useGeneratedPattern } from '@/lib/useGenerated'
 import { boardCount, finishedSize, legendOf } from '@/lib/pattern'
 
 export default function KitPage() {
@@ -23,18 +25,22 @@ export default function KitPage() {
   const aspectId = useStore((s) => s.aspectId)
   const addToCart = useStore((s) => s.addToCart)
   const setSettings = useStore((s) => s.setSettings)
-  const generate = useStore((s) => s.generate)
+  const applyPattern = useStore((s) => s.applyPattern)
+  const photo = useStore((s) => s.photo)
   const [tier, setTier] = useState<TierId>(settings.tier)
   const [beadSize, setBeadSize] = useState<BeadSize>(settings.beadSize)
 
-  // Same pattern at every tier; the user's current one (with any fixes) for its own tier.
-  const variants = useMemo(() => {
-    if (!pattern) return []
-    return TIERS.map((tr) => {
-      const p = tr.id === settings.tier ? pattern : buildPattern({ ...settings, paletteId: pattern.paletteId }, aspectId, tr.id)
-      return { tier: tr, pattern: p, colors: legendOf(p).length }
-    })
-  }, [pattern, settings, aspectId])
+  // Same photo at every tier; the user's current pattern (with any fixes) for its own tier.
+  const same = { ...settings, paletteId: pattern?.paletteId ?? settings.paletteId }
+  const others = {
+    small: useGeneratedPattern(photo, same, aspectId, 'small', hydrated && !!pattern && settings.tier !== 'small'),
+    standard: useGeneratedPattern(photo, same, aspectId, 'standard', hydrated && !!pattern && settings.tier !== 'standard'),
+    large: useGeneratedPattern(photo, same, aspectId, 'large', hydrated && !!pattern && settings.tier !== 'large'),
+  }
+  const variants = TIERS.map((tr) => {
+    const p = tr.id === settings.tier ? pattern : others[tr.id].pattern
+    return { tier: tr, pattern: p, colors: p ? legendOf(p).length : null, size: gridSize(tr.id, aspectValue(aspectId)) }
+  })
 
   if (!hydrated) return <SiteHeader />
   if (!pattern)
@@ -68,9 +74,9 @@ export default function KitPage() {
                   key={id}
                   type="button"
                   className="btn-secondary btn-sm"
-                  onClick={() => {
+                  onClick={async () => {
                     setSettings({ paletteId: id })
-                    generate()
+                    applyPattern(await generateFromPhoto(photo, { ...settings, paletteId: id }, aspectId))
                   }}
                 >
                   {t.kit.switchTo(getPalette(id).brand)}
@@ -92,9 +98,9 @@ export default function KitPage() {
         </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-3" role="radiogroup" aria-label={t.kit.sizeAria}>
-          {variants.map(({ tier: tr, pattern: p, colors }) => {
+          {variants.map(({ tier: tr, pattern: p, colors, size }) => {
             const active = tr.id === tier
-            const fin = finishedSize(p.width, p.height, beadSize)
+            const fin = finishedSize(size.width, size.height, beadSize)
             return (
               <button
                 key={tr.id}
@@ -111,17 +117,17 @@ export default function KitPage() {
                     {t.kit.sameAsPattern}
                   </span>
                 )}
-                <div className="mx-auto w-40 rounded-xl bg-[var(--board)] p-1.5">
-                  <PatternThumb pattern={p} />
+                <div className="mx-auto grid aspect-square w-40 place-items-center rounded-xl bg-[var(--board)] p-1.5">
+                  {p ? <PatternThumb pattern={p} /> : <Loader2 className="h-6 w-6 animate-spin text-muted" aria-hidden />}
                 </div>
                 <h2 className="mt-4 text-xl font-bold">{t.tiers[tr.id]}</h2>
                 <p className="text-sm text-muted">
-                  {p.width} × {p.height} · {fin.inch} in
+                  {size.width} × {size.height} · {fin.inch} in
                 </p>
                 <ul className="mt-3 space-y-1 text-sm">
-                  <li>{t.common.beads(p.width * p.height)}</li>
-                  <li>{t.common.colors(colors)}</li>
-                  <li>{t.settings.boards(boardCount(p.width, p.height))}</li>
+                  <li>{t.common.beads(size.width * size.height)}</li>
+                  <li>{colors === null ? '…' : t.common.colors(colors)}</li>
+                  <li>{t.settings.boards(boardCount(size.width, size.height))}</li>
                 </ul>
                 <p className="mt-4 text-2xl font-extrabold">
                   ${tr.priceUsd}
@@ -162,9 +168,9 @@ export default function KitPage() {
             <button
               type="button"
               className="btn-primary"
-              disabled={!sellable}
+              disabled={!sellable || !chosen.pattern}
               onClick={() => {
-                addToCart({ tier, beadSize, priceUsd: chosen.tier.priceUsd, pattern: chosen.pattern })
+                addToCart({ tier, beadSize, priceUsd: chosen.tier.priceUsd, pattern: chosen.pattern! })
                 router.push('/cart/')
               }}
             >

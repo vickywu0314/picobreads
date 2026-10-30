@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { create } from 'zustand'
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
 import { DEFAULT_PALETTE_ID, type BeadSize, type Pattern } from '@picobreads/pattern-engine'
-import { ASPECTS, COLOR_LIMITS, getTier, gridSize, type AspectId, type TierId } from '@/config/site'
-import { generateSamplePattern } from '@/mock/samplePattern'
+import { ASPECTS, COLOR_LIMITS, getTier, type AspectId, type TierId } from '@/config/site'
 
 export interface Settings {
   paletteId: string
@@ -46,7 +45,8 @@ interface State {
 
   setPhoto: (photo: string | null, aspectId?: AspectId) => void
   setSettings: (s: Partial<Settings>) => void
-  generate: () => void
+  /** Make `pattern` the current one (resets progress, counts a free preview). */
+  applyPattern: (pattern: Pattern) => void
   setActiveColor: (c: number | null) => void
   setActiveSection: (id: string | null) => void
   setPlaced: (indices: number[], value: boolean) => void
@@ -93,11 +93,6 @@ export const defaultSettings: Settings = {
 
 export const aspectValue = (id: AspectId) => ASPECTS.find((a) => a.id === id)?.value ?? 1
 
-export function buildPattern(settings: Settings, aspectId: AspectId, tier: TierId = settings.tier): Pattern {
-  const { width, height } = gridSize(tier, aspectValue(aspectId))
-  return generateSamplePattern({ ...settings, width, height })
-}
-
 const today = () => new Date().toISOString().slice(0, 10)
 
 export const useStore = create<State>()(
@@ -117,9 +112,8 @@ export const useStore = create<State>()(
 
       setPhoto: (photo, aspectId) => set((s) => ({ photo, aspectId: aspectId ?? s.aspectId })),
       setSettings: (p) => set((s) => ({ settings: { ...s.settings, ...p } })),
-      generate: () => {
-        const { settings, aspectId, previews } = get()
-        const pattern = buildPattern(settings, aspectId)
+      applyPattern: (pattern) => {
+        const { previews } = get()
         const used = previews.day === today() ? previews.used + 1 : 1
         set({
           pattern,

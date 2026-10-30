@@ -1,8 +1,9 @@
 // Pattern engine: pure functions, no UI dependencies, reusable by web / backend / mini program.
-// Milestone 0 (prototype) only ships data types, palettes and small helpers;
-// real photo → pattern generation lands in milestone 1.
+// Photo → pattern generation (generate.ts) runs in a Web Worker on the web.
 export * from './types'
 export * from './palettes'
 export * from './sections'
 export * from './stats'
 export * from './packs'
+export * from './color'
+export * from './generate'

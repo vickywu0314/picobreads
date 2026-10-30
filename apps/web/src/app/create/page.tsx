@@ -10,7 +10,7 @@ import { Stepper } from '@/components/ui'
 import { ASPECTS, FREE_PREVIEWS_PER_DAY, type AspectId } from '@/config/site'
 import { useT } from '@/i18n'
 import { previewsLeft, useHydrated, useStore } from '@/lib/store'
-import { SAMPLE_PHOTO_SVG } from '@/mock/samplePattern'
+import { SAMPLE_PHOTO_URL } from '@/lib/generate'
 
 const MAX_BYTES = 20 * 1024 * 1024
 const TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -24,12 +24,7 @@ async function cropToDataUrl(src: string, area: Area, maxSide = 900): Promise<st
   canvas.width = Math.round(area.width * k)
   canvas.height = Math.round(area.height * k)
   canvas.getContext('2d')!.drawImage(img, area.x, area.y, area.width, area.height, 0, 0, canvas.width, canvas.height)
-  try {
-    return canvas.toDataURL('image/jpeg', 0.85)
-  } catch {
-    // Some browsers taint canvases drawn from SVG; fall back to the uncropped image.
-    return src
-  }
+  return canvas.toDataURL('image/jpeg', 0.85)
 }
 
 export default function CreatePage() {
@@ -104,7 +99,7 @@ export default function CreatePage() {
               </p>
             )}
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <button type="button" className="btn-ghost btn-sm" onClick={() => setSrc(SAMPLE_PHOTO_SVG)}>
+              <button type="button" className="btn-ghost btn-sm" onClick={() => setSrc(SAMPLE_PHOTO_URL)}>
                 <Sparkles className="h-4 w-4" aria-hidden /> {t.create.sample}
               </button>
               {hydrated && (

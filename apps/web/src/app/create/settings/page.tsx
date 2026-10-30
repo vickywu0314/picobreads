@@ -2,16 +2,17 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useDeferredValue, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Loader2, Lock, Wand2 } from 'lucide-react'
 import { SiteHeader } from '@/components/SiteHeader'
-import { ProtoTag } from '@/components/PrototypeBanner'
 import { PatternThumb } from '@/components/PatternThumb'
 import { Segmented, Stepper, Toggle } from '@/components/ui'
 import { BrandPicker } from '@/components/BrandPicker'
 import { COLOR_LIMITS, TIERS, gridSize } from '@/config/site'
 import { useT } from '@/i18n'
-import { aspectValue, buildPattern, useHydrated, useStore } from '@/lib/store'
+import { aspectValue, useHydrated, useStore } from '@/lib/store'
+import { generateFromPhoto } from '@/lib/generate'
+import { useGeneratedPattern } from '@/lib/useGenerated'
 import { boardCount, finishedSize } from '@/lib/pattern'
 
 export default function SettingsPage() {
@@ -22,11 +23,10 @@ export default function SettingsPage() {
   const aspectId = useStore((s) => s.aspectId)
   const settings = useStore((s) => s.settings)
   const setSettings = useStore((s) => s.setSettings)
-  const generate = useStore((s) => s.generate)
+  const applyPattern = useStore((s) => s.applyPattern)
   const [busy, setBusy] = useState(false)
 
-  const deferred = useDeferredValue(settings)
-  const preview = useMemo(() => buildPattern(deferred, aspectId), [deferred, aspectId])
+  const { pattern: preview, busy: previewBusy } = useGeneratedPattern(photo, settings, aspectId, settings.tier, hydrated)
   const aspect = aspectValue(aspectId)
 
   if (!hydrated) return <SiteHeader />
@@ -44,10 +44,14 @@ export default function SettingsPage() {
             <div className="card overflow-hidden p-3">
               <div className="flex items-center justify-between px-1 pb-2 text-sm font-semibold">
                 <span>{t.settings.livePreview}</span>
-                <ProtoTag label={t.common.sample} />
+                {previewBusy && <Loader2 className="h-4 w-4 animate-spin text-muted" aria-label={t.settings.generating} />}
               </div>
-              <div className="rounded-2xl bg-[var(--board)] p-2">
-                <PatternThumb pattern={preview} />
+              <div className="relative grid min-h-48 place-items-center rounded-2xl bg-[var(--board)] p-2">
+                {preview ? (
+                  <PatternThumb pattern={preview} className={previewBusy ? 'opacity-70 transition-opacity' : 'transition-opacity'} />
+                ) : (
+                  <Loader2 className="h-8 w-8 animate-spin text-muted" aria-hidden />
+                )}
               </div>
               <div className="mt-3 flex items-center gap-3">
                 {photo && (
@@ -158,13 +162,14 @@ export default function SettingsPage() {
                 type="button"
                 className="btn-primary min-w-48"
                 disabled={busy}
-                onClick={() => {
+                onClick={async () => {
                   setBusy(true)
-                  // Fake latency so the flow feels like the real in-browser engine.
-                  setTimeout(() => {
-                    generate()
+                  try {
+                    applyPattern(await generateFromPhoto(photo, settings, aspectId))
                     router.push('/pattern/')
-                  }, 900)
+                  } finally {
+                    setBusy(false)
+                  }
                 }}
               >
                 {busy ? (

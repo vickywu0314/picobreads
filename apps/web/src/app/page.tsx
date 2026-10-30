@@ -1,17 +1,17 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo } from 'react'
 import { ArrowRight, Grid3x3, Lightbulb, Lock, Package } from 'lucide-react'
 import { SiteFooter, SiteHeader } from '@/components/SiteHeader'
 import { PatternThumb } from '@/components/PatternThumb'
 import { useT } from '@/i18n'
-import { buildPattern, defaultSettings } from '@/lib/store'
+import { defaultSettings } from '@/lib/store'
+import { useGeneratedPattern } from '@/lib/useGenerated'
 
 export default function HomePage() {
   const t = useT()
-  // Deterministic-looking hero sample (same settings every visit).
-  const sample = useMemo(() => buildPattern({ ...defaultSettings, maxColors: 20, detail: 4 }, '1:1'), [])
+  // Hero: the real engine run on the bundled sample photo.
+  const { pattern: sample } = useGeneratedPattern(null, { ...defaultSettings, maxColors: 20, detail: 4 }, '1:1')
   const featureIcons = [Grid3x3, Lightbulb, Package]
 
   return (
@@ -37,7 +37,7 @@ export default function HomePage() {
           </div>
           <figure className="card relative mx-auto w-full max-w-md rotate-1 p-4 shadow-xl">
             <div className="aspect-square overflow-hidden rounded-2xl bg-[var(--board)] p-2">
-              <PatternThumb pattern={sample} label={t.home.sampleAria} />
+              {sample && <PatternThumb pattern={sample} label={t.home.sampleAria} />}
             </div>
             <figcaption className="mt-3 text-center text-sm text-muted">{t.home.sampleCaption}</figcaption>
           </figure>

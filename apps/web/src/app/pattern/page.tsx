@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { Download, FileDown, Grid3x3, Lightbulb, Settings2, ShoppingBag } from 'lucide-react'
 import { SiteFooter, SiteHeader } from '@/components/SiteHeader'
-import { ProtoTag } from '@/components/PrototypeBanner'
 import { PatternThumb } from '@/components/PatternThumb'
 import { EmailGate } from '@/components/EmailGate'
 import { NoPattern } from '@/components/NoPattern'
@@ -71,7 +70,7 @@ export default function PatternPage() {
                 )}
               </div>
               <p className="mt-3 flex items-start gap-2 text-xs text-muted">
-                <ProtoTag label={t.common.sample} /> {t.pattern.sampleNote}
+                {t.pattern.sampleNote}
               </p>
             </div>
 
