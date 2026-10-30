@@ -11,13 +11,21 @@ export interface GenerateRequest {
   pixels: Uint8ClampedArray
   width: number
   height: number
-  opts: { paletteId: string; width: number; height: number; maxColors: number; detail: number; dithering: boolean }
+  opts: {
+    paletteId: string
+    width: number
+    height: number
+    maxColors: number
+    detail: number
+    dithering: boolean
+    style: 'auto' | 'illustration' | 'photo'
+  }
 }
 
 export type GenerateResponse = { id: number; cells: number[]; error?: undefined } | { id: number; error: string; cells?: undefined }
 
 // Source pixels per bead edge when sampling the photo; plenty for area averaging.
-const SAMPLES_PER_BEAD = 6
+const SAMPLES_PER_BEAD = 8
 
 let worker: Worker | null = null
 let workerFailed = false
@@ -93,6 +101,7 @@ export async function generateFromPhoto(
     maxColors: settings.maxColors,
     detail: settings.detail,
     dithering: settings.dithering,
+    style: settings.style ?? 'auto',
   }
   const w = getWorker()
   let cells: number[]

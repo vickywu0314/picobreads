@@ -21,6 +21,11 @@ export interface GenerateOptions {
   /** Floyd–Steinberg error diffusion in Lab space. Off by default. */
   dithering: boolean
   /**
+   * illustration: flat colors + outlines (cartoons, logos) → per-bead majority vote.
+   * photo: smooth gradients → per-bead average. auto (default) picks by looking at the image.
+   */
+  style?: 'auto' | 'illustration' | 'photo'
+  /**
    * Colors used by fewer than this share of cells are merged into their nearest
    * neighbour. Defaults depend on `detail`.
    */
@@ -38,6 +43,10 @@ export interface GenerateResult {
 // Per detail level 1..5: smoothing (<0) / sharpening (>0), and the small-color merge threshold.
 const SHARPEN = [-0.7, -0.35, 0, 0.45, 0.9]
 const MIN_SHARE = [0.012, 0.007, 0.004, 0.002, 0.001]
+// Illustration mode: extra vote weight for pixels darker than the bead's median (outlines, eyes).
+const LINE_BOOST = [0, 0.8, 1.6, 2.6, 4]
+// Remove isolated single beads at these detail levels.
+const DESPECKLE_MAX_DETAIL = 3
 
 /** Area-average the image into a width × height grid, in linear RGB (transparent → white). */
 export function downsampleLinear(img: ImageInput, width: number, height: number): Float32Array {
@@ -183,29 +192,114 @@ export function nearestColor(lab: Lab, candidates: number[], paletteLabs: Lab[])
   return best
 }
 
+/** Source pixels → Lab (alpha composited on white). */
+function imageLab(img: ImageInput): Float32Array {
+  const lut = new Float32Array(256)
+  for (let i = 0; i < 256; i++) lut[i] = srgbToLinear(i)
+  const n = img.width * img.height
+  const out = new Float32Array(n * 3)
+  for (let i = 0; i < n; i++) {
+    const a = img.data[i * 4 + 3] / 255
+    const lab = linearRgbToLab(
+      lut[img.data[i * 4]] * a + (1 - a),
+      lut[img.data[i * 4 + 1]] * a + (1 - a),
+      lut[img.data[i * 4 + 2]] * a + (1 - a),
+    )
+    out[i * 3] = lab[0]
+    out[i * 3 + 1] = lab[1]
+    out[i * 3 + 2] = lab[2]
+  }
+  return out
+}
+
+/**
+ * Heuristic: illustrations are mostly flat areas, so neighbouring pixels are
+ * near-identical far more often than in photos.
+ */
+export function looksLikeIllustration(img: ImageInput): boolean {
+  const lab = imageLab(img)
+  let flat = 0
+  let pairs = 0
+  const step = Math.max(1, Math.floor(img.width / 160))
+  for (let y = 0; y < img.height; y += step) {
+    for (let x = 1; x < img.width; x += step) {
+      const a = (y * img.width + x) * 3
+      const b = a - 3
+      const d = Math.abs(lab[a] - lab[b]) + Math.abs(lab[a + 1] - lab[b + 1]) + Math.abs(lab[a + 2] - lab[b + 2])
+      if (d < 4) flat++
+      pairs++
+    }
+  }
+  return flat / Math.max(1, pairs) > 0.55
+}
+
+/** Replace beads that match none of their 4 neighbours when ≥3 neighbours agree. */
+export function despeckle(cells: number[], width: number, height: number): number[] {
+  const out = cells.slice()
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x
+      const nb: number[] = []
+      if (x > 0) nb.push(cells[i - 1])
+      if (x < width - 1) nb.push(cells[i + 1])
+      if (y > 0) nb.push(cells[i - width])
+      if (y < height - 1) nb.push(cells[i + width])
+      if (nb.includes(cells[i])) continue
+      const counts = new Map<number, number>()
+      for (const c of nb) counts.set(c, (counts.get(c) ?? 0) + 1)
+      for (const [c, n] of counts) if (n >= 3 || (n >= 2 && nb.length === 2)) out[i] = c
+    }
+  }
+  return out
+}
+
+/** Pick ≤ maxColors bead colors: k-means centers → nearest bead colors → merge rare ones. */
+function chooseColors(
+  points: Lab[],
+  weights: (chosen: number[]) => Map<number, number>,
+  regular: number[],
+  paletteLabs: Lab[],
+  maxColors: number,
+  minCount: number,
+): number[] {
+  const k = Math.min(48, Math.max(maxColors + 4, Math.round(maxColors * 1.6)))
+  let chosen = [...new Set(kmeansLab(points, k).map((c) => nearestColor(c, regular, paletteLabs)))]
+  for (;;) {
+    if (chosen.length <= 1) return chosen
+    const counts = weights(chosen)
+    const used = chosen.filter((c) => (counts.get(c) ?? 0) > 0)
+    let rarest = used[0]
+    for (const c of used) if (counts.get(c)! < counts.get(rarest)!) rarest = c
+    const overLimit = used.length > maxColors
+    if (!overLimit && counts.get(rarest)! >= minCount && used.length === chosen.length) return chosen
+    chosen = overLimit || counts.get(rarest)! < minCount ? used.filter((c) => c !== rarest) : used
+  }
+}
+
 /**
  * Photo → bead pattern.
- * 1. Area-average into the grid (linear RGB), soften / sharpen by `detail`.
- * 2. Quantize in Lab with k-means, map each center to the nearest real bead color (CIEDE2000).
- * 3. Merge rarely used colors into their nearest neighbour until ≤ maxColors remain.
- * 4. Assign every cell to the nearest remaining bead color (optionally dithered).
+ *
+ * Photo style: area-average each bead (linear RGB), soften / sharpen by `detail`,
+ * then nearest bead color, optionally dithered.
+ *
+ * Illustration style: quantize the full-resolution pixels to bead colors first,
+ * then each bead takes the majority color of its pixels (dark line pixels get
+ * extra votes), so outlines stay crisp and no muddy in-between colors appear.
+ *
+ * Both: Lab k-means → nearest real bead colors (CIEDE2000) → merge rarely used
+ * colors until ≤ maxColors → (detail ≤ 3) remove isolated specks.
  */
 export function generatePattern(img: ImageInput, opts: GenerateOptions): GenerateResult {
   const { palette, width: W, height: H } = opts
   const detail = Math.min(5, Math.max(1, Math.round(opts.detail)))
   const maxColors = Math.max(1, Math.floor(opts.maxColors))
-  const minShare = opts.minShare ?? MIN_SHARE[detail - 1]
-
-  const rgb = adjustDetail(downsampleLinear(img, W, H), W, H, SHARPEN[detail - 1])
-  const labs: Lab[] = new Array(W * H)
-  for (let i = 0; i < W * H; i++) labs[i] = linearRgbToLab(rgb[i * 3], rgb[i * 3 + 1], rgb[i * 3 + 2])
+  const minCount = Math.max(1, Math.round(W * H * (opts.minShare ?? MIN_SHARE[detail - 1])))
+  const style = opts.style && opts.style !== 'auto' ? opts.style : looksLikeIllustration(img) ? 'illustration' : 'photo'
 
   const paletteLabs = palette.colors.map((c) => rgbToLab(c.rgb))
   const regular = regularColorIndices(palette)
-
-  // Cache nearest lookups: many cells share (almost) the same color.
   const cache = new Map<string, number>()
-  const nearestIn = (lab: Lab, set: number[], tag: string) => {
+  const nearestCached = (lab: Lab, set: number[], tag: string) => {
     const key = `${tag}|${Math.round(lab[0] * 2)},${Math.round(lab[1] * 2)},${Math.round(lab[2] * 2)}`
     let v = cache.get(key)
     if (v === undefined) {
@@ -215,64 +309,147 @@ export function generatePattern(img: ImageInput, opts: GenerateOptions): Generat
     return v
   }
 
-  // 2. Lab quantization → candidate bead colors.
-  const k = Math.min(48, Math.max(maxColors + 4, Math.round(maxColors * 1.6)))
-  const centers = kmeansLab(labs, k)
-  let chosen = [...new Set(centers.map((c) => nearestColor(c, regular, paletteLabs)))]
+  let cells: number[]
 
-  // 3. Merge: drop the least used color (its cells move to their nearest remaining color)
-  //    while over the limit or while a color is used by too few cells.
-  const minCount = Math.max(1, Math.round(W * H * minShare))
-  let assign: number[] = []
-  let version = 0
-  for (;;) {
-    const tag = `s${version}`
-    assign = labs.map((l) => nearestIn(l, chosen, tag))
-    if (chosen.length <= 1) break
-    const counts = new Map<number, number>(chosen.map((c) => [c, 0]))
-    for (const a of assign) counts.set(a, (counts.get(a) ?? 0) + 1)
-    const used = chosen.filter((c) => (counts.get(c) ?? 0) > 0)
-    let rarest = used[0]
-    for (const c of used) if (counts.get(c)! < counts.get(rarest)!) rarest = c
-    const overLimit = used.length > maxColors
-    if (!overLimit && counts.get(rarest)! >= minCount && used.length === chosen.length) break
-    chosen = overLimit || counts.get(rarest)! < minCount ? used.filter((c) => c !== rarest) : used
-    version++
-  }
-
-  // 4. Final assignment (optionally dithered).
-  if (opts.dithering && chosen.length > 1) {
-    const err = labs.map((l) => l.slice() as Lab)
-    const out = new Array<number>(W * H)
-    for (let y = 0; y < H; y++) {
-      const ltr = y % 2 === 0
-      for (let s = 0; s < W; s++) {
-        const x = ltr ? s : W - 1 - s
-        const i = y * W + x
-        const target = err[i]
-        const c = nearestColor(target, chosen, paletteLabs)
-        out[i] = c
-        const p = paletteLabs[c]
-        // Clamp error so saturated areas don't streak.
-        const e = [0, 1, 2].map((j) => Math.max(-20, Math.min(20, target[j] - p[j])))
-        const dir = ltr ? 1 : -1
-        const spread = (dx: number, dy: number, w: number) => {
-          const xx = x + dx * dir
-          const yy = y + dy
-          if (xx < 0 || xx >= W || yy >= H) return
-          const t = err[yy * W + xx]
-          t[0] += e[0] * w
-          t[1] += e[1] * w
-          t[2] += e[2] * w
-        }
-        spread(1, 0, 7 / 16)
-        spread(-1, 1, 3 / 16)
-        spread(0, 1, 5 / 16)
-        spread(1, 1, 1 / 16)
-      }
+  if (style === 'illustration') {
+    const src = imageLab(img)
+    const n = img.width * img.height
+    const px = (i: number): Lab => [src[i * 3], src[i * 3 + 1], src[i * 3 + 2]]
+    // Which bead each source pixel belongs to.
+    const owner = new Int32Array(n)
+    const sx = W / img.width
+    const sy = H / img.height
+    for (let y = 0; y < img.height; y++) {
+      const gy = Math.min(H - 1, Math.floor(y * sy))
+      for (let x = 0; x < img.width; x++) owner[y * img.width + x] = gy * W + Math.min(W - 1, Math.floor(x * sx))
     }
-    assign = out
+    // Vote weight: darker than the bead's median lightness → likely a line / eye.
+    const boost = LINE_BOOST[detail - 1]
+    const lightness: number[][] = Array.from({ length: W * H }, () => [])
+    for (let i = 0; i < n; i++) lightness[owner[i]].push(src[i * 3])
+    const median = lightness.map((ls) => {
+      ls.sort((a, b) => a - b)
+      return ls.length ? ls[ls.length >> 1] : 50
+    })
+    const weight = new Float32Array(n)
+    for (let i = 0; i < n; i++) weight[i] = 1 + boost * Math.max(0, Math.min(1.5, (median[owner[i]] - src[i * 3]) / 25))
+
+    // Pixels with (almost) the same color share one nearest-color lookup.
+    const keyIndex = new Map<number, number>()
+    const uniq: Lab[] = []
+    const pixU = new Int32Array(n)
+    for (let i = 0; i < n; i++) {
+      const key = (Math.round(src[i * 3] * 2) * 513 + Math.round(src[i * 3 + 1] * 2) + 256) * 513 + Math.round(src[i * 3 + 2] * 2) + 256
+      let u = keyIndex.get(key)
+      if (u === undefined) {
+        u = uniq.length
+        keyIndex.set(key, u)
+        uniq.push(px(i))
+      }
+      pixU[i] = u
+    }
+
+    const vote = (set: number[]) => {
+      const nearestU = new Int32Array(uniq.length)
+      for (let u = 0; u < uniq.length; u++) {
+        let best = 0
+        let bd = Infinity
+        for (let j = 0; j < set.length; j++) {
+          const d = dist2(uniq[u], paletteLabs[set[j]])
+          if (d < bd) {
+            bd = d
+            best = j
+          }
+        }
+        nearestU[u] = best
+      }
+      const k = set.length
+      const tally = new Float32Array(W * H * k)
+      for (let i = 0; i < n; i++) tally[owner[i] * k + nearestU[pixU[i]]] += weight[i]
+      const out = new Array<number>(W * H)
+      for (let c = 0; c < W * H; c++) {
+        let best = 0
+        for (let j = 1; j < k; j++) if (tally[c * k + j] > tally[c * k + best]) best = j
+        out[c] = set[best]
+      }
+      return out
+    }
+
+    // k-means on a sample of pixels.
+    const sample: Lab[] = []
+    const stride = Math.max(1, Math.floor(n / 8000))
+    for (let i = 0; i < n; i += stride) sample.push(px(i))
+    const chosen = chooseColors(
+      sample,
+      (set) => {
+        const counts = new Map<number, number>()
+        for (const c of vote(set)) counts.set(c, (counts.get(c) ?? 0) + 1)
+        return counts
+      },
+      regular,
+      paletteLabs,
+      maxColors,
+      minCount,
+    )
+    cells = vote(chosen)
+  } else {
+    const rgb = adjustDetail(downsampleLinear(img, W, H), W, H, SHARPEN[detail - 1])
+    const labs: Lab[] = new Array(W * H)
+    for (let i = 0; i < W * H; i++) labs[i] = linearRgbToLab(rgb[i * 3], rgb[i * 3 + 1], rgb[i * 3 + 2])
+    let version = 0
+    const chosen = chooseColors(
+      labs,
+      (set) => {
+        const tag = `p${version++}`
+        const counts = new Map<number, number>()
+        for (const l of labs) {
+          const c = nearestCached(l, set, tag)
+          counts.set(c, (counts.get(c) ?? 0) + 1)
+        }
+        return counts
+      },
+      regular,
+      paletteLabs,
+      maxColors,
+      minCount,
+    )
+    if (opts.dithering && chosen.length > 1) cells = ditherLab(labs, W, H, chosen, paletteLabs)
+    else cells = labs.map((l) => nearestCached(l, chosen, 'final'))
   }
 
-  return { width: W, height: H, paletteId: palette.id, cells: assign }
+  if (detail <= DESPECKLE_MAX_DETAIL && !opts.dithering) cells = despeckle(cells, W, H)
+  return { width: W, height: H, paletteId: palette.id, cells }
+}
+
+/** Serpentine Floyd–Steinberg in Lab, error clamped so saturated areas don't streak. */
+function ditherLab(labs: Lab[], W: number, H: number, chosen: number[], paletteLabs: Lab[]): number[] {
+  const err = labs.map((l) => l.slice() as Lab)
+  const out = new Array<number>(W * H)
+  for (let y = 0; y < H; y++) {
+    const ltr = y % 2 === 0
+    for (let s = 0; s < W; s++) {
+      const x = ltr ? s : W - 1 - s
+      const i = y * W + x
+      const target = err[i]
+      const c = nearestColor(target, chosen, paletteLabs)
+      out[i] = c
+      const p = paletteLabs[c]
+      const e = [0, 1, 2].map((j) => Math.max(-20, Math.min(20, target[j] - p[j])))
+      const dir = ltr ? 1 : -1
+      const spread = (dx: number, dy: number, w: number) => {
+        const xx = x + dx * dir
+        const yy = y + dy
+        if (xx < 0 || xx >= W || yy >= H) return
+        const t = err[yy * W + xx]
+        t[0] += e[0] * w
+        t[1] += e[1] * w
+        t[2] += e[2] * w
+      }
+      spread(1, 0, 7 / 16)
+      spread(-1, 1, 3 / 16)
+      spread(0, 1, 5 / 16)
+      spread(1, 1, 1 / 16)
+    }
+  }
+  return out
 }

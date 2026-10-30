@@ -108,6 +108,18 @@ export default function SettingsPage() {
                   )
                 })}
               </div>
+              <p className="mt-2 text-sm text-muted">{t.settings.sizeTip}</p>
+            </div>
+
+            <div>
+              <h2 className="label mb-2">{t.settings.style}</h2>
+              <Segmented
+                label={t.settings.style}
+                value={settings.style ?? 'auto'}
+                onChange={(style) => setSettings({ style })}
+                options={(['auto', 'illustration', 'photo'] as const).map((v) => ({ value: v, label: t.settings.styles[v] }))}
+              />
+              <p className="mt-2 text-sm text-muted">{t.settings.styleHints[settings.style ?? 'auto']}</p>
             </div>
 
             <label className="block">

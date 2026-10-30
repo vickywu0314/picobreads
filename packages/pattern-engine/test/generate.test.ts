@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { countColors, deltaE2000, generatePattern, getPalette, rgbToLab, type ImageInput, type Lab } from '../src'
+import { countColors, deltaE2000, despeckle, generatePattern, getPalette, looksLikeIllustration, rgbToLab, type ImageInput, type Lab } from '../src'
 
 describe('deltaE2000', () => {
   // Reference pairs from Sharma, Wu & Dalal (2005).
@@ -90,5 +90,36 @@ describe('generatePattern', () => {
     const b = generatePattern(grad, { ...base, maxColors: 8, dithering: true })
     expect(a.cells).toEqual(b.cells)
     expect(new Set(a.cells).size).toBeLessThanOrEqual(8)
+  })
+})
+
+describe('illustration style', () => {
+  // Flat background with a 3px dark outline: much thinner than one bead (each bead = 8px here).
+  const lineArt = image(160, 160, (x, y) => (Math.abs(x - 80) <= 1 || Math.abs(y - 80) <= 1 ? [30, 25, 25] : [240, 225, 200]))
+
+  it('is detected automatically for flat artwork, not for noisy photos', () => {
+    expect(looksLikeIllustration(lineArt)).toBe(true)
+    let seed = 7
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647) * 60
+    const photo = image(160, 160, (x, y) => [100 + x / 2 + rnd(), 120 + y / 3 + rnd(), 90 + rnd()])
+    expect(looksLikeIllustration(photo)).toBe(false)
+  })
+
+  it('keeps thin dark outlines that averaging would wash out', () => {
+    const opts = { ...base, maxColors: 8, detail: 4 }
+    const illus = generatePattern(lineArt, { ...opts, style: 'illustration' })
+    const dark = (cells: number[]) => cells.filter((c) => rgbToLab(perler.colors[c].rgb)[0] < 35).length
+    expect(dark(illus.cells)).toBeGreaterThanOrEqual(36) // the cross is ~39 beads long
+    const photo = generatePattern(lineArt, { ...opts, style: 'photo' })
+    expect(dark(photo.cells)).toBeLessThan(dark(illus.cells))
+  })
+})
+
+describe('despeckle', () => {
+  it('removes isolated single beads but keeps lines', () => {
+    const cells = [1, 1, 1, 1, 2, 1, 1, 1, 1]
+    expect(despeckle(cells, 3, 3)).toEqual([1, 1, 1, 1, 1, 1, 1, 1, 1])
+    const line = [1, 2, 1, 1, 2, 1, 1, 2, 1]
+    expect(despeckle(line, 3, 3)).toEqual(line)
   })
 })

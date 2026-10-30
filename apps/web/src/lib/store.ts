@@ -13,6 +13,8 @@ export interface Settings {
   maxColors: number
   detail: number
   dithering: boolean
+  /** Engine style; older saved settings may not have it (treated as auto). */
+  style?: 'auto' | 'illustration' | 'photo'
 }
 
 export interface CartItem {
@@ -89,6 +91,7 @@ export const defaultSettings: Settings = {
   maxColors: COLOR_LIMITS.default,
   detail: 3,
   dithering: false,
+  style: 'auto',
 }
 
 export const aspectValue = (id: AspectId) => ASPECTS.find((a) => a.id === id)?.value ?? 1
