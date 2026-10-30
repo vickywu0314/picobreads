@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { getPalette, type Pattern } from '@picobreads/pattern-engine'
+import { useT } from '@/i18n'
 
 /** Static, non-interactive render of a pattern (beads drawn as rounded dots). */
 export function PatternThumb({
@@ -15,6 +16,7 @@ export function PatternThumb({
   beads?: boolean
   label?: string
 }) {
+  const t = useT()
   const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export function PatternThumb({
     <canvas
       ref={ref}
       role="img"
-      aria-label={label ?? `Bead pattern, ${pattern.width} by ${pattern.height}`}
+      aria-label={label ?? t.common.patternAria(pattern.width, pattern.height)}
       className={`block h-full w-full ${className}`}
       style={{ aspectRatio: `${pattern.width} / ${pattern.height}` }}
     />

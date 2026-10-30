@@ -7,6 +7,7 @@ import { Lock } from 'lucide-react'
 import { Logo } from '@/components/SiteHeader'
 import { ProtoTag } from '@/components/PrototypeBanner'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { LanguageToggle } from '@/components/LanguageToggle'
 import { useT } from '@/i18n'
 
 const KEY = 'pb-admin'
@@ -66,10 +67,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-2 px-4">
           <div className="flex items-center gap-3">
             <Logo />
-            <span className="rounded-full bg-fg px-2 py-0.5 text-xs font-bold text-bg">{t.admin.title}</span>
+            <span className="whitespace-nowrap rounded-full bg-fg px-2 py-0.5 text-xs font-bold text-bg">{t.admin.title}</span>
             <ProtoTag />
           </div>
-          <ThemeToggle />
+          <div className="flex items-center">
+            <LanguageToggle />
+            <ThemeToggle />
+          </div>
         </div>
         <nav className="mx-auto flex max-w-6xl gap-1 px-4">
           {tabs.map((tab) => (

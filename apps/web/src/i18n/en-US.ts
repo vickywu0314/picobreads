@@ -1,4 +1,4 @@
-// en-US copy. Add zh-CN later as another object of the same `Messages` type.
+// en-US copy. This object defines the `Messages` shape every other locale must match.
 const plural = (n: number, one: string, many = one + 's') => `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`
 
 export const enUS = {
@@ -19,6 +19,26 @@ export const enUS = {
     difficulty: { easy: 'Easy', medium: 'Medium', hard: 'Challenging' },
     theme: { light: 'Light', dark: 'Dark', system: 'System', label: 'Color theme' },
     privacyLine: 'Your photo stays on your device while you preview — it is never uploaded.',
+    sample: 'Sample',
+    mode: 'Mode',
+    view: 'View',
+    progress: 'Progress',
+    decrease: 'Decrease',
+    increase: 'Increase',
+    yourPhoto: 'Your photo',
+    patternAria: (w: number, h: number) => `Bead pattern, ${w} by ${h} beads`,
+    language: 'Language',
+  },
+  tiers: { small: 'Small', standard: 'Standard', large: 'Large' },
+  brands: {
+    recommended: 'Recommended',
+    colorCount: (n: number) => `${n} colors`,
+    blurbs: {
+      perler: 'The best-known brand in North America. Very consistent size, color and melt.',
+      'artkal-s': 'The widest color range — great for portraits and subtle shading.',
+      hama: 'Classic Danish brand, popular in Europe. Reliable quality.',
+      'mard-221': 'Widely used standard chart from China. Budget-friendly.',
+    } as Record<string, string>,
   },
   nav: {
     create: 'Create',
@@ -53,6 +73,7 @@ export const enUS = {
     privacyBody:
       'Patterns are generated right in your browser. Your photo is only uploaded if you order a kit, and is deleted automatically after 90 days.',
     sampleCaption: 'Sample pattern · 52 × 52 · Perler colors',
+    sampleAria: 'Sample bead pattern of a cat',
   },
   create: {
     steps: ['Photo', 'Adjust', 'Pattern'],
@@ -78,8 +99,8 @@ export const enUS = {
       '5mm': { label: '5 mm (Midi)', hint: 'Classic size. Easiest for kids and beginners.' },
       '2.6mm': { label: '2.6 mm (Mini)', hint: 'Finer detail, smaller finished piece.' },
     },
-    palette: 'Bead brand colors',
-    paletteHint: 'Which bead color chart to match against.',
+    palette: 'Bead brand',
+    paletteHint: 'Your pattern uses this brand’s color chart, and your kit ships with these beads.',
     size: 'Size',
     sizeCells: (w: number, h: number) => `${w} × ${h} beads`,
     finished: (cm: string, inch: string) => `≈ ${cm} cm / ${inch} in`,
@@ -148,6 +169,7 @@ export const enUS = {
   },
   lightbox: {
     title: 'Light box mode',
+    boardAria: 'Light box board',
     calibrateTitle: 'Calibrate your screen',
     calibrateBody:
       'Lay a clear pegboard on the screen and drag the slider until the dots line up with the holes. Or hold a credit card against the outline.',
@@ -159,6 +181,7 @@ export const enUS = {
     warning: 'Take the pegboard off the screen before ironing!',
     prevColor: 'Previous color',
     nextColor: 'Next color',
+    nextShort: 'Next',
     nextSection: 'Next board',
     exit: 'Exit',
     fullscreen: 'Full screen',
@@ -175,6 +198,8 @@ export const enUS = {
     assembled: 'We bead it for you',
     assembledNote: 'Coming later',
     sameAsPattern: 'Your current pattern',
+    sizeAria: 'Kit size',
+    brand: (b: string) => `Beads: ${b}`,
   },
   cart: {
     title: 'Cart',
@@ -185,6 +210,7 @@ export const enUS = {
     checkout: 'Checkout',
     checkoutNote: 'On the real site this goes to Shopify checkout.',
     attrs: 'Line item attributes',
+    itemTitle: (tier: string) => `Custom bead kit — ${tier}`,
   },
   success: {
     title: 'Thank you! Your order is in.',
@@ -203,6 +229,7 @@ export const enUS = {
     email: 'Email address',
     send: 'Send magic link',
     sent: (email: string) => `In the real site, a sign-in link is emailed to ${email}.`,
+    magicTitle: 'Continue on another device',
   },
   admin: {
     title: 'Admin',
@@ -224,6 +251,10 @@ export const enUS = {
     markShipped: 'Mark shipped',
     pickCols: { color: 'Color', need: 'Need', withSpare: '+ spare', bags: 'Bags', grams: 'Grams', shelf: 'Shelf' },
     settingsSaved: 'Saved (prototype — not persisted).',
+    pdfLater: 'Prototype: PDF export arrives in milestone 3.',
+    photoAlt: 'Customer photo (sample)',
+    pickNote: (allowance: number, packs: string, grams: number) =>
+      `+${allowance}% spare · bags ${packs} · ${grams} g/bead (estimate)`,
     allowance: 'Spare allowance (%)',
     packSizes: 'Bag sizes (beads)',
     dailyLimit: 'Free previews per IP per day',

@@ -18,7 +18,7 @@ export function ProtoTag({ label }: { label?: string }) {
   const t = useT()
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-full border border-dashed border-warn/60 bg-warn/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-warn"
+      className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-dashed border-warn/60 bg-warn/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-warn"
       title={t.common.prototypeFake}
     >
       <FlaskConical className="h-3 w-3" aria-hidden />

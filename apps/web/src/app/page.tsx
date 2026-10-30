@@ -37,7 +37,7 @@ export default function HomePage() {
           </div>
           <figure className="card relative mx-auto w-full max-w-md rotate-1 p-4 shadow-xl">
             <div className="aspect-square overflow-hidden rounded-2xl bg-[var(--board)] p-2">
-              <PatternThumb pattern={sample} label="Sample bead pattern of a cat" />
+              <PatternThumb pattern={sample} label={t.home.sampleAria} />
             </div>
             <figcaption className="mt-3 text-center text-sm text-muted">{t.home.sampleCaption}</figcaption>
           </figure>

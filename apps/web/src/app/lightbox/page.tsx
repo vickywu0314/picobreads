@@ -31,7 +31,7 @@ function Calibrate({ onDone }: { onDone: () => void }) {
       <h1 className="text-2xl font-bold">{t.lightbox.calibrateTitle}</h1>
       <p className="text-white/70">{t.lightbox.calibrateBody}</p>
       <Segmented
-        label="Bead size"
+        label={t.settings.beadSize}
         value={beadSize}
         onChange={(b: BeadSize) => setSettings({ beadSize: b })}
         options={(['5mm', '2.6mm'] as const).map((b) => ({ value: b, label: b }))}
@@ -97,6 +97,7 @@ function LightCanvas({
   const drawRef = useRef(draw)
   drawRef.current = draw
   const [, force] = useState(0)
+  const t = useT()
 
   const paint = () => {
     const c = ref.current
@@ -174,7 +175,7 @@ function LightCanvas({
     }
   })
 
-  return <canvas ref={ref} className="absolute inset-0 h-full w-full touch-none" aria-label="Light box board" />
+  return <canvas ref={ref} className="absolute inset-0 h-full w-full touch-none" aria-label={t.lightbox.boardAria} />
 }
 
 export default function LightboxPage() {
@@ -325,7 +326,7 @@ export default function LightboxPage() {
               <span className="sr-only sm:not-sr-only">{t.lightbox.prevColor}</span>
             </button>
             <button type="button" className="btn h-16 bg-white text-black hover:bg-white/90" onClick={() => stepColor(1)}>
-              <span className="sm:hidden">{t.common.next}</span>
+              <span className="whitespace-nowrap sm:hidden">{t.lightbox.nextShort}</span>
               <span className="hidden sm:inline">{t.lightbox.nextColor}</span>
               <ChevronRight className="h-6 w-6" aria-hidden />
             </button>

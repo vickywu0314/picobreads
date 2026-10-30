@@ -60,7 +60,7 @@ export function Swatch({ rgb, number, size = 28, done }: { rgb: Rgb; number?: nu
 export function Stepper({ step }: { step: 0 | 1 | 2 }) {
   const t = useT()
   return (
-    <ol className="flex items-center gap-2 text-xs font-semibold text-muted" aria-label="Progress">
+    <ol className="flex items-center gap-2 text-xs font-semibold text-muted" aria-label={t.common.progress}>
       {t.create.steps.map((s, i) => (
         <li key={s} className="flex items-center gap-2" aria-current={i === step ? 'step' : undefined}>
           <span

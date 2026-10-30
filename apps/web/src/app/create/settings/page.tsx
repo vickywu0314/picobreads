@@ -4,11 +4,11 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useDeferredValue, useMemo, useState } from 'react'
 import { Loader2, Lock, Wand2 } from 'lucide-react'
-import { PALETTES } from '@picobreads/pattern-engine'
 import { SiteHeader } from '@/components/SiteHeader'
 import { ProtoTag } from '@/components/PrototypeBanner'
 import { PatternThumb } from '@/components/PatternThumb'
 import { Segmented, Stepper, Toggle } from '@/components/ui'
+import { BrandPicker } from '@/components/BrandPicker'
 import { COLOR_LIMITS, TIERS, gridSize } from '@/config/site'
 import { useT } from '@/i18n'
 import { aspectValue, buildPattern, useHydrated, useStore } from '@/lib/store'
@@ -44,7 +44,7 @@ export default function SettingsPage() {
             <div className="card overflow-hidden p-3">
               <div className="flex items-center justify-between px-1 pb-2 text-sm font-semibold">
                 <span>{t.settings.livePreview}</span>
-                <ProtoTag label="Sample" />
+                <ProtoTag label={t.common.sample} />
               </div>
               <div className="rounded-2xl bg-[var(--board)] p-2">
                 <PatternThumb pattern={preview} />
@@ -52,7 +52,7 @@ export default function SettingsPage() {
               <div className="mt-3 flex items-center gap-3">
                 {photo && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={photo} alt="Your cropped photo" className="h-14 w-14 rounded-xl object-cover" />
+                  <img src={photo} alt={t.common.yourPhoto} className="h-14 w-14 rounded-xl object-cover" />
                 )}
                 <p className="text-xs text-muted">{t.settings.sampleNote}</p>
               </div>
@@ -73,6 +73,12 @@ export default function SettingsPage() {
             </div>
 
             <div>
+              <h2 className="label mb-1">{t.settings.palette}</h2>
+              <p className="mb-2 text-sm text-muted">{t.settings.paletteHint}</p>
+              <BrandPicker value={settings.paletteId} onChange={(paletteId) => setSettings({ paletteId })} />
+            </div>
+
+            <div>
               <h2 className="label mb-2">{t.settings.size}</h2>
               <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label={t.settings.size}>
                 {TIERS.map((tier) => {
@@ -90,7 +96,7 @@ export default function SettingsPage() {
                         active ? 'border-accent bg-accent-soft' : 'border-border bg-surface hover:bg-surface-2'
                       }`}
                     >
-                      <span className="block font-bold">{tier.name}</span>
+                      <span className="block font-bold">{t.tiers[tier.id]}</span>
                       <span className="block text-xs text-muted">{t.settings.sizeCells(width, height)}</span>
                       <span className="mt-1 block text-xs text-muted">{fin.cm} cm</span>
                       <span className="block text-xs text-muted">{t.settings.boards(boardCount(width, height))}</span>
@@ -143,22 +149,6 @@ export default function SettingsPage() {
                 onChange={(dithering) => setSettings({ dithering })}
               />
             </div>
-
-            <label className="block">
-              <span className="label">{t.settings.palette}</span>
-              <select
-                className="input mt-2"
-                value={settings.paletteId}
-                onChange={(e) => setSettings({ paletteId: e.target.value })}
-              >
-                {PALETTES.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.product} — {p.colors.length} colors
-                  </option>
-                ))}
-              </select>
-              <span className="mt-1 block text-xs text-muted">{t.settings.paletteHint}</span>
-            </label>
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
               <Link href="/create/" className="btn-secondary">

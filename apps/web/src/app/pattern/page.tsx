@@ -53,7 +53,7 @@ export default function PatternPage() {
             <div className="card p-3">
               <div className="mb-3 max-w-xs">
                 <Segmented
-                  label="View"
+                  label={t.common.view}
                   value={view}
                   onChange={setView}
                   options={[
@@ -67,11 +67,11 @@ export default function PatternPage() {
                   <PatternThumb pattern={pattern} />
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={photo} alt="Your photo" className="max-h-[70vh] w-full rounded-xl object-contain" />
+                  <img src={photo} alt={t.common.yourPhoto} className="max-h-[70vh] w-full rounded-xl object-contain" />
                 )}
               </div>
               <p className="mt-3 flex items-start gap-2 text-xs text-muted">
-                <ProtoTag label="Sample" /> {t.pattern.sampleNote}
+                <ProtoTag label={t.common.sample} /> {t.pattern.sampleNote}
               </p>
             </div>
 

@@ -1,11 +1,12 @@
 import type { Palette } from './types'
 import perler from '../palettes/perler.json'
 import artkalS from '../palettes/artkal-s.json'
+import hama from '../palettes/hama.json'
 import mard221 from '../palettes/mard-221.json'
 
 // TODO: community-measured approximations, not official manufacturer colors.
 // See palettes/README.md before relying on them for production kits.
-export const PALETTES: Palette[] = [perler, artkalS, mard221] as unknown as Palette[]
+export const PALETTES: Palette[] = [perler, artkalS, hama, mard221] as unknown as Palette[]
 
 export const DEFAULT_PALETTE_ID = 'perler'
 

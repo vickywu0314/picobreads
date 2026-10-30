@@ -116,7 +116,7 @@ export default function BeadPage() {
           boardCells={BOARD_CELLS}
           editMode={mode === 'fix'}
           onCellTap={onCellTap}
-          label={`Bead pattern ${pattern.width} by ${pattern.height}`}
+          label={t.common.patternAria(pattern.width, pattern.height)}
         />
         <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between gap-2 p-2">
           <div className="pointer-events-auto flex items-center gap-1 rounded-full bg-surface/90 p-1 shadow backdrop-blur">
@@ -150,7 +150,7 @@ export default function BeadPage() {
       {/* Control panel */}
       <aside className="flex max-h-[46%] flex-col gap-3 overflow-y-auto *:shrink-0 border-t border-border bg-surface p-3 md:max-h-none md:w-96 md:border-l md:border-t-0 md:p-4">
         <Segmented
-          label="Mode"
+          label={t.common.mode}
           value={mode}
           onChange={setMode}
           options={[
@@ -272,7 +272,7 @@ export default function BeadPage() {
           </span>
           <div className="flex gap-1">
             <Link href="/lightbox/" className="btn-ghost btn-sm">
-              <Lightbulb className="h-4 w-4" aria-hidden /> Light box
+              <Lightbulb className="h-4 w-4" aria-hidden /> {t.pattern.lightbox}
             </Link>
             <button
               type="button"

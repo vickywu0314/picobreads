@@ -7,7 +7,7 @@ import { ArrowLeft, Download, FileDown } from 'lucide-react'
 import { getPalette, packTotal, pickPacks, withAllowance } from '@picobreads/pattern-engine'
 import { PatternThumb } from '@/components/PatternThumb'
 import { Swatch } from '@/components/ui'
-import { PICKING, getTier } from '@/config/site'
+import { PICKING } from '@/config/site'
 import { useT } from '@/i18n'
 import { legendOf } from '@/lib/pattern'
 import { STATUS_STYLE, mockOrders, type OrderStatus } from '@/mock/orders'
@@ -37,7 +37,7 @@ function OrderDetail() {
         <span className={`rounded-full px-3 py-1 text-sm font-bold ${STATUS_STYLE[status]}`}>{t.admin.status[status]}</span>
       </div>
       <p className="mt-1 text-muted">
-        {order.customer} · {order.email} · {getTier(order.tier).name} {order.pattern.width}×{order.pattern.height} · {order.beadSize} ·{' '}
+        {order.customer} · {order.email} · {t.tiers[order.tier]} {order.pattern.width}×{order.pattern.height} · {order.beadSize} ·{' '}
         {palette.brand}
       </p>
 
@@ -57,10 +57,10 @@ function OrderDetail() {
             {t.admin.markShipped}
           </button>
         )}
-        <button type="button" className="btn-secondary btn-sm" onClick={() => alert('Prototype: PDF export arrives in milestone 3.')}>
+        <button type="button" className="btn-secondary btn-sm" onClick={() => alert(t.admin.pdfLater)}>
           <Download className="h-4 w-4" aria-hidden /> {t.admin.downloadPick}
         </button>
-        <button type="button" className="btn-secondary btn-sm" onClick={() => alert('Prototype: PDF export arrives in milestone 3.')}>
+        <button type="button" className="btn-secondary btn-sm" onClick={() => alert(t.admin.pdfLater)}>
           <FileDown className="h-4 w-4" aria-hidden /> {t.admin.downloadPattern}
         </button>
       </div>
@@ -75,14 +75,14 @@ function OrderDetail() {
           <div className="card p-3">
             <p className="mb-2 text-sm font-semibold">{t.admin.photo}</p>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={SAMPLE_PHOTO_SVG} alt="Customer photo (sample)" className="w-full rounded-xl" />
+            <img src={SAMPLE_PHOTO_SVG} alt={t.admin.photoAlt} className="w-full rounded-xl" />
           </div>
         </div>
 
         <section className="card overflow-x-auto">
           <h2 className="px-4 pt-4 font-bold">{t.admin.pickList}</h2>
           <p className="px-4 text-xs text-muted">
-            +{Math.round(PICKING.allowance * 100)}% spare · bags {PICKING.packSizes.join(' / ')} · {weight} g/bead (estimate)
+            {t.admin.pickNote(Math.round(PICKING.allowance * 100), PICKING.packSizes.join(' / '), weight)}
           </p>
           <table className="mt-3 w-full min-w-[36rem] text-left text-sm">
             <thead className="border-y border-border text-xs uppercase tracking-wide text-muted">

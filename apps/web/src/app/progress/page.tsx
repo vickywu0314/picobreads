@@ -38,7 +38,7 @@ export default function ProgressPage() {
                   {pattern.width} × {pattern.height} · {Math.round((done / pattern.cells.length) * 100)}%
                 </p>
                 <div className="mt-2">
-                  <ProgressBar value={done / pattern.cells.length} label="Progress" />
+                  <ProgressBar value={done / pattern.cells.length} label={t.common.progress} />
                 </div>
               </div>
               <Link href="/bead/" className="btn-primary btn-sm">
@@ -52,7 +52,7 @@ export default function ProgressPage() {
 
         <section className="card mt-4 p-5">
           <div className="flex items-center gap-2">
-            <h2 className="font-bold">Magic link</h2>
+            <h2 className="font-bold">{t.progress.magicTitle}</h2>
             <ProtoTag />
           </div>
           {sent ? (

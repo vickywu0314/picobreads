@@ -64,6 +64,10 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+html[data-locale-pending] body {
+  visibility: hidden;
+}
+
 :focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 2px;

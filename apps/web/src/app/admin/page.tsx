@@ -2,12 +2,12 @@
 
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
-import { getTier } from '@/config/site'
-import { useT } from '@/i18n'
+import { useLocale, useT } from '@/i18n'
 import { STATUS_STYLE, mockOrders, type OrderStatus } from '@/mock/orders'
 
 export default function AdminOrdersPage() {
   const t = useT()
+  const locale = useLocale()
   const orders = useMemo(() => mockOrders(), [])
   const [filter, setFilter] = useState<OrderStatus | 'all'>('all')
   const list = filter === 'all' ? orders : orders.filter((o) => o.status === filter)
@@ -50,10 +50,10 @@ export default function AdminOrdersPage() {
                     {o.id}
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-muted">{new Date(o.date).toLocaleDateString('en-US')}</td>
+                <td className="px-4 py-3 text-muted">{new Date(o.date).toLocaleDateString(locale)}</td>
                 <td className="px-4 py-3">{o.customer}</td>
                 <td className="px-4 py-3">
-                  {getTier(o.tier).name} · {o.pattern.width}×{o.pattern.height} · {o.beadSize}
+                  {t.tiers[o.tier]} · {o.pattern.width}×{o.pattern.height} · {o.beadSize}
                 </td>
                 <td className="px-4 py-3">
                   <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${STATUS_STYLE[o.status]}`}>{t.admin.status[o.status]}</span>

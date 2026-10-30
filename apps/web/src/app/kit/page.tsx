@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import { Check, ShoppingBag } from 'lucide-react'
-import type { BeadSize } from '@picobreads/pattern-engine'
+import { getPalette, type BeadSize } from '@picobreads/pattern-engine'
 import { SiteFooter, SiteHeader } from '@/components/SiteHeader'
 import { ProtoTag } from '@/components/PrototypeBanner'
 import { PatternThumb } from '@/components/PatternThumb'
@@ -62,7 +62,7 @@ export default function KitPage() {
           />
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-3" role="radiogroup" aria-label="Kit size">
+        <div className="mt-6 grid gap-4 md:grid-cols-3" role="radiogroup" aria-label={t.kit.sizeAria}>
           {variants.map(({ tier: tr, pattern: p, colors }) => {
             const active = tr.id === tier
             const fin = finishedSize(p.width, p.height, beadSize)
@@ -85,7 +85,7 @@ export default function KitPage() {
                 <div className="mx-auto w-40 rounded-xl bg-[var(--board)] p-1.5">
                   <PatternThumb pattern={p} />
                 </div>
-                <h2 className="mt-4 text-xl font-bold">{tr.name}</h2>
+                <h2 className="mt-4 text-xl font-bold">{t.tiers[tr.id]}</h2>
                 <p className="text-sm text-muted">
                   {p.width} × {p.height} · {fin.inch} in
                 </p>
@@ -124,9 +124,11 @@ export default function KitPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="font-bold">
-                {chosen.tier.name} · {beadSize}
+                {t.tiers[tier]} · {beadSize}
               </p>
-              <p className="text-sm text-muted">${chosen.tier.priceUsd}</p>
+              <p className="text-sm text-muted">
+                ${chosen.tier.priceUsd} · {t.kit.brand(getPalette(chosen.pattern.paletteId).brand)}
+              </p>
             </div>
             <button
               type="button"

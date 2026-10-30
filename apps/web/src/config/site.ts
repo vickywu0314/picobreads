@@ -9,6 +9,9 @@ export const SITE = {
   tagline: 'Your photo, as a fuse bead kit.',
 }
 
+/** Bead brand we recommend (most consistent quality, best known in North America). */
+export const RECOMMENDED_PALETTE_ID = 'perler'
+
 export type TierId = 'small' | 'standard' | 'large'
 
 export interface Tier {

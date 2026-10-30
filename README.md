@@ -11,10 +11,10 @@ apps/web/                  Next.js 15 (App Router, static export), Tailwind CSS 
   src/app/                 pages (home, create, settings, pattern, bead, lightbox, kit, cart, checkout, progress, admin)
   src/components/          PatternCanvas (pan/zoom editor), PatternThumb, UI bits
   src/config/site.ts       business knobs: size tiers, prices (placeholder), allowance, bag sizes, limits
-  src/i18n/en-US.ts        all UI copy (add zh-CN later as another object of the same type)
+  src/i18n/                UI copy: en-US.ts + zh-CN.ts; locale follows the browser, switchable in the header
   src/mock/                PROTOTYPE ONLY: sample pattern generator, fake orders
 packages/pattern-engine/   pure TypeScript, no UI deps: types, palettes, sections, stats, bag picking
-  palettes/                bead color charts (Perler / Artkal S / MARD 221) — see palettes/README.md
+  palettes/                bead color charts (Perler / Artkal S / Hama / MARD 221) — see palettes/README.md
 ```
 
 ## Local development
@@ -45,4 +45,4 @@ Milestone 0 needs none. See `.env.example`.
 
 ## Color data credit
 
-Color data: craft-color-codes by MakeBead (https://makebead.com). Perler / Artkal values from maxcleme/beadcolors (MIT). Community-measured approximations, not official manufacturer colors.
+Color data: craft-color-codes by MakeBead (https://makebead.com). Perler / Artkal / Hama values from maxcleme/beadcolors (MIT). Community-measured approximations, not official manufacturer colors.

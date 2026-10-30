@@ -6,6 +6,7 @@ import { SITE } from '@/config/site'
 import { useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
 import { ThemeToggle } from './ThemeToggle'
+import { LanguageToggle } from './LanguageToggle'
 
 export function Logo({ className = '' }: { className?: string }) {
   return (
@@ -35,6 +36,7 @@ export function SiteHeader() {
           <Link href="/progress/" className="hidden rounded-full px-3 py-2 hover:bg-surface-2 sm:block">
             {t.nav.progress}
           </Link>
+          <LanguageToggle />
           <ThemeToggle />
           <Link href="/cart/" className="icon-btn relative" aria-label={`${t.nav.cart} (${hydrated ? count : 0})`}>
             <ShoppingBag className="h-5 w-5" aria-hidden />

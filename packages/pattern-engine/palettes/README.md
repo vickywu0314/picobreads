@@ -4,8 +4,9 @@
 
 | 文件 | 品牌 / 系列 | 色数 | 说明 | 许可 |
 |---|---|---|---|---|
-| `perler.json` | Perler Midi 5mm | 103 | 北美零售最主流（Walmart / Michaels / Amazon） | MIT（maxcleme/beadcolors） |
+| `perler.json` | Perler Midi 5mm | 103 | 北美零售最主流，品质稳定，**默认 / 推荐** | MIT（maxcleme/beadcolors） |
 | `artkal-s.json` | Artkal S 系列 5mm | 199 | 色数最全，玩家与图纸网站常用；另有 2.6mm C 系列 | MIT（maxcleme/beadcolors） |
+| `hama.json` | Hama Midi 5mm | 92 | 丹麦老牌，欧洲主流，品质口碑好 | MIT（maxcleme/beadcolors） |
 | `mard-221.json` | MARD 5mm 221 色 | 221 | 国内拼豆 App / 供应链通用标准 | CC BY 4.0（MakeBead） |
 
 - `specialty` 字段标记夜光 / 闪粉 / 荧光 / 珠光 / 透明等特殊豆，自动生成图纸时默认不使用。
@@ -14,7 +15,7 @@
 ## 来源与署名
 
 Color data: craft-color-codes by MakeBead (https://makebead.com)，npm 包 `craft-color-codes@1.0.0`。
-数据许可：CC BY 4.0；其中 Perler / Artkal 的颜色值来自 maxcleme/beadcolors，沿用其 MIT 许可：
+数据许可：CC BY 4.0；其中 Perler / Artkal / Hama 的颜色值来自 maxcleme/beadcolors，沿用其 MIT 许可：
 
 ```
 MIT License

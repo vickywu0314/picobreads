@@ -6,7 +6,7 @@ import { Lock, Minus, Plus, Trash2 } from 'lucide-react'
 import { SiteFooter, SiteHeader } from '@/components/SiteHeader'
 import { ProtoTag } from '@/components/PrototypeBanner'
 import { PatternThumb } from '@/components/PatternThumb'
-import { getTier } from '@/config/site'
+import { getPalette } from '@picobreads/pattern-engine'
 import { useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
 
@@ -44,9 +44,9 @@ export default function CartPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-bold">Custom bead kit — {getTier(item.tier).name}</p>
+                        <p className="font-bold">{t.cart.itemTitle(t.tiers[item.tier])}</p>
                         <p className="text-sm text-muted">
-                          {item.pattern.width} × {item.pattern.height} · {item.beadSize}
+                          {item.pattern.width} × {item.pattern.height} · {item.beadSize} · {getPalette(item.pattern.paletteId).brand}
                         </p>
                       </div>
                       <p className="font-bold">${item.priceUsd * item.qty}</p>
@@ -63,11 +63,11 @@ export default function CartPage() {
                     </details>
                     <div className="mt-2 flex items-center justify-between">
                       <div className="flex items-center gap-1 rounded-full border border-border">
-                        <button type="button" className="icon-btn h-9 w-9" onClick={() => setQty(item.id, item.qty - 1)} aria-label="Decrease">
+                        <button type="button" className="icon-btn h-9 w-9" onClick={() => setQty(item.id, item.qty - 1)} aria-label={t.common.decrease}>
                           <Minus className="h-4 w-4" aria-hidden />
                         </button>
                         <span className="w-6 text-center font-semibold tabular-nums">{item.qty}</span>
-                        <button type="button" className="icon-btn h-9 w-9" onClick={() => setQty(item.id, item.qty + 1)} aria-label="Increase">
+                        <button type="button" className="icon-btn h-9 w-9" onClick={() => setQty(item.id, item.qty + 1)} aria-label={t.common.increase}>
                           <Plus className="h-4 w-4" aria-hidden />
                         </button>
                       </div>
