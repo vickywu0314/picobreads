@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, CheckCheck, ChevronRight, Cloud, Lightbulb, Maximize, Minus, Plus, RotateCcw, Undo2, Volume2, VolumeX } from 'lucide-react'
+import { ArrowLeft, CheckCheck, ChevronRight, Cloud, Eye, Lightbulb, Maximize, Minus, Plus, RotateCcw, Undo2, Volume2, VolumeX } from 'lucide-react'
 import { regularColorIndices, sectionCellIndices } from '@picobreads/pattern-engine'
 import { PatternCanvas, type PatternCanvasHandle, type ToolPointerEvent } from '@/components/PatternCanvas'
 import { NoPattern } from '@/components/NoPattern'
 import { Modal, ProgressBar, Swatch } from '@/components/ui'
 import { BeadTray } from '@/components/bead/BeadTray'
 import { ToolLayer, useToolLayer, type Flight } from '@/components/bead/ToolLayer'
+import { MiniPreview, ProgressPreview } from '@/components/bead/ProgressPreview'
 import { PEN_CAPACITY, ToolIcon, type ToolId } from '@/components/bead/tools'
 import { BOARD_CELLS } from '@/config/site'
 import { useT } from '@/i18n'
@@ -41,6 +42,7 @@ export default function BeadPage() {
   const [fixCell, setFixCell] = useState<number | null>(null)
   const [finished, setFinished] = useState(false)
   const [muted, setMutedState] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   // Refs mirror state for the pointer handlers (they run many times per frame).
   const loadRef = useRef(load)
@@ -364,16 +366,23 @@ export default function BeadPage() {
             <Link href="/pattern/" className="icon-btn" aria-label={t.common.back}>
               <ArrowLeft className="h-5 w-5" aria-hidden />
             </Link>
-            <span className="pr-3 text-sm font-bold">{t.editor.title}</span>
+            <span className="pr-1 text-sm font-bold">{t.editor.title}</span>
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(true)}
+              className="ml-1 inline-flex h-9 items-center gap-1.5 rounded-full bg-accent px-3 text-sm font-bold text-accent-fg"
+            >
+              <Eye className="h-4 w-4" aria-hidden /> {t.editor.preview.open}
+            </button>
           </div>
           <div className="pointer-events-auto flex items-center gap-0.5 rounded-full bg-surface/90 p-1 shadow backdrop-blur">
             <button type="button" className="icon-btn" onClick={undo} disabled={!canUndo} aria-label={t.editor.undo}>
               <Undo2 className="h-5 w-5" aria-hidden />
             </button>
-            <button type="button" className="icon-btn" onClick={() => canvas.current?.zoomOut()} aria-label={t.editor.zoomOut}>
+            <button type="button" className="icon-btn hidden sm:inline-flex" onClick={() => canvas.current?.zoomOut()} aria-label={t.editor.zoomOut}>
               <Minus className="h-5 w-5" aria-hidden />
             </button>
-            <button type="button" className="icon-btn" onClick={() => canvas.current?.zoomIn()} aria-label={t.editor.zoomIn}>
+            <button type="button" className="icon-btn hidden sm:inline-flex" onClick={() => canvas.current?.zoomIn()} aria-label={t.editor.zoomIn}>
               <Plus className="h-5 w-5" aria-hidden />
             </button>
             <button type="button" className="icon-btn" onClick={() => canvas.current?.fit()} aria-label={t.editor.fit}>
@@ -381,6 +390,13 @@ export default function BeadPage() {
             </button>
           </div>
         </div>
+        <MiniPreview
+          pattern={pattern}
+          palette={palette}
+          placed={placed}
+          onOpen={() => setPreviewOpen(true)}
+          className="absolute bottom-2 left-2"
+        />
         {toolActive && (
           <p className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/40 px-3 py-1 text-[11px] text-white">
             {t.editor.twoFingers}
@@ -528,6 +544,8 @@ export default function BeadPage() {
         count={load.count}
         onLand={onLand}
       />
+
+      <ProgressPreview open={previewOpen} onClose={() => setPreviewOpen(false)} pattern={pattern} palette={palette} placed={placed} />
 
       {/* Fix color picker */}
       <Modal

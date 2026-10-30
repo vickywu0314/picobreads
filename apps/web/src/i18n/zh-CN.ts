@@ -171,6 +171,17 @@ export const zhCN: Messages = {
     tweezersEmpty: '镊子是空的',
     sound: '音效',
     twoFingers: '双指移动和缩放',
+    preview: {
+      open: '预览',
+      title: '目前的效果',
+      progress: (done: number, total: number, pct: number) => `已放 ${done} / ${total} 颗 · ${pct}%`,
+      views: { board: '板上', ironed: '熨烫后', final: '完成后' },
+      hints: {
+        board: '只显示你已经放上的豆子，就像低头看底板一样。',
+        ironed: '已放的豆子熨烫后的样子。',
+        final: '整张图全部完成并熨烫后的样子，方便对比。',
+      },
+    },
     fixTitle: (x: number, y: number) => `修改格子（${x}, ${y}）`,
     current: '当前颜色',
     reset: '重置进度',

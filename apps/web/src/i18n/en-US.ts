@@ -172,6 +172,17 @@ export const enUS = {
     tweezersEmpty: 'Tweezers are empty',
     sound: 'Sound',
     twoFingers: 'Two fingers to move & zoom',
+    preview: {
+      open: 'Preview',
+      title: 'Your work so far',
+      progress: (done: number, total: number, pct: number) => `${done.toLocaleString('en-US')} of ${total.toLocaleString('en-US')} beads placed · ${pct}%`,
+      views: { board: 'On the board', ironed: 'Ironed', final: 'Finished' },
+      hints: {
+        board: 'Only the beads you have placed, as they sit on the pegboard.',
+        ironed: 'What your placed beads look like after ironing.',
+        final: 'The whole pattern finished and ironed, to compare.',
+      },
+    },
     fixTitle: (x: number, y: number) => `Change cell (${x}, ${y})`,
     current: 'Current',
     reset: 'Reset progress',
