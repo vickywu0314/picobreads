@@ -46,7 +46,11 @@ export const BOARD_CELLS = 29
 /** Pegboard hole pitch in millimetres. */
 export const BEAD_PITCH_MM: Record<BeadSize, number> = { '5mm': 5, '2.6mm': 2.6 }
 
-export const COLOR_LIMITS = { min: 8, max: 28, default: 16 }
+/**
+ * Max-colors slider: from `min` up to every regular color of the chosen bead brand
+ * (see maxColorsFor). The more colors, the closer to the photo — and the harder to bead.
+ */
+export const COLOR_LIMITS = { min: 8, default: 28 }
 
 export const PICKING = {
   allowance: 0.1,

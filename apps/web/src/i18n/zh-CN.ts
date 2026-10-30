@@ -76,6 +76,7 @@ export const zhCN: Messages = {
     finished: (cm: string, inch: string) => `约 ${cm} 厘米 / ${inch} 英寸`,
     boards: (v: number) => `${v} 块底板`,
     maxColors: '最多颜色数',
+    maxColorsHint: (n: number, brand: string) => `最多 ${n} 色（${brand} 全部颜色）。颜色越多越接近照片，拼起来也越费时。`,
     detail: '细节程度',
     detailLevels: ['简洁', '柔和', '均衡', '细致', '最高'],
     style: '图片类型',

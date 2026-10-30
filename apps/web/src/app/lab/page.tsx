@@ -15,7 +15,7 @@ import { drawWork } from '@/components/bead/ProgressPreview'
 import { COLOR_LIMITS, TIERS, type TierId } from '@/config/site'
 import { useT } from '@/i18n'
 import { generateFromPhoto, photoPixels } from '@/lib/generate'
-import { legendOf } from '@/lib/pattern'
+import { legendOf, maxColorsFor } from '@/lib/pattern'
 import { defaultSettings, useStore, type Settings } from '@/lib/store'
 
 type Style = 'illustration' | 'photo'
@@ -126,16 +126,17 @@ export default function LabPage() {
             <label className="block">
               <span className="flex items-center justify-between">
                 <span className="label">{t.settings.maxColors}</span>
-                <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-sm font-bold">{opts.maxColors}</span>
+                <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-sm font-bold">{Math.min(opts.maxColors, maxColorsFor(opts.paletteId))}</span>
               </span>
               <input
                 type="range"
                 min={COLOR_LIMITS.min}
-                max={COLOR_LIMITS.max}
-                value={opts.maxColors}
+                max={maxColorsFor(opts.paletteId)}
+                value={Math.min(opts.maxColors, maxColorsFor(opts.paletteId))}
                 onChange={(e) => setOpts({ ...opts, maxColors: Number(e.target.value) })}
                 className="mt-3 w-full accent-[var(--accent)]"
               />
+              <span className="mt-1 block text-xs text-muted">{t.settings.maxColorsHint(maxColorsFor(opts.paletteId), getPalette(opts.paletteId).brand)}</span>
             </label>
             <label className="block">
               <span className="flex items-center justify-between">

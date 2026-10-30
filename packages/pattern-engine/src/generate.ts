@@ -213,24 +213,45 @@ function imageLab(img: ImageInput): Float32Array {
 }
 
 /**
- * Heuristic: illustrations are mostly flat areas, so neighbouring pixels are
- * near-identical far more often than in photos.
+ * Heuristic for "auto" style. Illustrations (cartoons, drawings, logos) have thin
+ * dark outlines, or very few distinct colors. Photos — including smooth skies and
+ * sunsets, which are also "flat" pixel to pixel — have neither.
  */
 export function looksLikeIllustration(img: ImageInput): boolean {
+  // Work on a ~200px nearest-neighbour sample; plenty for these statistics.
+  const step = Math.max(1, Math.floor(Math.max(img.width, img.height) / 200))
+  const w = Math.floor(img.width / step)
+  const h = Math.floor(img.height / step)
   const lab = imageLab(img)
-  let flat = 0
-  let pairs = 0
-  const step = Math.max(1, Math.floor(img.width / 160))
-  for (let y = 0; y < img.height; y += step) {
-    for (let x = 1; x < img.width; x += step) {
-      const a = (y * img.width + x) * 3
-      const b = a - 3
-      const d = Math.abs(lab[a] - lab[b]) + Math.abs(lab[a + 1] - lab[b + 1]) + Math.abs(lab[a + 2] - lab[b + 2])
-      if (d < 4) flat++
-      pairs++
+  const L = new Float32Array(w * h)
+  const bins = new Map<number, number>()
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const p = (y * step * img.width + x * step) * 3
+      L[y * w + x] = lab[p]
+      const key = (Math.floor(lab[p] / 6) * 64 + Math.floor(lab[p + 1] / 6) + 32) * 64 + Math.floor(lab[p + 2] / 6) + 32
+      bins.set(key, (bins.get(key) ?? 0) + 1)
     }
   }
-  return flat / Math.max(1, pairs) > 0.55
+  // 1. Thin dark lines: darker by 20+ than the pixels 3 steps away on both sides.
+  const D = 3
+  let lines = 0
+  let total = 0
+  for (let y = D; y < h - D; y++) {
+    for (let x = D; x < w - D; x++) {
+      const v = L[y * w + x]
+      const horiz = v < L[y * w + x - D] - 20 && v < L[y * w + x + D] - 20
+      const vert = v < L[(y - D) * w + x] - 20 && v < L[(y + D) * w + x] - 20
+      if (horiz || vert) lines++
+      total++
+    }
+  }
+  if (lines / Math.max(1, total) >= 0.015) return true
+  // 2. Few colors: a handful of color bins cover most of the image.
+  const counts = [...bins.values()].sort((a, b) => b - a)
+  let covered = 0
+  for (let k = 0; k < Math.min(12, counts.length); k++) covered += counts[k]
+  return covered / (w * h) >= 0.8
 }
 
 /** Replace beads that match none of their 4 neighbours when ≥3 neighbours agree. */
@@ -262,17 +283,19 @@ function chooseColors(
   maxColors: number,
   minCount: number,
 ): number[] {
-  const k = Math.min(48, Math.max(maxColors + 4, Math.round(maxColors * 1.6)))
+  const k = Math.min(256, Math.max(maxColors + 4, Math.round(maxColors * 1.6)))
   let chosen = [...new Set(kmeansLab(points, k).map((c) => nearestColor(c, regular, paletteLabs)))]
   for (;;) {
     if (chosen.length <= 1) return chosen
     const counts = weights(chosen)
-    const used = chosen.filter((c) => (counts.get(c) ?? 0) > 0)
-    let rarest = used[0]
-    for (const c of used) if (counts.get(c)! < counts.get(rarest)!) rarest = c
-    const overLimit = used.length > maxColors
-    if (!overLimit && counts.get(rarest)! >= minCount && used.length === chosen.length) return chosen
-    chosen = overLimit || counts.get(rarest)! < minCount ? used.filter((c) => c !== rarest) : used
+    const used = chosen.filter((c) => (counts.get(c) ?? 0) > 0).sort((a, b) => counts.get(a)! - counts.get(b)!)
+    const rare = used.filter((c) => counts.get(c)! < minCount)
+    const over = used.length - maxColors
+    if (over <= 0 && rare.length === 0 && used.length === chosen.length) return chosen
+    // Remove the rarest colors; when far over the limit, a third of the excess per round
+    // (their pixels move to the nearest remaining color on the next pass).
+    const drop = Math.max(rare.length ? 1 : 0, over > 0 ? Math.max(1, Math.ceil(over / 3)) : 0)
+    chosen = used.slice(Math.min(drop, used.length - 1))
   }
 }
 
@@ -293,7 +316,9 @@ export function generatePattern(img: ImageInput, opts: GenerateOptions): Generat
   const { palette, width: W, height: H } = opts
   const detail = Math.min(5, Math.max(1, Math.round(opts.detail)))
   const maxColors = Math.max(1, Math.floor(opts.maxColors))
-  const minCount = Math.max(1, Math.round(W * H * (opts.minShare ?? MIN_SHARE[detail - 1])))
+  // Asking for many colors means "keep subtle shades": relax the rare-color threshold accordingly.
+  const share = opts.minShare ?? MIN_SHARE[detail - 1] * Math.min(1, 28 / maxColors)
+  const minCount = Math.max(1, Math.round(W * H * share))
   const style = opts.style && opts.style !== 'auto' ? opts.style : looksLikeIllustration(img) ? 'illustration' : 'photo'
 
   const paletteLabs = palette.colors.map((c) => rgbToLab(c.rgb))

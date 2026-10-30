@@ -1,4 +1,4 @@
-import { countColors, type BeadSize, type Palette, type Pattern, type Rgb } from '@picobreads/pattern-engine'
+import { countColors, getPalette, regularColorIndices, type BeadSize, type Palette, type Pattern, type Rgb } from '@picobreads/pattern-engine'
 import { BEAD_PITCH_MM, BOARD_CELLS } from '@/config/site'
 
 export interface LegendEntry {
@@ -31,3 +31,6 @@ export function finishedSize(width: number, height: number, bead: BeadSize) {
 export const boardCount = (width: number, height: number) => Math.ceil(width / BOARD_CELLS) * Math.ceil(height / BOARD_CELLS)
 
 export const colorLabel = (palette: Palette, i: number) => `${palette.colors[i].name} · ${palette.colors[i].code}`
+
+/** Upper bound for the max-colors slider: all regular (non-specialty) colors of the brand. */
+export const maxColorsFor = (paletteId: string) => regularColorIndices(getPalette(paletteId)).length

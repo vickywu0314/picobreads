@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Loader2, Lock, Wand2 } from 'lucide-react'
+import { getPalette } from '@picobreads/pattern-engine'
 import { SiteHeader } from '@/components/SiteHeader'
 import { PatternThumb } from '@/components/PatternThumb'
 import { Segmented, Stepper, Toggle } from '@/components/ui'
@@ -13,7 +14,7 @@ import { useT } from '@/i18n'
 import { aspectValue, useHydrated, useStore } from '@/lib/store'
 import { generateFromPhoto } from '@/lib/generate'
 import { useGeneratedPattern } from '@/lib/useGenerated'
-import { boardCount, finishedSize } from '@/lib/pattern'
+import { boardCount, finishedSize, maxColorsFor } from '@/lib/pattern'
 
 export default function SettingsPage() {
   const t = useT()
@@ -129,16 +130,17 @@ export default function SettingsPage() {
             <label className="block">
               <span className="flex items-center justify-between">
                 <span className="label">{t.settings.maxColors}</span>
-                <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-sm font-bold">{settings.maxColors}</span>
+                <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-sm font-bold">{Math.min(settings.maxColors, maxColorsFor(settings.paletteId))}</span>
               </span>
               <input
                 type="range"
                 min={COLOR_LIMITS.min}
-                max={COLOR_LIMITS.max}
-                value={settings.maxColors}
+                max={maxColorsFor(settings.paletteId)}
+                value={Math.min(settings.maxColors, maxColorsFor(settings.paletteId))}
                 onChange={(e) => setSettings({ maxColors: Number(e.target.value) })}
                 className="mt-3 w-full accent-[var(--accent)]"
               />
+              <span className="mt-1 block text-xs text-muted">{t.settings.maxColorsHint(maxColorsFor(settings.paletteId), getPalette(settings.paletteId).brand)}</span>
             </label>
 
             <label className="block">

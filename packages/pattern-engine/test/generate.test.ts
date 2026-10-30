@@ -123,3 +123,25 @@ describe('despeckle', () => {
     expect(despeckle(line, 3, 3)).toEqual(line)
   })
 })
+
+describe('auto style', () => {
+  it('treats a smooth sunset with a dark silhouette as a photo', () => {
+    const sunset = image(200, 150, (x, y) => {
+      const t = y / 150
+      const sky: [number, number, number] = [Math.round(60 + 190 * t), Math.round(90 + 60 * t), Math.round(200 - 150 * t)]
+      // silhouette: a solid dark figure, no thin outlines
+      return (x - 100) ** 2 / 400 + (y - 110) ** 2 / 1600 < 1 ? [15, 12, 12] : sky
+    })
+    expect(looksLikeIllustration(sunset)).toBe(false)
+  })
+})
+
+describe('many colors', () => {
+  it('can use far more than 28 colors when asked', () => {
+    const rainbow = image(240, 240, (x, y) => [(x * 3) % 256, (y * 3) % 256, ((x + y) * 2) % 256])
+    const r = generatePattern(rainbow, { ...base, palette: getPalette('mard-221'), width: 60, height: 60, maxColors: 120, detail: 5, style: 'photo' })
+    const n = new Set(r.cells).size
+    expect(n).toBeGreaterThan(40)
+    expect(n).toBeLessThanOrEqual(120)
+  })
+})

@@ -75,6 +75,7 @@ export const enUS = {
     finished: (cm: string, inch: string) => `≈ ${cm} cm / ${inch} in`,
     boards: (n: number) => plural(n, 'pegboard'),
     maxColors: 'Max colors',
+    maxColorsHint: (n: number, brand: string) => `Up to ${n} — every ${brand} color. More colors look closer to the photo but take longer to bead.`,
     detail: 'Detail',
     detailLevels: ['Simple', 'Soft', 'Balanced', 'Detailed', 'Max'],
     style: 'Image type',
