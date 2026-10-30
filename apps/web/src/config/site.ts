@@ -1,0 +1,65 @@
+import type { BeadSize } from '@picobreads/pattern-engine'
+
+// All business knobs for the prototype live here. In milestone 5 most of these
+// move to the admin "Settings" page / database.
+
+export const SITE = {
+  // TODO: confirm final brand name and domain.
+  name: 'Picobreads',
+  tagline: 'Your photo, as a fuse bead kit.',
+}
+
+export type TierId = 'small' | 'standard' | 'large'
+
+export interface Tier {
+  id: TierId
+  name: string
+  /** Cells on the long side. Short side follows the crop aspect ratio. */
+  longSide: number
+  /** TODO: placeholder price in USD, not decided yet. */
+  priceUsd: number
+}
+
+export const TIERS: Tier[] = [
+  { id: 'small', name: 'Small', longSide: 29, priceUsd: 24 },
+  { id: 'standard', name: 'Standard', longSide: 52, priceUsd: 39 },
+  { id: 'large', name: 'Large', longSide: 78, priceUsd: 59 },
+]
+
+export const getTier = (id: TierId) => TIERS.find((t) => t.id === id) ?? TIERS[1]
+
+/** Cells per pegboard edge, used to split patterns into sections. */
+export const BOARD_CELLS = 29
+
+/** Pegboard hole pitch in millimetres. */
+export const BEAD_PITCH_MM: Record<BeadSize, number> = { '5mm': 5, '2.6mm': 2.6 }
+
+export const COLOR_LIMITS = { min: 8, max: 28, default: 16 }
+
+export const PICKING = {
+  allowance: 0.1,
+  packSizes: [500, 100, 50],
+  // TODO: placeholder grams per bead until we weigh real supplier beads.
+  estWeightG: { '5mm': 0.06, '2.6mm': 0.012 } as Record<BeadSize, number>,
+}
+
+export const FREE_PREVIEWS_PER_DAY = 10
+export const PHOTO_RETENTION_DAYS = 90
+export const ASSEMBLED_VARIANT_ENABLED = false
+
+/** Crop aspect presets (width / height). */
+export const ASPECTS = [
+  { id: '1:1', label: 'Square', value: 1 },
+  { id: '4:3', label: 'Landscape 4:3', value: 4 / 3 },
+  { id: '3:4', label: 'Portrait 3:4', value: 3 / 4 },
+  { id: '3:2', label: 'Landscape 3:2', value: 3 / 2 },
+  { id: '2:3', label: 'Portrait 2:3', value: 2 / 3 },
+] as const
+
+export type AspectId = (typeof ASPECTS)[number]['id']
+
+export function gridSize(tier: TierId, aspect: number): { width: number; height: number } {
+  const long = getTier(tier).longSide
+  if (aspect >= 1) return { width: long, height: Math.max(1, Math.round(long / aspect)) }
+  return { width: Math.max(1, Math.round(long * aspect)), height: long }
+}
