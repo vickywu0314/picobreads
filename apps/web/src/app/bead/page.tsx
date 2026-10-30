@@ -587,7 +587,7 @@ export default function BeadPage() {
 
       <Modal open={finished} onClose={() => setFinished(false)} title={t.editor.finishedTitle}>
         <p className="text-muted">{t.editor.finishedBody}</p>
-        <Link href="/kit/" className="btn-primary mt-6 w-full">
+        <Link href="/create/product/" className="btn-primary mt-6 w-full">
           {t.pattern.buyKit}
         </Link>
       </Modal>

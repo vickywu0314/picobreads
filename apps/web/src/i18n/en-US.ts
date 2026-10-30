@@ -1,7 +1,9 @@
+import { siteEn } from './site-en'
 // en-US copy. This object defines the `Messages` shape every other locale must match.
 const plural = (n: number, one: string, many = one + 's') => `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`
 
 export const enUS = {
+  ...siteEn,
   common: {
     prototype: 'Prototype',
     prototypeBanner: 'Prototype — patterns are real; orders, emails and admin use sample data.',
@@ -41,41 +43,6 @@ export const enUS = {
       hama: 'Classic Danish brand, popular in Europe. Reliable quality.',
       'mard-221': 'Widely used standard chart from China. Budget-friendly.',
     } as Record<string, string>,
-  },
-  nav: {
-    create: 'Create',
-    progress: 'My progress',
-    cart: 'Cart',
-    admin: 'Admin',
-    privacy: 'Privacy',
-    menu: 'Menu',
-  },
-  home: {
-    eyebrow: 'Custom fuse bead kits',
-    title: 'Turn any photo into a bead pattern you can actually build.',
-    subtitle:
-      'Upload a photo, get a pattern in seconds, bead it on screen or under a light box — then order a kit with exactly the beads you need.',
-    cta: 'Make my pattern',
-    ctaSecondary: 'See how it works',
-    freeNote: 'Free previews, no account needed.',
-    stepsTitle: 'How it works',
-    steps: [
-      { title: 'Upload a photo', body: 'Pets, people, places. Crop it square or rectangular.' },
-      { title: 'Tune your pattern', body: 'Pick size, bead type and how many colors. See it update live.' },
-      { title: 'Bead it your way', body: 'Follow color by color on screen, or use light box mode under a clear pegboard.' },
-      { title: 'Get the exact kit', body: 'We pack the right count of every color — plus a little spare.' },
-    ],
-    featuresTitle: 'Made for real beading',
-    features: [
-      { title: 'Color-by-color mode', body: 'Only the cells for one color light up. Tap to mark them done.' },
-      { title: 'Light box guide', body: 'Lay a clear pegboard on your tablet and the holes light up for you.' },
-      { title: 'Exactly enough beads', body: 'No 20-color tubs you never finish. Just what your pattern needs.' },
-    ],
-    privacyTitle: 'Private by design',
-    privacyBody:
-      'Patterns are generated right in your browser. Your photo is only uploaded if you order a kit, and is deleted automatically after 90 days.',
-    sampleCaption: 'Sample pattern · 52 × 52 · Perler colors',
-    sampleAria: 'Sample bead pattern of a cat',
   },
   create: {
     steps: ['Photo', 'Adjust', 'Pattern'],

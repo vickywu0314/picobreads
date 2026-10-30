@@ -1,18 +1,20 @@
-# Picobreads
+# Cordelia Morrow
 
-Custom fuse bead (perler bead) patterns and kits. Milestone 0: clickable prototype — fully static, no backend.
+*Your moments, made personal.* Personalized gifts — custom fuse bead art first, storybooks coming soon. Milestone 0: clickable prototype — fully static, no backend. Commerce will run on Shopify.
 
-See `CLAUDE.md` for the product spec and `docs/prototype-notes.md` (中文) for what is real vs. mocked in the prototype.
+See `CLAUDE.md` for the product spec, `docs/sitemap.md` for the site structure and `docs/prototype-notes.md` (中文) for what is real vs. mocked.
 
 ## Structure
 
 ```
 apps/web/                  Next.js 15 (App Router, static export), Tailwind CSS 4, zustand
-  src/app/                 pages (home, create, settings, pattern, bead, lightbox, kit, cart, checkout, progress, admin)
+  src/app/                 pages: home, beads (hub, patterns, community), create (6 steps), storybooks, account, cart, footer pages, bead / lightbox tools, lab, admin
   src/components/          PatternCanvas (pan/zoom editor), PatternThumb, UI bits
   src/config/site.ts       business knobs: size tiers, prices (placeholder), allowance, bag sizes, limits
   src/i18n/                UI copy: en-US.ts + zh-CN.ts; locale follows the browser, switchable in the header
-  src/mock/                PROTOTYPE ONLY: sample pattern generator, fake orders
+  src/config/catalog.ts    PROTOTYPE content: pattern library, community posts, purchase forms
+  src/mock/                PROTOTYPE ONLY: sample pattern generator, fake admin orders
+  public/patterns/         sample illustrations used by the library / community
 packages/pattern-engine/   pure TypeScript, no UI deps: types, palettes, sections, stats, bag picking
   palettes/                bead color charts (Perler / Artkal S / Hama / MARD 221) — see palettes/README.md
 ```

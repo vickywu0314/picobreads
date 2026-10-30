@@ -12,10 +12,9 @@ export default function SuccessPage() {
   const t = useT()
   const [order, setOrder] = useState('')
 
-  // Fake order: empty the cart once we land here.
+  // The bag placed the (fake) order just before navigating here.
   useEffect(() => {
-    setOrder(`#PB${1000 + Math.floor(Math.random() * 9000)}`)
-    useStore.getState().clearCart()
+    setOrder(`#${useStore.getState().orders[0]?.id ?? 'CM1000'}`)
   }, [])
 
   return (
@@ -23,7 +22,7 @@ export default function SuccessPage() {
       <SiteHeader />
       <main className="container-page max-w-2xl py-12 text-center">
         <CheckCircle2 className="mx-auto h-16 w-16 text-ok" aria-hidden />
-        <h1 className="mt-4 text-3xl font-extrabold tracking-tight">{t.success.title}</h1>
+        <h1 className="mt-4 font-serif text-4xl">{t.success.title}</h1>
         <p className="mt-2 text-muted">{t.success.body}</p>
         <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-surface-2 px-4 py-2 font-mono text-sm">
           {t.success.order} {order} <ProtoTag />
@@ -34,8 +33,8 @@ export default function SuccessPage() {
             <Link href="/bead/" className="btn-secondary">
               <Grid3x3 className="h-5 w-5" aria-hidden /> {t.success.keepBeading}
             </Link>
-            <Link href="/progress/" className="btn-secondary">
-              <Mail className="h-5 w-5" aria-hidden /> {t.success.saveProgress}
+            <Link href="/account/?tab=orders" className="btn-secondary">
+              <Mail className="h-5 w-5" aria-hidden /> {t.account.tabs.orders}
             </Link>
           </div>
         </div>

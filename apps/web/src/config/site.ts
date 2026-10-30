@@ -4,9 +4,8 @@ import type { BeadSize } from '@picobreads/pattern-engine'
 // move to the admin "Settings" page / database.
 
 export const SITE = {
-  // TODO: confirm final brand name and domain.
-  name: 'Picobreads',
-  tagline: 'Your photo, as a fuse bead kit.',
+  name: 'Cordelia Morrow',
+  tagline: 'Your moments, made personal.',
 }
 
 /** Bead brand we recommend (most consistent quality, best known in North America). */

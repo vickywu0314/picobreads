@@ -9,10 +9,10 @@
   --fg: #221c18;
   --muted: #6e645c;
   --border: #e7ddd0;
-  --accent: #e4572e;
-  --accent-hover: #cc4520;
+  --accent: #b9533c;
+  --accent-hover: #a14330;
   --accent-fg: #ffffff;
-  --accent-soft: #fde4d9;
+  --accent-soft: #f6e1d8;
   --ok: #2f8a57;
   --warn: #b26a00;
   --canvas-bg: #efe8de;
@@ -51,6 +51,7 @@
   --color-accent-soft: var(--accent-soft);
   --color-ok: var(--ok);
   --color-warn: var(--warn);
+  --font-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, 'Songti SC', 'STSong', serif;
   --font-sans: ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 

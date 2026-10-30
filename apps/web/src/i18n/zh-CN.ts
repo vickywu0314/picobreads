@@ -1,8 +1,10 @@
 import type { Messages } from './en-US'
+import { siteZh } from './site-zh'
 
 const n = (v: number) => v.toLocaleString('zh-CN')
 
 export const zhCN: Messages = {
+  ...siteZh,
   common: {
     prototype: '原型',
     prototypeBanner: '原型演示 · 图纸是真实生成的；下单、邮件、后台为示例数据',
@@ -42,39 +44,6 @@ export const zhCN: Messages = {
       hama: '丹麦经典品牌，欧洲主流，品质可靠。',
       'mard-221': '国内通用的标准色卡，性价比高。',
     },
-  },
-  nav: {
-    create: '开始制作',
-    progress: '我的进度',
-    cart: '购物车',
-    admin: '后台',
-    privacy: '隐私',
-    menu: '菜单',
-  },
-  home: {
-    eyebrow: '定制拼豆材料包',
-    title: '把任何照片变成一张真能拼出来的拼豆图纸。',
-    subtitle: '上传照片，几秒生成图纸；在屏幕上拼，或用灯箱模式照着拼；再下单一份刚好够用的材料包。',
-    cta: '开始做我的图纸',
-    ctaSecondary: '看看怎么玩',
-    freeNote: '免费预览，无需注册。',
-    stepsTitle: '怎么玩',
-    steps: [
-      { title: '上传照片', body: '宠物、人像、风景都可以，支持正方形或长方形裁剪。' },
-      { title: '调整图纸', body: '选尺寸、豆子大小和颜色数，实时看到效果。' },
-      { title: '用你喜欢的方式拼', body: '在屏幕上按颜色一格格拼，或把透明底板放在平板上用灯箱模式。' },
-      { title: '收到刚好够用的材料包', body: '每种颜色按数量配好，还多放一点备用。' },
-    ],
-    featuresTitle: '为真正动手拼而设计',
-    features: [
-      { title: '按颜色拼', body: '只点亮一种颜色的格子，点一下就算放好。' },
-      { title: '灯箱引导', body: '把透明底板放在平板上，该放豆的孔会亮起来。' },
-      { title: '豆子刚好够用', body: '不用买一大桶用不完的颜色，只给你图纸需要的。' },
-    ],
-    privacyTitle: '隐私优先',
-    privacyBody: '图纸在你的浏览器里生成。只有下单时才会上传照片，并在 90 天后自动删除。',
-    sampleCaption: '示例图纸 · 52 × 52 · Perler 色卡',
-    sampleAria: '一只猫的示例拼豆图纸',
   },
   create: {
     steps: ['照片', '调整', '图纸'],

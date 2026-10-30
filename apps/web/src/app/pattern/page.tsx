@@ -7,7 +7,7 @@ import { SiteFooter, SiteHeader } from '@/components/SiteHeader'
 import { PatternThumb } from '@/components/PatternThumb'
 import { EmailGate } from '@/components/EmailGate'
 import { NoPattern } from '@/components/NoPattern'
-import { Segmented, Stepper, Swatch } from '@/components/ui'
+import { Segmented, Swatch } from '@/components/ui'
 import { useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
 import { usePatternData } from '@/lib/usePattern'
@@ -39,7 +39,6 @@ export default function PatternPage() {
     <>
       <SiteHeader />
       <main className="container-page py-6">
-        <Stepper step={2} />
         <div className="mt-6 flex flex-wrap items-end justify-between gap-3">
           <h1 className="text-3xl font-extrabold tracking-tight">{t.pattern.title}</h1>
           <Link href="/create/settings/" className="btn-ghost btn-sm">
@@ -100,7 +99,7 @@ export default function PatternPage() {
                 <Link href="/lightbox/" className="btn-secondary">
                   <Lightbulb className="h-5 w-5" aria-hidden /> {t.pattern.lightbox}
                 </Link>
-                <Link href="/kit/" className="btn-secondary">
+                <Link href="/create/product/" className="btn-secondary">
                   <ShoppingBag className="h-5 w-5" aria-hidden /> {t.pattern.buyKit}
                 </Link>
               </div>

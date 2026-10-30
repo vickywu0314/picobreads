@@ -57,21 +57,22 @@ export function Swatch({ rgb, number, size = 28, done }: { rgb: Rgb; number?: nu
   )
 }
 
-export function Stepper({ step }: { step: 0 | 1 | 2 }) {
+/** 6-step customization progress (Upload → Crop → Size → Preview → Product → Confirm). */
+export function Stepper({ step }: { step: number }) {
   const t = useT()
   return (
-    <ol className="flex items-center gap-2 text-xs font-semibold text-muted" aria-label={t.common.progress}>
-      {t.create.steps.map((s, i) => (
-        <li key={s} className="flex items-center gap-2" aria-current={i === step ? 'step' : undefined}>
+    <ol className="flex items-center gap-1.5 text-xs font-semibold text-muted" aria-label={t.common.progress}>
+      {t.steps.map((s, i) => (
+        <li key={s} className="flex items-center gap-1.5" aria-current={i === step ? 'step' : undefined}>
           <span
-            className={`grid h-6 w-6 place-items-center rounded-full ${
-              i <= step ? 'bg-accent text-accent-fg' : 'bg-surface-2 text-muted'
+            className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${
+              i < step ? 'bg-accent/70 text-accent-fg' : i === step ? 'bg-accent text-accent-fg' : 'bg-surface-2 text-muted'
             }`}
           >
             {i + 1}
           </span>
-          <span className={i === step ? 'text-fg' : ''}>{s}</span>
-          {i < 2 && <span className="h-px w-5 bg-border" aria-hidden />}
+          <span className={`${i === step ? 'text-fg' : 'hidden md:inline'}`}>{s}</span>
+          {i < t.steps.length - 1 && <span className="h-px w-3 bg-border md:w-5" aria-hidden />}
         </li>
       ))}
     </ol>

@@ -6,7 +6,7 @@ import Cropper, { type Area } from 'react-easy-crop'
 import { ImagePlus, Lock, Sparkles } from 'lucide-react'
 import { SiteHeader } from '@/components/SiteHeader'
 import { ProtoTag } from '@/components/PrototypeBanner'
-import { Stepper } from '@/components/ui'
+import { Stepper, Toggle } from '@/components/ui'
 import { ASPECTS, FREE_PREVIEWS_PER_DAY, type AspectId } from '@/config/site'
 import { useT } from '@/i18n'
 import { previewsLeft, useHydrated, useStore } from '@/lib/store'
@@ -62,10 +62,10 @@ export default function CreatePage() {
     <>
       <SiteHeader />
       <main className="container-page py-6">
-        <Stepper step={0} />
+        <Stepper step={src ? 1 : 0} />
         {!src ? (
           <section className="mt-6">
-            <h1 className="text-3xl font-extrabold tracking-tight">{t.create.uploadTitle}</h1>
+            <h1 className="font-serif text-4xl">{t.create.uploadTitle}</h1>
             <p className="mt-2 text-muted">{t.create.uploadHint}</p>
             <label
               onDragOver={(e) => {
@@ -108,13 +108,29 @@ export default function CreatePage() {
                 </span>
               )}
             </div>
-            <p className="mt-8 flex items-start gap-2 rounded-2xl bg-surface-2 p-4 text-sm text-muted">
+            <div className="mt-8 grid gap-4 sm:grid-cols-[1fr_auto]">
+              <div className="rounded-2xl bg-surface-2 p-4">
+                <p className="font-semibold">{t.flow.tipsTitle}</p>
+                <ul className="mt-2 space-y-1 text-sm text-muted">
+                  {t.flow.tips.map((tip) => (
+                    <li key={tip}>✓ {tip}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="flex gap-2">
+                {['tabby-cat', 'corgi', 'hearts'].map((id) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={id} src={`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/patterns/${id}.jpg`} alt="" className="h-24 w-24 rounded-xl object-cover" />
+                ))}
+              </div>
+            </div>
+            <p className="mt-4 flex items-start gap-2 text-sm text-muted">
               <Lock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {t.common.privacyLine}
             </p>
           </section>
         ) : (
           <section className="mt-6">
-            <h1 className="text-3xl font-extrabold tracking-tight">{t.create.cropTitle}</h1>
+            <h1 className="font-serif text-4xl">{t.create.cropTitle}</h1>
             <p className="mt-2 text-muted">{t.create.cropHint}</p>
             <div className="relative mt-5 h-[55vh] min-h-72 overflow-hidden rounded-3xl bg-black">
               <Cropper
@@ -165,6 +181,13 @@ export default function CreatePage() {
                 />
               </label>
             </div>
+            <div className="mt-5 flex items-center justify-between gap-4 rounded-2xl bg-surface-2 p-4 opacity-70">
+              <div>
+                <p className="label">{t.flow.removeBg}</p>
+                <p className="text-xs text-muted">{t.flow.removeBgNote}</p>
+              </div>
+              <Toggle label={t.flow.removeBg} checked={false} onChange={() => {}} />
+            </div>
             <div className="mt-8 flex flex-wrap justify-between gap-3">
               <button type="button" className="btn-secondary" onClick={() => setSrc(null)}>
                 {t.create.changePhoto}
@@ -175,6 +198,7 @@ export default function CreatePage() {
                 onClick={async () => {
                   if (!area.current) return
                   setPhoto(await cropToDataUrl(src, area.current), aspectId)
+                  useStore.getState().setSource({ kind: 'upload' })
                   router.push('/create/settings/')
                 }}
               >

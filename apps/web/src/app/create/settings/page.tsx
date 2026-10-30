@@ -35,8 +35,9 @@ export default function SettingsPage() {
     <>
       <SiteHeader />
       <main className="container-page py-6">
-        <Stepper step={1} />
-        <h1 className="mt-6 text-3xl font-extrabold tracking-tight">{t.settings.title}</h1>
+        <Stepper step={2} />
+        <h1 className="mt-6 font-serif text-4xl">{t.flow.sizeTitle}</h1>
+        <p className="mt-2 text-muted">{t.flow.relation}</p>
 
         <div className="mt-6 grid gap-6 md:grid-cols-[1fr_1.05fr]">
           {/* Live preview */}
@@ -181,7 +182,7 @@ export default function SettingsPage() {
                   setBusy(true)
                   try {
                     applyPattern(await generateFromPhoto(photo, settings, aspectId))
-                    router.push('/pattern/')
+                    router.push('/create/preview/')
                   } finally {
                     setBusy(false)
                   }
@@ -193,7 +194,7 @@ export default function SettingsPage() {
                   </>
                 ) : (
                   <>
-                    <Wand2 className="h-5 w-5" aria-hidden /> {t.settings.generate}
+                    <Wand2 className="h-5 w-5" aria-hidden /> {t.flow.toPreview}
                   </>
                 )}
               </button>

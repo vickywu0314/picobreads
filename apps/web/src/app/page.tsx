@@ -1,86 +1,192 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight, Grid3x3, Lightbulb, Lock, Package } from 'lucide-react'
+import { ArrowRight, BookOpen, Gift, Grid3x3 } from 'lucide-react'
 import { SiteFooter, SiteHeader } from '@/components/SiteHeader'
-import { PatternThumb } from '@/components/PatternThumb'
+import { ProtoTag } from '@/components/PrototypeBanner'
+import { Ironed } from '@/components/Ironed'
+import { COMMUNITY, LIBRARY, getLibraryPattern, type LibraryPattern, type Theme } from '@/config/catalog'
 import { useT } from '@/i18n'
-import { defaultSettings } from '@/lib/store'
-import { useGeneratedPattern } from '@/lib/useGenerated'
+import { useLibraryPattern } from '@/lib/library'
+import { BookCover } from '@/components/BookCover'
+
+function LibraryIroned({ p, className = '' }: { p: LibraryPattern | undefined; className?: string }) {
+  const { pattern } = useLibraryPattern(p)
+  return pattern ? <Ironed pattern={pattern} className={className} /> : <div className={`aspect-square animate-pulse rounded-xl bg-surface-2 ${className}`} />
+}
+
+const GIFT_THEMES: { theme: Theme; pattern: string }[] = [
+  { theme: 'couples', pattern: 'hearts' },
+  { theme: 'family', pattern: 'house' },
+  { theme: 'friends', pattern: 'cupcake' },
+  { theme: 'pets', pattern: 'corgi' },
+]
 
 export default function HomePage() {
   const t = useT()
-  // Hero: the real engine run on the bundled sample photo.
-  const { pattern: sample } = useGeneratedPattern(null, { ...defaultSettings, maxColors: 20, detail: 4 }, '1:1')
-  const featureIcons = [Grid3x3, Lightbulb, Package]
+  const hero = getLibraryPattern('tabby-cat')
+  const stories = COMMUNITY.slice(0, 3)
 
   return (
     <>
       <SiteHeader />
       <main>
-        <section className="container-page grid items-center gap-10 pb-12 pt-8 md:grid-cols-[1.1fr_1fr] md:pt-16">
+        {/* Hero */}
+        <section className="mx-auto grid w-full max-w-6xl items-center gap-10 px-4 pb-14 pt-10 sm:px-6 md:grid-cols-[1.1fr_1fr] md:pt-20">
           <div>
-            <p className="mb-3 text-sm font-bold uppercase tracking-widest text-accent">{t.home.eyebrow}</p>
-            <h1 className="text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl">{t.home.title}</h1>
-            <p className="mt-5 max-w-xl text-lg text-muted">{t.home.subtitle}</p>
+            <h1 className="font-serif text-5xl leading-[1.02] tracking-tight sm:text-6xl">{t.home.heroTitle}</h1>
+            <p className="mt-6 max-w-xl text-lg text-muted">{t.home.heroBody}</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/create/" className="btn-primary h-14 px-7 text-lg">
-                {t.home.cta} <ArrowRight className="h-5 w-5" aria-hidden />
+                {t.home.heroCta} <ArrowRight className="h-5 w-5" aria-hidden />
               </Link>
-              <a href="#how" className="btn-secondary h-14 px-6">
-                {t.home.ctaSecondary}
-              </a>
+              <Link href="/beads/patterns/" className="btn-secondary h-14 px-6">
+                <Gift className="h-5 w-5" aria-hidden /> {t.home.heroCta2}
+              </Link>
             </div>
-            <p className="mt-4 flex items-center gap-2 text-sm text-muted">
-              <Lock className="h-4 w-4" aria-hidden /> {t.home.freeNote} {t.common.privacyLine}
-            </p>
           </div>
-          <figure className="card relative mx-auto w-full max-w-md rotate-1 p-4 shadow-xl">
-            <div className="aspect-square overflow-hidden rounded-2xl bg-[var(--board)] p-2">
-              {sample && <PatternThumb pattern={sample} label={t.home.sampleAria} />}
+          {/* Product + gifting scene (placeholder until real photography). */}
+          <figure className="relative mx-auto w-full max-w-md">
+            <div className="absolute -inset-4 -z-10 rotate-3 rounded-[2rem] bg-accent-soft" aria-hidden />
+            <div className="rounded-[1.75rem] border-[10px] border-[#d9c4a5] bg-[#fffaf2] p-5 shadow-2xl dark:border-[#5a4633]">
+              <LibraryIroned p={hero} />
             </div>
-            <figcaption className="mt-3 text-center text-sm text-muted">{t.home.sampleCaption}</figcaption>
+            <div className="absolute -right-3 -top-4 rotate-[5deg] rounded-lg bg-surface px-3 py-2 font-serif text-sm italic shadow-lg">
+              For Mom, with love ♥
+            </div>
+            <figcaption className="mt-8 flex items-center justify-center gap-2 text-xs text-muted">
+              <ProtoTag label={t.common.sample} /> {t.home.heroCaption}
+            </figcaption>
           </figure>
         </section>
 
-        <section id="how" className="container-page scroll-mt-20 py-12">
-          <h2 className="text-2xl font-bold sm:text-3xl">{t.home.stepsTitle}</h2>
-          <ol className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {t.home.steps.map((s, i) => (
-              <li key={s.title} className="card p-5">
-                <span className="grid h-9 w-9 place-items-center rounded-full bg-accent-soft font-bold text-accent">{i + 1}</span>
-                <h3 className="mt-4 font-bold">{s.title}</h3>
-                <p className="mt-1 text-sm text-muted">{s.body}</p>
+        {/* Brand intro */}
+        <section className="mx-auto w-full max-w-3xl px-4 py-12 text-center sm:px-6">
+          <h2 className="font-serif text-3xl sm:text-4xl">{t.home.introTitle}</h2>
+          <p className="mt-4 text-lg text-muted">{t.home.introBody}</p>
+          <Link href="/about/" className="mt-4 inline-flex items-center gap-1 font-semibold text-accent hover:underline">
+            {t.home.introLink} <ArrowRight className="h-4 w-4" aria-hidden />
+          </Link>
+        </section>
+
+        {/* Products */}
+        <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+          <h2 className="font-serif text-3xl">{t.home.productsTitle}</h2>
+          <div className="mt-6 grid gap-5 md:grid-cols-2">
+            <Link href="/beads/" className="card group flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
+              <div className="grid grid-cols-3 gap-2 bg-surface-2 p-5">
+                {['corgi', 'hearts', 'sunflower'].map((id) => (
+                  <LibraryIroned key={id} p={getLibraryPattern(id)} />
+                ))}
+              </div>
+              <div className="flex flex-1 flex-col p-6">
+                <h3 className="flex items-center gap-2 font-serif text-2xl">
+                  <Grid3x3 className="h-6 w-6 text-accent" aria-hidden /> {t.home.beadsTitle}
+                </h3>
+                <p className="mt-2 flex-1 text-muted">{t.home.beadsBody}</p>
+                <span className="mt-4 inline-flex items-center gap-1 font-semibold text-accent group-hover:underline">
+                  {t.home.beadsCta} <ArrowRight className="h-4 w-4" aria-hidden />
+                </span>
+              </div>
+            </Link>
+            <Link href="/storybooks/" className="card group flex flex-col overflow-hidden transition-shadow hover:shadow-lg">
+              <div className="grid h-full min-h-40 place-items-center bg-[#e9e4f5] p-5 dark:bg-[#2a2638]">
+                <BookCover title={t.storybooks.cover} />
+              </div>
+              <div className="flex flex-1 flex-col p-6">
+                <h3 className="flex items-center gap-2 font-serif text-2xl">
+                  <BookOpen className="h-6 w-6 text-accent" aria-hidden /> {t.home.booksTitle}
+                  <span className="rounded-full bg-surface-2 px-2.5 py-0.5 font-sans text-xs font-bold text-muted">{t.home.soon}</span>
+                </h3>
+                <p className="mt-2 flex-1 text-muted">{t.home.booksBody}</p>
+                <span className="mt-4 inline-flex items-center gap-1 font-semibold text-accent group-hover:underline">
+                  {t.home.booksCta} <ArrowRight className="h-4 w-4" aria-hidden />
+                </span>
+              </div>
+            </Link>
+          </div>
+        </section>
+
+        {/* How it works */}
+        <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+          <h2 className="font-serif text-3xl">{t.home.howTitle}</h2>
+          <ol className="mt-6 grid gap-4 md:grid-cols-3">
+            {t.home.how.map((s, i) => (
+              <li key={s.title} className="card p-6">
+                <span className="font-serif text-4xl text-accent">{i + 1}</span>
+                <h3 className="mt-2 text-lg font-bold">{s.title}</h3>
+                <p className="mt-1 text-muted">{s.body}</p>
               </li>
             ))}
           </ol>
+          <Link href="/create/" className="btn-primary mt-6">
+            {t.home.howCta}
+          </Link>
         </section>
 
-        <section className="container-page py-12">
-          <h2 className="text-2xl font-bold sm:text-3xl">{t.home.featuresTitle}</h2>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {t.home.features.map((f, i) => {
-              const Icon = featureIcons[i]
-              return (
-                <div key={f.title} className="card p-6">
-                  <Icon className="h-7 w-7 text-accent" aria-hidden />
-                  <h3 className="mt-4 text-lg font-bold">{f.title}</h3>
-                  <p className="mt-1 text-muted">{f.body}</p>
+        {/* Gift ideas */}
+        <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+          <h2 className="font-serif text-3xl">{t.home.giftsTitle}</h2>
+          <p className="mt-2 text-muted">{t.home.giftsBody}</p>
+          <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+            {GIFT_THEMES.map(({ theme, pattern }) => (
+              <Link key={theme} href={`/beads/patterns/?theme=${theme}`} className="card group overflow-hidden transition-shadow hover:shadow-lg">
+                <div className="bg-surface-2 p-4">
+                  <LibraryIroned p={getLibraryPattern(pattern)} />
                 </div>
+                <div className="p-4">
+                  <h3 className="font-serif text-xl">{t.themes[theme]}</h3>
+                  <p className="mt-1 text-sm text-muted">{t.themeBlurbs[theme]}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Stories */}
+        <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+          <h2 className="font-serif text-3xl">{t.home.storiesTitle}</h2>
+          <p className="mt-2 flex items-center gap-2 text-sm text-muted">
+            <ProtoTag label={t.common.sample} /> {t.home.storiesNote}
+          </p>
+          <div className="mt-6 grid gap-5 md:grid-cols-3">
+            {stories.map((s) => {
+              const p = getLibraryPattern(s.patternId)
+              const post = t.community.posts[s.id]
+              return (
+                <article key={s.id} className="card flex flex-col overflow-hidden">
+                  <div className="grid grid-cols-2 gap-2 bg-surface-2 p-3">
+                    <figure>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={p?.image} alt="" className="aspect-square w-full rounded-lg object-cover" />
+                      <figcaption className="mt-1 text-center text-[11px] text-muted">{t.home.storyOriginal}</figcaption>
+                    </figure>
+                    <figure>
+                      <LibraryIroned p={p} />
+                      <figcaption className="mt-1 text-center text-[11px] text-muted">{t.home.storyFinished}</figcaption>
+                    </figure>
+                  </div>
+                  <div className="flex flex-1 flex-col p-5">
+                    <h3 className="font-serif text-xl">{post.title}</h3>
+                    <p className="text-xs text-muted">{t.community.by(s.author)}</p>
+                    <p className="mt-2 flex-1 text-sm text-muted">“{post.story}”</p>
+                    <Link href={`/beads/community/detail/?id=${s.id}`} className="mt-3 text-sm font-semibold text-accent hover:underline">
+                      {t.home.storyView} →
+                    </Link>
+                  </div>
+                </article>
               )
             })}
           </div>
         </section>
 
-        <section className="container-page py-12">
-          <div className="card flex flex-col items-start gap-4 bg-accent-soft p-8 sm:flex-row sm:items-center">
-            <Lock className="h-10 w-10 shrink-0 text-accent" aria-hidden />
-            <div className="flex-1">
-              <h2 className="text-xl font-bold">{t.home.privacyTitle}</h2>
-              <p className="mt-1 text-muted">{t.home.privacyBody}</p>
-            </div>
-            <Link href="/create/" className="btn-primary">
-              {t.home.cta}
+        {/* Final CTA */}
+        <section className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
+          <div className="rounded-[2rem] bg-accent px-6 py-14 text-center text-accent-fg">
+            <h2 className="font-serif text-4xl">{t.home.finalTitle}</h2>
+            <p className="mx-auto mt-3 max-w-xl opacity-90">{t.home.finalBody}</p>
+            <Link href="/create/" className="btn mt-8 h-14 bg-bg px-8 text-lg text-fg hover:bg-surface">
+              {t.home.finalCta}
             </Link>
           </div>
         </section>

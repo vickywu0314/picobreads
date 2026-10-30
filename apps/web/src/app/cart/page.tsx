@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Lock, Minus, Plus, Trash2 } from 'lucide-react'
 import { SiteFooter, SiteHeader } from '@/components/SiteHeader'
 import { ProtoTag } from '@/components/PrototypeBanner'
-import { PatternThumb } from '@/components/PatternThumb'
+import { Ironed } from '@/components/Ironed'
 import { getPalette } from '@picobreads/pattern-engine'
 import { useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
@@ -23,14 +23,14 @@ export default function CartPage() {
       <SiteHeader />
       <main className="container-page py-6">
         <div className="flex items-center gap-3">
-          <h1 className="text-3xl font-extrabold tracking-tight">{t.cart.title}</h1>
+          <h1 className="font-serif text-4xl">{t.bag.title}</h1>
           <ProtoTag />
         </div>
         {!hydrated ? null : cart.length === 0 ? (
           <div className="card mt-6 p-10 text-center">
             <p className="text-muted">{t.cart.empty}</p>
             <Link href="/create/" className="btn-primary mt-4">
-              {t.home.cta}
+              {t.home.heroCta}
             </Link>
           </div>
         ) : (
@@ -38,13 +38,13 @@ export default function CartPage() {
             <ul className="flex flex-col gap-3">
               {cart.map((item) => (
                 <li key={item.id} className="card flex gap-4 p-3">
-                  <div className="w-24 shrink-0 rounded-xl bg-[var(--board)] p-1">
-                    <PatternThumb pattern={item.pattern} />
+                  <div className="w-24 shrink-0 rounded-xl bg-surface-2 p-1.5">
+                    <Ironed pattern={item.pattern} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-bold">{t.cart.itemTitle(t.tiers[item.tier])}</p>
+                        <p className="font-bold">{t.bag.itemTitle(t.flow.forms[item.form ?? 'kit'].title, t.tiers[item.tier])}</p>
                         <p className="text-sm text-muted">
                           {item.pattern.width} × {item.pattern.height} · {item.beadSize} · {getPalette(item.pattern.paletteId).brand}
                         </p>
@@ -55,7 +55,7 @@ export default function CartPage() {
                       <summary className="cursor-pointer">{t.cart.attrs}</summary>
                       <pre className="mt-1 overflow-x-auto rounded-lg bg-surface-2 p-2 font-mono">
                         {JSON.stringify(
-                          { pattern_id: item.pattern.id, tier: item.tier, bead_size: item.beadSize, palette: item.pattern.paletteId },
+                          { pattern_id: item.pattern.id, product: item.form ?? 'kit', tier: item.tier, bead_size: item.beadSize, palette: item.pattern.paletteId },
                           null,
                           1,
                         )}
@@ -85,10 +85,14 @@ export default function CartPage() {
                 <span>${subtotal}</span>
               </div>
               <p className="mt-1 text-sm text-muted">{t.cart.shippingNote}</p>
-              <button type="button" className="btn-primary mt-5 w-full" onClick={() => router.push('/checkout/success/')}>
+              <button type="button" className="btn-primary mt-5 w-full" onClick={() => {
+                  useStore.getState().placeOrder()
+                  router.push('/checkout/success/')
+                }}>
                 <Lock className="h-4 w-4" aria-hidden /> {t.cart.checkout}
               </button>
               <p className="mt-3 text-center text-xs text-muted">{t.cart.checkoutNote}</p>
+              <p className="mt-1 text-center text-xs text-muted">{t.bag.guestNote}</p>
             </aside>
           </div>
         )}

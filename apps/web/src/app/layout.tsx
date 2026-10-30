@@ -5,8 +5,8 @@ import { PrototypeBanner } from '@/components/PrototypeBanner'
 import { LocaleSync } from '@/components/LocaleSync'
 
 export const metadata: Metadata = {
-  title: { default: `${SITE.name} — custom fuse bead patterns & kits`, template: `%s · ${SITE.name}` },
-  description: 'Turn any photo into a fuse bead pattern, bead it online or with a light box, and order a kit with exactly the beads you need.',
+  title: { default: `${SITE.name} — ${SITE.tagline}`, template: `%s · ${SITE.name}` },
+  description: 'Personalized gifts made from your photos and stories — custom fuse bead art you can build yourself, and storybooks coming soon.',
 }
 
 export const viewport: Viewport = {
