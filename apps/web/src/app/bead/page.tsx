@@ -1,19 +1,28 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, CheckCheck, ChevronRight, Cloud, Lightbulb, Maximize, Minus, Plus, RotateCcw, Undo2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowLeft, CheckCheck, ChevronRight, Cloud, Lightbulb, Maximize, Minus, Plus, RotateCcw, Undo2, Volume2, VolumeX } from 'lucide-react'
 import { regularColorIndices, sectionCellIndices } from '@picobreads/pattern-engine'
-import { PatternCanvas, type PatternCanvasHandle } from '@/components/PatternCanvas'
+import { PatternCanvas, type PatternCanvasHandle, type ToolPointerEvent } from '@/components/PatternCanvas'
 import { NoPattern } from '@/components/NoPattern'
-import { Modal, ProgressBar, Segmented, Swatch } from '@/components/ui'
+import { Modal, ProgressBar, Swatch } from '@/components/ui'
+import { BeadTray } from '@/components/bead/BeadTray'
+import { ToolLayer, useToolLayer, type Flight } from '@/components/bead/ToolLayer'
+import { PEN_CAPACITY, ToolIcon, type ToolId } from '@/components/bead/tools'
 import { BOARD_CELLS } from '@/config/site'
 import { useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
 import { usePatternData } from '@/lib/usePattern'
 import { css } from '@/lib/pattern'
+import { buzz, isMuted, setMuted, sfx } from '@/lib/sfx'
 
-type Mode = 'bead' | 'fix'
+type Pt = { x: number; y: number }
+
+const TOOL_KEY = 'pb-tool'
+// With a finger the tool tip sits up-left of the touch point, so the hand never hides the target.
+const TOUCH_TIP_OFFSET = { x: -34, y: -52 }
+const STRING_INTERVAL_MS = 80
 
 export default function BeadPage() {
   const t = useT()
@@ -26,12 +35,49 @@ export default function BeadPage() {
   const { setActiveColor, setActiveSection, setPlaced, recolor, undo, resetProgress } = useStore.getState()
 
   const canvas = useRef<PatternCanvasHandle>(null)
-  const [mode, setMode] = useState<Mode>('bead')
+  const [tool, setToolState] = useState<ToolId>('pen')
+  const [load, setLoadState] = useState<{ color: number | null; count: number }>({ color: null, count: 0 })
   const [toast, setToast] = useState<string | null>(null)
   const [fixCell, setFixCell] = useState<number | null>(null)
   const [finished, setFinished] = useState(false)
+  const [muted, setMutedState] = useState(false)
+
+  // Refs mirror state for the pointer handlers (they run many times per frame).
+  const loadRef = useRef(load)
+  const toolRef = useRef(tool)
+  const pending = useRef(new Set<number>())
+  const gesture = useRef<{ active: boolean; last: Pt | null; lastCell: number; stringing: number | null; hideTimer: number | null; lastMiss: number }>({
+    active: false,
+    last: null,
+    lastCell: -1,
+    stringing: null,
+    hideTimer: null,
+    lastMiss: 0,
+  })
+
+  const setLoad = useCallback((l: { color: number | null; count: number }) => {
+    loadRef.current = l
+    setLoadState(l)
+  }, [])
+  const setTool = useCallback((id: ToolId) => {
+    toolRef.current = id
+    setToolState(id)
+    try {
+      localStorage.setItem(TOOL_KEY, id)
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(TOOL_KEY) as ToolId | null
+      if (saved && ['pen', 'tweezers', 'hand', 'fix'].includes(saved)) setTool(saved)
+    } catch {}
+    setMutedState(isMuted())
+  }, [setTool])
 
   const section = data?.sections.find((s) => s.id === activeSection) ?? null
+  const sectionRef = useRef(section)
+  sectionRef.current = section
 
   // Progress per color (optionally limited to the active section).
   const progress = useMemo(() => {
@@ -65,45 +111,238 @@ export default function BeadPage() {
 
   useEffect(() => {
     if (!toast) return
-    const id = setTimeout(() => setToast(null), 1800)
+    const id = setTimeout(() => setToast(null), 2200)
     return () => clearTimeout(id)
   }, [toast])
+
+  // ---- tool mechanics -------------------------------------------------------
+
+  const inSection = (i: number) => {
+    const s = sectionRef.current
+    if (!s || !data) return true
+    const x = i % data.pattern.width
+    const y = Math.floor(i / data.pattern.width)
+    return x >= s.x && x < s.x + s.w && y >= s.y && y < s.y + s.h
+  }
+
+  /** Can a bead of the loaded color go into cell i right now? */
+  const canPlace = (i: number) => {
+    const { pattern, placed: p } = useStore.getState()
+    const l = loadRef.current
+    return !!pattern && l.color !== null && pattern.cells[i] === l.color && p[i] !== '1' && !pending.current.has(i) && inSection(i)
+  }
+
+  const tipOf = (e: { clientX: number; clientY: number; pointerType: string }): Pt =>
+    e.pointerType === 'mouse' ? { x: e.clientX, y: e.clientY } : { x: e.clientX + TOUCH_TIP_OFFSET.x, y: e.clientY + TOUCH_TIP_OFFSET.y }
+
+  const updateRing = (tip: Pt) => {
+    const i = canvas.current?.cellAt(tip.x, tip.y) ?? -1
+    if (i < 0) return useToolLayer.setState({ ring: null })
+    const r = canvas.current!.cellRect(i)
+    useToolLayer.setState({ ring: { ...r, ok: canPlace(i) } })
+  }
+
+  const stopStringing = () => {
+    if (gesture.current.stringing !== null) clearInterval(gesture.current.stringing)
+    gesture.current.stringing = null
+  }
+
+  const startStringing = (color: number) => {
+    stopStringing()
+    if (loadRef.current.color !== color) setLoad({ color, count: 0 })
+    setActiveColor(color)
+    const step = () => {
+      const l = loadRef.current
+      if (l.count >= PEN_CAPACITY) {
+        stopStringing()
+        buzz(15)
+        return
+      }
+      setLoad({ color, count: l.count + 1 })
+      sfx('string')
+    }
+    step()
+    gesture.current.stringing = window.setInterval(step, STRING_INTERVAL_MS)
+  }
+
+  /** Slide one bead off the tool into cell i (animated; committed on landing). */
+  const launch = (i: number, from: Pt) => {
+    const l = loadRef.current
+    if (!data || l.color === null) return
+    pending.current.add(i)
+    const left = l.count - 1
+    setLoad({ color: l.color, count: left })
+    const flight: Flight = { id: Math.random(), cell: i, from, to: canvas.current!.cellRect(i), color: data.palette.colors[l.color].rgb }
+    useToolLayer.setState((s) => ({ flights: [...s.flights, flight] }))
+    if (left === 0 && toolRef.current === 'pen') setToast(t.editor.penEmpty)
+  }
+
+  const onLand = useCallback(
+    (f: Flight) => {
+      pending.current.delete(f.cell)
+      useToolLayer.setState((s) => ({ flights: s.flights.filter((x) => x.id !== f.id) }))
+      setPlaced([f.cell], true)
+      sfx('drop')
+      buzz(6)
+    },
+    [setPlaced],
+  )
+
+  /** Pen: drop a bead wherever the tip passes over a matching empty spot. */
+  const penAt = (tip: Pt) => {
+    const i = canvas.current?.cellAt(tip.x, tip.y) ?? -1
+    if (i < 0 || i === gesture.current.lastCell) return
+    gesture.current.lastCell = i
+    if (loadRef.current.count <= 0) return
+    if (canPlace(i)) launch(i, tip)
+    else {
+      const { pattern, placed: p } = useStore.getState()
+      if (pattern && p[i] !== '1' && pattern.cells[i] !== loadRef.current.color && Date.now() - gesture.current.lastMiss > 350) {
+        gesture.current.lastMiss = Date.now()
+        sfx('miss')
+      }
+    }
+  }
+
+  /** Pen sweep: sample along the segment so fast strokes don't skip cells. */
+  const penSweep = (from: Pt, to: Pt) => {
+    const size = canvas.current ? Math.max(2, canvas.current.cellRect(0).size * 0.4) : 4
+    const steps = Math.max(1, Math.ceil(Math.hypot(to.x - from.x, to.y - from.y) / size))
+    for (let k = 1; k <= steps; k++) penAt({ x: from.x + ((to.x - from.x) * k) / steps, y: from.y + ((to.y - from.y) * k) / steps })
+  }
+
+  const overTray = (e: { clientX: number; clientY: number }) =>
+    (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest('[data-well]') as HTMLElement | null
+
+  const showTool = (tip: Pt, pressed: boolean) => {
+    if (gesture.current.hideTimer) clearTimeout(gesture.current.hideTimer)
+    useToolLayer.setState({ tip, visible: true, pressed })
+    updateRing(tip)
+  }
+
+  const hideToolSoon = (pointerType: string) => {
+    if (pointerType === 'mouse') return
+    gesture.current.hideTimer = window.setTimeout(() => useToolLayer.setState({ visible: false, ring: null }), 900)
+  }
+
+  const pointerDown = (e: { clientX: number; clientY: number; pointerType: string }, wellColor?: number) => {
+    if (!data) return
+    const tip = tipOf(e)
+    const g = gesture.current
+    g.active = true
+    g.last = tip
+    g.lastCell = -1
+    showTool(tip, true)
+    const tl = toolRef.current
+
+    if (wellColor !== undefined) {
+      if (tl === 'pen') startStringing(wellColor)
+      else if (tl === 'tweezers') {
+        const l = loadRef.current
+        if (!(l.color === wellColor && l.count > 0)) {
+          setLoad({ color: wellColor, count: 1 })
+          setActiveColor(wellColor)
+          sfx('pick')
+        }
+      }
+      return
+    }
+
+    if (tl === 'pen') penAt(tip)
+    else if (tl === 'tweezers' && loadRef.current.count === 0) {
+      // Empty tweezers on a placed bead: take it back out.
+      const i = canvas.current?.cellAt(tip.x, tip.y) ?? -1
+      const { pattern, placed: p } = useStore.getState()
+      if (i >= 0 && pattern && p[i] === '1' && inSection(i)) {
+        setPlaced([i], false)
+        setLoad({ color: pattern.cells[i], count: 1 })
+        setActiveColor(pattern.cells[i])
+        sfx('pick')
+        buzz(8)
+      }
+    }
+  }
+
+  const pointerMove = (e: { clientX: number; clientY: number; pointerType: string }) => {
+    const tip = tipOf(e)
+    const g = gesture.current
+    showTool(tip, g.active)
+    if (!g.active) return
+    if (g.stringing !== null) {
+      // Keep stringing only while the finger stays on the same well.
+      const well = overTray(e)
+      if (!well || Number(well.dataset.well) !== loadRef.current.color) stopStringing()
+    }
+    if (toolRef.current === 'pen' && g.last) penSweep(g.last, tip)
+    g.last = tip
+  }
+
+  const pointerUp = (e: { clientX: number; clientY: number; pointerType: string }, cancelled = false) => {
+    const tip = tipOf(e)
+    const g = gesture.current
+    stopStringing()
+    g.active = false
+    useToolLayer.setState({ pressed: false })
+    if (!cancelled && toolRef.current === 'tweezers' && loadRef.current.count > 0) {
+      const i = canvas.current?.cellAt(tip.x, tip.y) ?? -1
+      if (i >= 0 && canPlace(i)) launch(i, tip)
+      else if (overTray(e)) setLoad({ color: loadRef.current.color, count: 0 })
+      else if (i >= 0) sfx('miss')
+    }
+    hideToolSoon(e.pointerType)
+  }
+
+  const onTool = (e: ToolPointerEvent) => {
+    if (e.type === 'down') pointerDown(e)
+    else if (e.type === 'move') pointerMove(e)
+    else if (e.type === 'up') pointerUp(e)
+    else if (e.type === 'cancel') pointerUp(e, true)
+    else if (e.type === 'hover') showTool(tipOf(e), false)
+    else if (e.type === 'leave') useToolLayer.setState({ visible: false, ring: null })
+  }
+
+  const onWellPointer = (type: 'down' | 'move' | 'up' | 'cancel', color: number, e: React.PointerEvent) => {
+    if (type === 'down') {
+      if (toolRef.current === 'hand' || toolRef.current === 'fix') setTool('pen')
+      pointerDown(e, color)
+    } else if (type === 'move') pointerMove(e)
+    else pointerUp(e, type === 'cancel')
+  }
+
+  useEffect(() => () => stopStringing(), [])
 
   if (!hydrated) return null
   if (!data || !progress) return <NoPattern />
 
   const { pattern, palette, legend, numbers, sections } = data
-  const colorsHere = legend.filter((l) => progress.total.has(l.color))
-  const active = activeColor !== null ? palette.colors[activeColor] : null
-  const activeTotal = activeColor !== null ? (progress.total.get(activeColor) ?? 0) : 0
-  const activeDone = activeColor !== null ? (progress.done.get(activeColor) ?? 0) : 0
-
-  const onCellTap = (i: number) => {
-    const c = pattern.cells[i]
-    if (mode === 'fix') return setFixCell(i)
-    const x = i % pattern.width
-    const y = Math.floor(i / pattern.width)
-    if (section && !(x >= section.x && x < section.x + section.w && y >= section.y && y < section.y + section.h)) return
-    if (activeColor === null) {
-      setActiveColor(c)
-      return
-    }
-    if (c !== activeColor) {
-      setToast(t.editor.hintOther)
-      navigator.vibrate?.(30)
-      return
-    }
-    setPlaced([i], placed[i] !== '1')
-  }
+  const wells = legend
+    .filter((l) => progress.total.has(l.color))
+    .map((l) => ({ color: l.color, number: l.number, left: (progress.total.get(l.color) ?? 0) - (progress.done.get(l.color) ?? 0) }))
+  const focusColor = load.color ?? activeColor
+  const focus = focusColor !== null ? palette.colors[focusColor] : null
+  const focusTotal = focusColor !== null ? (progress.total.get(focusColor) ?? 0) : 0
+  const focusDone = focusColor !== null ? (progress.done.get(focusColor) ?? 0) : 0
+  const toolActive = tool === 'pen' || tool === 'tweezers'
 
   const nextSection = () => {
     const idx = sections.findIndex((s) => s.id === activeSection)
     setActiveSection(sections[(idx + 1) % sections.length].id)
   }
 
+  const toolStatus =
+    tool === 'pen'
+      ? load.count > 0
+        ? t.editor.penLoad(load.count, PEN_CAPACITY)
+        : t.editor.penEmptyState
+      : tool === 'tweezers'
+        ? load.count > 0 && load.color !== null
+          ? t.editor.holding(palette.colors[load.color].name)
+          : t.editor.tweezersEmpty
+        : null
+
   return (
     <div className="flex h-[calc(100dvh-1.75rem)] flex-col md:flex-row">
-      {/* Canvas area */}
+      {/* Board */}
       <div className="relative min-h-0 flex-1">
         <PatternCanvas
           ref={canvas}
@@ -111,11 +350,13 @@ export default function BeadPage() {
           palette={palette}
           numbers={numbers}
           placed={placed}
-          selected={mode === 'bead' ? activeColor : null}
+          selected={tool === 'fix' ? null : focusColor}
           section={section}
           boardCells={BOARD_CELLS}
-          editMode={mode === 'fix'}
-          onCellTap={onCellTap}
+          editMode={tool === 'fix'}
+          toolMode={toolActive}
+          onTool={onTool}
+          onCellTap={(i) => tool === 'fix' && setFixCell(i)}
           label={t.common.patternAria(pattern.width, pattern.height)}
         />
         <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between gap-2 p-2">
@@ -125,7 +366,7 @@ export default function BeadPage() {
             </Link>
             <span className="pr-3 text-sm font-bold">{t.editor.title}</span>
           </div>
-          <div className="pointer-events-auto flex items-center gap-1 rounded-full bg-surface/90 p-1 shadow backdrop-blur">
+          <div className="pointer-events-auto flex items-center gap-0.5 rounded-full bg-surface/90 p-1 shadow backdrop-blur">
             <button type="button" className="icon-btn" onClick={undo} disabled={!canUndo} aria-label={t.editor.undo}>
               <Undo2 className="h-5 w-5" aria-hidden />
             </button>
@@ -140,108 +381,112 @@ export default function BeadPage() {
             </button>
           </div>
         </div>
+        {toolActive && (
+          <p className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/40 px-3 py-1 text-[11px] text-white">
+            {t.editor.twoFingers}
+          </p>
+        )}
         {toast && (
-          <div role="status" className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-fg px-4 py-2 text-sm font-semibold text-bg shadow-lg">
+          <div role="status" className="absolute bottom-10 left-1/2 -translate-x-1/2 rounded-full bg-fg px-4 py-2 text-sm font-semibold text-bg shadow-lg">
             {toast}
           </div>
         )}
       </div>
 
-      {/* Control panel */}
-      <aside className="flex max-h-[46%] flex-col gap-3 overflow-y-auto *:shrink-0 border-t border-border bg-surface p-3 md:max-h-none md:w-96 md:border-l md:border-t-0 md:p-4">
-        <Segmented
-          label={t.common.mode}
-          value={mode}
-          onChange={setMode}
-          options={[
-            { value: 'bead', label: t.editor.modeBead },
-            { value: 'fix', label: t.editor.modeFix },
-          ]}
-        />
-
-        {mode === 'bead' ? (
-          <div className="rounded-2xl bg-surface-2 p-3">
-            {active && activeColor !== null ? (
-              <div className="flex items-center gap-3">
-                <Swatch rgb={active.rgb} number={numbers.get(activeColor)} size={40} done={activeDone === activeTotal && activeTotal > 0} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="truncate font-bold">
-                      {active.name} <span className="font-mono text-xs text-muted">{active.code}</span>
-                    </span>
-                    <span className="shrink-0 font-mono text-sm tabular-nums">
-                      {activeDone}/{activeTotal}
-                    </span>
-                  </div>
-                  <div className="mt-1.5">
-                    <ProgressBar value={activeTotal ? activeDone / activeTotal : 0} label={active.name} />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-muted">{t.editor.hintSelect}</p>
-            )}
-            <div className="mt-3 flex items-center gap-3 text-xs font-semibold text-muted">
-              <span className="w-10 shrink-0">{t.editor.total}</span>
-              <ProgressBar value={progress.placedAll / progress.all} label={t.editor.total} />
-              <span className="shrink-0 tabular-nums">{Math.round((progress.placedAll / progress.all) * 100)}%</span>
-            </div>
-          </div>
-        ) : (
-          <p className="rounded-2xl bg-surface-2 p-3 text-sm text-muted">{t.editor.fixHint}</p>
-        )}
-
-        {/* Colors */}
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 md:flex-wrap md:overflow-visible">
-          <button
-            type="button"
-            onClick={() => setActiveColor(null)}
-            aria-pressed={activeColor === null}
-            className={`flex h-12 shrink-0 items-center rounded-full border px-3 text-xs font-bold ${
-              activeColor === null ? 'border-accent bg-accent-soft' : 'border-border'
-            }`}
-          >
-            {t.editor.allColors}
-          </button>
-          {colorsHere.map((l) => {
-            const c = palette.colors[l.color]
-            const tot = progress.total.get(l.color) ?? 0
-            const dn = progress.done.get(l.color) ?? 0
-            const left = tot - dn
-            const on = activeColor === l.color
-            return (
-              <button
-                key={l.color}
-                type="button"
-                aria-pressed={on}
-                aria-label={`${c.name} ${c.code}, ${t.editor.left(left)}`}
-                onClick={() => {
-                  setMode('bead')
-                  setActiveColor(on ? null : l.color)
-                }}
-                className={`flex h-12 shrink-0 items-center gap-2 rounded-full border py-1 pl-1 pr-3 ${
-                  on ? 'border-accent bg-accent-soft ring-2 ring-accent' : 'border-border bg-surface'
-                }`}
-              >
-                <Swatch rgb={c.rgb} number={l.number} size={36} done={left === 0} />
-                <span className="text-left leading-tight">
-                  <span className="block font-mono text-[11px] text-muted">{c.code}</span>
-                  <span className="block text-xs font-bold tabular-nums">{left}</span>
-                </span>
-              </button>
-            )
-          })}
+      {/* Workbench */}
+      <aside className="flex max-h-[50%] flex-col gap-3 overflow-y-auto border-t border-border bg-surface p-3 *:shrink-0 md:max-h-none md:w-[26rem] md:border-l md:border-t-0 md:p-4">
+        {/* Tools */}
+        <div role="radiogroup" aria-label={t.editor.toolLabel} className="grid grid-cols-4 gap-1.5">
+          {(['pen', 'tweezers', 'hand', 'fix'] as const).map((id) => (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={tool === id}
+              onClick={() => {
+                // Switching tools puts whatever was held back into the tray.
+                setTool(id)
+                setLoad({ color: null, count: 0 })
+                useToolLayer.setState({ visible: false, ring: null })
+              }}
+              className={`flex h-14 flex-col items-center justify-center gap-0.5 rounded-2xl border text-[11px] font-bold ${
+                tool === id ? 'border-accent bg-accent-soft text-fg' : 'border-border text-muted hover:text-fg'
+              }`}
+            >
+              <ToolIcon tool={id} />
+              {t.editor.tools[id]}
+            </button>
+          ))}
         </div>
 
-        {/* Sections */}
+        {/* Status */}
+        <div className="rounded-2xl bg-surface-2 p-3">
+          <div className="flex items-start gap-3">
+            {focus && focusColor !== null ? (
+              <Swatch rgb={focus.rgb} number={numbers.get(focusColor)} size={36} done={focusDone === focusTotal && focusTotal > 0} />
+            ) : (
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface text-muted">
+                <ToolIcon tool={tool} className="h-4.5 w-4.5" />
+              </span>
+            )}
+            <div className="min-w-0 flex-1">
+              {toolStatus && <p className="text-sm font-bold">{toolStatus}</p>}
+              {tool === 'pen' && (
+                <div className="mt-1 flex gap-0.5" aria-hidden>
+                  {Array.from({ length: PEN_CAPACITY }, (_, i) => (
+                    <span
+                      key={i}
+                      className="h-2 flex-1 rounded-sm"
+                      style={{ background: i < load.count && load.color !== null ? css(palette.colors[load.color].rgb) : 'var(--border)' }}
+                    />
+                  ))}
+                </div>
+              )}
+              <p className="mt-1 text-xs text-muted">{t.editor.toolHints[tool]}</p>
+            </div>
+            <button
+              type="button"
+              className="icon-btn -m-1.5 h-9 w-9"
+              onClick={() => {
+                setMuted(!muted)
+                setMutedState(!muted)
+              }}
+              aria-label={t.editor.sound}
+              aria-pressed={!muted}
+            >
+              {muted ? <VolumeX className="h-4.5 w-4.5" aria-hidden /> : <Volume2 className="h-4.5 w-4.5" aria-hidden />}
+            </button>
+          </div>
+          {focus && focusColor !== null && (
+            <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-muted">
+              <span className="w-28 shrink-0 truncate">
+                {focus.name} {focusDone}/{focusTotal}
+              </span>
+              <ProgressBar value={focusTotal ? focusDone / focusTotal : 0} label={focus.name} />
+            </div>
+          )}
+          <div className="mt-1.5 flex items-center gap-2 text-xs font-semibold text-muted">
+            <span className="w-28 shrink-0">{t.editor.total}</span>
+            <ProgressBar value={progress.placedAll / progress.all} label={t.editor.total} />
+            <span className="shrink-0 tabular-nums">{Math.round((progress.placedAll / progress.all) * 100)}%</span>
+          </div>
+        </div>
+
+        {/* Tray */}
+        <BeadTray
+          wells={wells}
+          palette={palette}
+          active={focusColor}
+          label={t.editor.tray}
+          wellLabel={(w) => t.editor.wellLabel(palette.colors[w.color].name, palette.colors[w.color].code, w.left)}
+          onWellPointer={onWellPointer}
+        />
+
+        {/* Boards */}
         <div className="flex flex-wrap items-center gap-2">
           <label className="flex flex-1 items-center gap-2">
             <span className="text-sm font-semibold">{t.editor.section}</span>
-            <select
-              className="input h-10 flex-1"
-              value={activeSection ?? ''}
-              onChange={(e) => setActiveSection(e.target.value || null)}
-            >
+            <select className="input h-10 flex-1" value={activeSection ?? ''} onChange={(e) => setActiveSection(e.target.value || null)}>
               <option value="">{t.editor.allSections}</option>
               {sections.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -256,11 +501,7 @@ export default function BeadPage() {
             </button>
           )}
           {section && (
-            <button
-              type="button"
-              className="btn-secondary btn-sm"
-              onClick={() => setPlaced(sectionCellIndices(section, pattern.width), true)}
-            >
+            <button type="button" className="btn-secondary btn-sm" onClick={() => setPlaced(sectionCellIndices(section, pattern.width), true)}>
               <CheckCheck className="h-4 w-4" aria-hidden /> {t.editor.sectionDone}
             </button>
           )}
@@ -274,22 +515,25 @@ export default function BeadPage() {
             <Link href="/lightbox/" className="btn-ghost btn-sm">
               <Lightbulb className="h-4 w-4" aria-hidden /> {t.pattern.lightbox}
             </Link>
-            <button
-              type="button"
-              className="btn-ghost btn-sm"
-              onClick={() => confirm(t.editor.resetConfirm) && resetProgress()}
-            >
+            <button type="button" className="btn-ghost btn-sm" onClick={() => confirm(t.editor.resetConfirm) && resetProgress()}>
               <RotateCcw className="h-4 w-4" aria-hidden /> {t.editor.reset}
             </button>
           </div>
         </div>
       </aside>
 
+      <ToolLayer
+        tool={toolActive ? (tool as 'pen' | 'tweezers') : null}
+        color={load.color !== null ? palette.colors[load.color].rgb : null}
+        count={load.count}
+        onLand={onLand}
+      />
+
       {/* Fix color picker */}
       <Modal
         open={fixCell !== null}
         onClose={() => setFixCell(null)}
-        title={fixCell !== null ? t.editor.fixTitle(fixCell % pattern.width + 1, Math.floor(fixCell / pattern.width) + 1) : ''}
+        title={fixCell !== null ? t.editor.fixTitle((fixCell % pattern.width) + 1, Math.floor(fixCell / pattern.width) + 1) : ''}
       >
         {fixCell !== null && (
           <>
@@ -297,8 +541,7 @@ export default function BeadPage() {
             <div className="mb-4 flex items-center gap-2">
               <Swatch rgb={palette.colors[pattern.cells[fixCell]].rgb} />
               <span className="text-sm">
-                {palette.colors[pattern.cells[fixCell]].name}{' '}
-                <span className="font-mono text-muted">{palette.colors[pattern.cells[fixCell]].code}</span>
+                {palette.colors[pattern.cells[fixCell]].name} <span className="font-mono text-muted">{palette.colors[pattern.cells[fixCell]].code}</span>
               </span>
             </div>
             <div className="grid max-h-[45vh] grid-cols-6 gap-2 overflow-y-auto p-1 sm:grid-cols-8">
@@ -314,9 +557,7 @@ export default function BeadPage() {
                       recolor(fixCell, ci)
                       setFixCell(null)
                     }}
-                    className={`aspect-square rounded-full ring-1 ring-black/15 ${
-                      ci === pattern.cells[fixCell] ? 'outline-3 outline-offset-2 outline-accent' : ''
-                    }`}
+                    className={`aspect-square rounded-full ring-1 ring-black/15 ${ci === pattern.cells[fixCell] ? 'outline-3 outline-offset-2 outline-accent' : ''}`}
                     style={{ background: css(c.rgb) }}
                   />
                 )

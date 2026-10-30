@@ -8,6 +8,17 @@ export interface PatternCanvasHandle {
   zoomIn: () => void
   zoomOut: () => void
   fit: () => void
+  /** Cell index under a viewport point, or -1. */
+  cellAt: (clientX: number, clientY: number) => number
+  /** Viewport geometry of a cell (center + edge length). */
+  cellRect: (index: number) => { x: number; y: number; size: number }
+}
+
+export interface ToolPointerEvent {
+  type: 'down' | 'move' | 'up' | 'hover' | 'leave' | 'cancel'
+  clientX: number
+  clientY: number
+  pointerType: string
 }
 
 interface Props {
@@ -24,6 +35,12 @@ interface Props {
   /** Show the "fix colors" cursor style. */
   editMode?: boolean
   onCellTap?: (index: number) => void
+  /**
+   * Tool mode: one-finger / left-mouse gestures go to `onTool` instead of panning.
+   * Two fingers still pinch-zoom and pan; mouse wheel zooms, middle / right drag pans.
+   */
+  toolMode?: boolean
+  onTool?: (e: ToolPointerEvent) => void
   label: string
 }
 
@@ -99,14 +116,27 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
         const py = oy + y * scale
 
         if (isPlaced && showBeads) {
-          // Placed bead: round bead with a hole.
+          // Placed bead: round bead with a hole and a soft highlight.
+          const cx = px + scale / 2
+          const cy = py + scale / 2
           ctx.fillStyle = focus ? s.solid : s.dim
           ctx.beginPath()
-          ctx.arc(px + scale / 2, py + scale / 2, scale * 0.46, 0, Math.PI * 2)
+          ctx.arc(cx, cy, scale * 0.47, 0, Math.PI * 2)
           ctx.fill()
+          if (scale >= 12) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.45)'
+            ctx.lineWidth = Math.max(1, scale * 0.07)
+            ctx.beginPath()
+            ctx.arc(cx, cy, scale * 0.33, Math.PI * 1.05, Math.PI * 1.55)
+            ctx.stroke()
+            ctx.strokeStyle = 'rgba(0,0,0,0.18)'
+            ctx.beginPath()
+            ctx.arc(cx, cy, scale * 0.44, Math.PI * 0.1, Math.PI * 0.8)
+            ctx.stroke()
+          }
           ctx.fillStyle = board
           ctx.beginPath()
-          ctx.arc(px + scale / 2, py + scale / 2, scale * 0.15, 0, Math.PI * 2)
+          ctx.arc(cx, cy, scale * 0.15, 0, Math.PI * 2)
           ctx.fill()
         } else {
           // Not placed yet: flat square (the "map" of what goes here).
@@ -210,6 +240,25 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
       zoomIn: () => zoomAt(size.current.w / 2, size.current.h / 2, 1.5),
       zoomOut: () => zoomAt(size.current.w / 2, size.current.h / 2, 1 / 1.5),
       fit,
+      cellAt: (clientX, clientY) => {
+        const canvas = canvasRef.current
+        if (!canvas) return -1
+        const r = canvas.getBoundingClientRect()
+        if (clientX < r.left || clientY < r.top || clientX > r.right || clientY > r.bottom) return -1
+        const { pattern } = propsRef.current
+        const v = view.current
+        const x = Math.floor((clientX - r.left - v.ox) / v.scale)
+        const y = Math.floor((clientY - r.top - v.oy) / v.scale)
+        return x >= 0 && y >= 0 && x < pattern.width && y < pattern.height ? y * pattern.width + x : -1
+      },
+      cellRect: (index) => {
+        const r = canvasRef.current?.getBoundingClientRect() ?? { left: 0, top: 0 }
+        const { pattern } = propsRef.current
+        const v = view.current
+        const x = index % pattern.width
+        const y = Math.floor(index / pattern.width)
+        return { x: r.left + v.ox + (x + 0.5) * v.scale, y: r.top + v.oy + (y + 0.5) * v.scale, size: v.scale }
+      },
     }),
     [zoomAt, fit],
   )
@@ -255,6 +304,11 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
     const pts = new Map<number, { x: number; y: number }>()
     let tap: { x: number; y: number; moved: boolean } | null = null
     let pinch: { dist: number; mx: number; my: number } | null = null
+    // Pointer currently driving the tool (one finger / left mouse) in tool mode.
+    let toolPointer: number | null = null
+    let mousePan = false
+    const tool = (type: ToolPointerEvent['type'], e: PointerEvent) =>
+      propsRef.current.onTool?.({ type, clientX: e.clientX, clientY: e.clientY, pointerType: e.pointerType })
 
     const local = (e: PointerEvent) => {
       const r = canvas.getBoundingClientRect()
@@ -269,15 +323,34 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
       canvas.setPointerCapture(e.pointerId)
       const p = local(e)
       pts.set(e.pointerId, p)
-      if (pts.size === 1) tap = { ...p, moved: false }
+      const toolMode = propsRef.current.toolMode
+      mousePan = e.pointerType === 'mouse' && e.button !== 0
+      if (toolMode && pts.size === 1 && !mousePan) {
+        toolPointer = e.pointerId
+        tool('down', e)
+        return
+      }
+      if (pts.size === 1) tap = { ...p, moved: !!toolMode }
       if (pts.size === 2) {
+        if (toolPointer !== null) {
+          tool('cancel', e)
+          toolPointer = null
+        }
         pinch = pinchState()
         if (tap) tap.moved = true
       }
     }
     const move = (e: PointerEvent) => {
       const prev = pts.get(e.pointerId)
-      if (!prev) return
+      if (!prev) {
+        if (propsRef.current.toolMode && e.pointerType === 'mouse') tool('hover', e)
+        return
+      }
+      if (toolPointer === e.pointerId) {
+        pts.set(e.pointerId, local(e))
+        tool('move', e)
+        return
+      }
       const p = local(e)
       pts.set(e.pointerId, p)
       const v = view.current
@@ -299,6 +372,11 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
     const up = (e: PointerEvent) => {
       if (!pts.has(e.pointerId)) return
       pts.delete(e.pointerId)
+      if (toolPointer === e.pointerId) {
+        toolPointer = null
+        tool(e.type === 'pointercancel' ? 'cancel' : 'up', e)
+        return
+      }
       if (pts.size < 2) pinch = null
       if (pts.size === 0 && tap && !tap.moved) {
         const { pattern, onCellTap } = propsRef.current
@@ -320,7 +398,15 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
     canvas.addEventListener('pointerup', up)
     canvas.addEventListener('pointercancel', up)
     canvas.addEventListener('wheel', wheel, { passive: false })
+    const leave = (e: PointerEvent) => {
+      if (propsRef.current.toolMode && e.pointerType === 'mouse' && !pts.size) tool('leave', e)
+    }
+    const noMenu = (e: Event) => propsRef.current.toolMode && e.preventDefault()
+    canvas.addEventListener('pointerleave', leave)
+    canvas.addEventListener('contextmenu', noMenu)
     return () => {
+      canvas.removeEventListener('pointerleave', leave)
+      canvas.removeEventListener('contextmenu', noMenu)
       canvas.removeEventListener('pointerdown', down)
       canvas.removeEventListener('pointermove', move)
       canvas.removeEventListener('pointerup', up)
@@ -335,7 +421,7 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
         ref={canvasRef}
         role="img"
         aria-label={props.label}
-        className={`absolute inset-0 touch-none ${props.editMode ? 'cursor-crosshair' : 'cursor-pointer'}`}
+        className={`absolute inset-0 touch-none ${props.toolMode ? 'cursor-none' : props.editMode ? 'cursor-crosshair' : 'cursor-grab'}`}
       />
     </div>
   )
