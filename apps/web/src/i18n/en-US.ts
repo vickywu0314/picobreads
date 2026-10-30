@@ -33,6 +33,8 @@ export const enUS = {
   brands: {
     recommended: 'Recommended',
     colorCount: (n: number) => `${n} colors`,
+    kitAvailable: 'Kits available',
+    patternOnly: 'Pattern only for now',
     blurbs: {
       perler: 'The best-known brand in North America. Very consistent size, color and melt.',
       'artkal-s': 'The widest color range — great for portraits and subtle shading.',
@@ -200,6 +202,10 @@ export const enUS = {
     sameAsPattern: 'Your current pattern',
     sizeAria: 'Kit size',
     brand: (b: string) => `Beads: ${b}`,
+    unavailableTitle: (b: string) => `${b} kits aren’t available yet`,
+    unavailableBody: 'Your free pattern and online beading still work. To order a kit, re-match your pattern to one of these brands:',
+    switchTo: (b: string) => `Use ${b} colors`,
+    switchNote: 'Bead-placing progress for this pattern will reset.',
   },
   cart: {
     title: 'Cart',
@@ -261,6 +267,8 @@ export const enUS = {
     retention: 'Delete customer photos after (days)',
     assembled: 'Offer “we bead it for you” variant',
     tiers: 'Size tiers (long side, beads)',
+    kitBrands: 'Brands sold as kits',
+    kitBrandsHint: 'Other brands stay available for free patterns and online beading.',
   },
   privacy: {
     title: 'Privacy, in plain words',

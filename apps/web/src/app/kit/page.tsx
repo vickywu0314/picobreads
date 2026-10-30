@@ -2,14 +2,14 @@
 
 import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
-import { Check, ShoppingBag } from 'lucide-react'
+import { Check, Info, ShoppingBag } from 'lucide-react'
 import { getPalette, type BeadSize } from '@picobreads/pattern-engine'
 import { SiteFooter, SiteHeader } from '@/components/SiteHeader'
 import { ProtoTag } from '@/components/PrototypeBanner'
 import { PatternThumb } from '@/components/PatternThumb'
 import { NoPattern } from '@/components/NoPattern'
 import { Segmented, Toggle } from '@/components/ui'
-import { ASSEMBLED_VARIANT_ENABLED, TIERS, type TierId } from '@/config/site'
+import { ASSEMBLED_VARIANT_ENABLED, KIT_PALETTE_IDS, TIERS, isKitBrand, type TierId } from '@/config/site'
 import { useT } from '@/i18n'
 import { buildPattern, useHydrated, useStore } from '@/lib/store'
 import { boardCount, finishedSize, legendOf } from '@/lib/pattern'
@@ -22,6 +22,8 @@ export default function KitPage() {
   const settings = useStore((s) => s.settings)
   const aspectId = useStore((s) => s.aspectId)
   const addToCart = useStore((s) => s.addToCart)
+  const setSettings = useStore((s) => s.setSettings)
+  const generate = useStore((s) => s.generate)
   const [tier, setTier] = useState<TierId>(settings.tier)
   const [beadSize, setBeadSize] = useState<BeadSize>(settings.beadSize)
 
@@ -29,7 +31,7 @@ export default function KitPage() {
   const variants = useMemo(() => {
     if (!pattern) return []
     return TIERS.map((tr) => {
-      const p = tr.id === settings.tier ? pattern : buildPattern(settings, aspectId, tr.id)
+      const p = tr.id === settings.tier ? pattern : buildPattern({ ...settings, paletteId: pattern.paletteId }, aspectId, tr.id)
       return { tier: tr, pattern: p, colors: legendOf(p).length }
     })
   }, [pattern, settings, aspectId])
@@ -44,6 +46,8 @@ export default function KitPage() {
     )
 
   const chosen = variants.find((v) => v.tier.id === tier)!
+  const brand = getPalette(pattern.paletteId).brand
+  const sellable = isKitBrand(pattern.paletteId)
 
   return (
     <>
@@ -51,6 +55,31 @@ export default function KitPage() {
       <main className="container-page py-6">
         <h1 className="text-3xl font-extrabold tracking-tight">{t.kit.title}</h1>
         <p className="mt-2 max-w-2xl text-muted">{t.kit.subtitle}</p>
+
+        {!sellable && (
+          <div role="alert" className="mt-6 rounded-2xl border border-warn/40 bg-warn/10 p-4">
+            <p className="flex items-center gap-2 font-bold">
+              <Info className="h-5 w-5 text-warn" aria-hidden /> {t.kit.unavailableTitle(brand)}
+            </p>
+            <p className="mt-1 text-sm text-muted">{t.kit.unavailableBody}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {KIT_PALETTE_IDS.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  className="btn-secondary btn-sm"
+                  onClick={() => {
+                    setSettings({ paletteId: id })
+                    generate()
+                  }}
+                >
+                  {t.kit.switchTo(getPalette(id).brand)}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-muted">{t.kit.switchNote}</p>
+          </div>
+        )}
 
         <div className="mt-6 max-w-sm">
           <p className="label mb-2">{t.kit.beadSize}</p>
@@ -127,12 +156,13 @@ export default function KitPage() {
                 {t.tiers[tier]} · {beadSize}
               </p>
               <p className="text-sm text-muted">
-                ${chosen.tier.priceUsd} · {t.kit.brand(getPalette(chosen.pattern.paletteId).brand)}
+                ${chosen.tier.priceUsd} · {t.kit.brand(brand)}
               </p>
             </div>
             <button
               type="button"
               className="btn-primary"
+              disabled={!sellable}
               onClick={() => {
                 addToCart({ tier, beadSize, priceUsd: chosen.tier.priceUsd, pattern: chosen.pattern })
                 router.push('/cart/')

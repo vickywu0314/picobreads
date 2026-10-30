@@ -24,7 +24,7 @@ const rows: [string, string, TierId, BeadSize, OrderStatus, number, string][] = 
   ['#PB1047', 'Liam K.', 'large', '5mm', 'picking', 4 / 3, 'perler'],
   ['#PB1046', 'Olivia M.', 'small', '5mm', 'picking', 1, 'artkal-s'],
   ['#PB1045', 'Noah P.', 'standard', '2.6mm', 'picked', 3 / 4, 'perler'],
-  ['#PB1044', 'Ava T.', 'standard', '5mm', 'shipped', 1, 'mard-221'],
+  ['#PB1044', 'Ava T.', 'standard', '5mm', 'shipped', 1, 'artkal-s'],
   ['#PB1043', 'Lucas W.', 'small', '5mm', 'shipped', 1, 'perler'],
 ]
 

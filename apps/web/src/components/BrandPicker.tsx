@@ -1,8 +1,8 @@
 'use client'
 
-import { Check } from 'lucide-react'
+import { Check, FileImage, Package } from 'lucide-react'
 import { PALETTES, regularColorIndices } from '@picobreads/pattern-engine'
-import { RECOMMENDED_PALETTE_ID } from '@/config/site'
+import { RECOMMENDED_PALETTE_ID, isKitBrand } from '@/config/site'
 import { useT } from '@/i18n'
 import { css } from '@/lib/pattern'
 
@@ -43,6 +43,14 @@ export function BrandPicker({ value, onChange }: { value: string; onChange: (id:
               ))}
             </span>
             <span className="mt-2 block text-xs text-muted">{t.brands.blurbs[p.id]}</span>
+            <span
+              className={`mt-2 inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                isKitBrand(p.id) ? 'bg-ok/15 text-ok' : 'bg-surface-2 text-muted'
+              }`}
+            >
+              {isKitBrand(p.id) ? <Package className="h-3 w-3" aria-hidden /> : <FileImage className="h-3 w-3" aria-hidden />}
+              {isKitBrand(p.id) ? t.brands.kitAvailable : t.brands.patternOnly}
+            </span>
           </button>
         )
       })}

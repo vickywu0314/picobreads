@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import { Toggle } from '@/components/ui'
-import { ASSEMBLED_VARIANT_ENABLED, FREE_PREVIEWS_PER_DAY, PHOTO_RETENTION_DAYS, PICKING, TIERS } from '@/config/site'
+import { PALETTES } from '@picobreads/pattern-engine'
+import { ASSEMBLED_VARIANT_ENABLED, FREE_PREVIEWS_PER_DAY, PHOTO_RETENTION_DAYS, PICKING, TIERS, isKitBrand } from '@/config/site'
 import { useT } from '@/i18n'
 
 export default function AdminSettingsPage() {
@@ -28,8 +29,22 @@ export default function AdminSettingsPage() {
         <div className="mt-3 grid grid-cols-3 gap-3">
           {TIERS.map((tier) => (
             <label key={tier.id} className="block">
-              <span className="text-xs text-muted">{tier.name}</span>
+              <span className="text-xs text-muted">{t.tiers[tier.id]}</span>
               <input type="number" min={10} max={200} defaultValue={tier.longSide} className="input mt-1" />
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset className="card mt-4 p-5">
+        <legend className="sr-only">{t.admin.kitBrands}</legend>
+        <p className="label">{t.admin.kitBrands}</p>
+        <p className="text-xs text-muted">{t.admin.kitBrandsHint}</p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {PALETTES.map((p) => (
+            <label key={p.id} className="flex items-center gap-2 text-sm">
+              <input type="checkbox" defaultChecked={isKitBrand(p.id)} className="h-5 w-5 accent-[var(--accent)]" />
+              {p.brand}
             </label>
           ))}
         </div>

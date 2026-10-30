@@ -12,6 +12,14 @@ export const SITE = {
 /** Bead brand we recommend (most consistent quality, best known in North America). */
 export const RECOMMENDED_PALETTE_ID = 'perler'
 
+/**
+ * Brands we stock and sell kits for. Other palettes can still be used for free
+ * patterns and online beading ("pattern only").
+ */
+export const KIT_PALETTE_IDS = ['perler', 'artkal-s']
+
+export const isKitBrand = (paletteId: string) => KIT_PALETTE_IDS.includes(paletteId)
+
 export type TierId = 'small' | 'standard' | 'large'
 
 export interface Tier {

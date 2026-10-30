@@ -34,6 +34,8 @@ export const zhCN: Messages = {
   brands: {
     recommended: '推荐',
     colorCount: (v: number) => `${v} 色`,
+    kitAvailable: '可买材料包',
+    patternOnly: '暂只提供图纸',
     blurbs: {
       perler: '北美最知名的品牌，尺寸、颜色和熔烫效果都很稳定。',
       'artkal-s': '颜色最全，适合人像和细腻的过渡。',
@@ -198,6 +200,10 @@ export const zhCN: Messages = {
     sameAsPattern: '当前图纸',
     sizeAria: '材料包尺寸',
     brand: (b: string) => `豆子品牌：${b}`,
+    unavailableTitle: (b: string) => `暂不提供 ${b} 材料包`,
+    unavailableBody: '免费图纸和在线拼不受影响。如果想买材料包，请把图纸改用以下品牌的色卡：',
+    switchTo: (b: string) => `改用 ${b} 色卡`,
+    switchNote: '这张图纸的拼豆进度会被重置。',
   },
   cart: {
     title: '购物车',
@@ -258,6 +264,8 @@ export const zhCN: Messages = {
     retention: '用户照片保留天数',
     assembled: '提供“帮你拼好”选项',
     tiers: '尺寸档位（长边颗数）',
+    kitBrands: '销售材料包的品牌',
+    kitBrandsHint: '其他品牌仍可用于免费图纸和在线拼。',
   },
   privacy: {
     title: '隐私说明（大白话版）',
