@@ -61,7 +61,7 @@ function getWorker(): Worker | null {
 const pixelCache = new Map<string, Promise<ImageData>>()
 
 /** Decode the (already cropped) photo and scale it to roughly SAMPLES_PER_BEAD px per bead. */
-function photoPixels(photo: string, gridW: number, gridH: number): Promise<ImageData> {
+export function photoPixels(photo: string, gridW: number, gridH: number): Promise<ImageData> {
   const key = `${photo.length}:${photo.slice(-64)}:${gridW}x${gridH}`
   let p = pixelCache.get(key)
   if (!p) {
@@ -89,10 +89,11 @@ function photoPixels(photo: string, gridW: number, gridH: number): Promise<Image
 export async function generateFromPhoto(
   photo: string | null,
   settings: Settings,
-  aspectId: AspectId,
+  /** A crop preset, or a raw width / height ratio. */
+  aspectId: AspectId | number,
   tier: TierId = settings.tier,
 ): Promise<Pattern> {
-  const { width, height } = gridSize(tier, aspectValue(aspectId))
+  const { width, height } = gridSize(tier, typeof aspectId === 'number' ? aspectId : aspectValue(aspectId))
   const img = await photoPixels(photo ?? SAMPLE_PHOTO_URL, width, height)
   const opts = {
     paletteId: settings.paletteId,

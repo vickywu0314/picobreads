@@ -301,6 +301,19 @@ export const enUS = {
     kitBrands: 'Brands sold as kits',
     kitBrandsHint: 'Other brands stay available for free patterns and online beading.',
   },
+  lab: {
+    nav: 'Ironed preview lab (temp)',
+    title: 'Ironed preview lab',
+    badge: 'Temporary tool',
+    intro: 'Upload a photo to see how it looks as a finished, ironed piece in every size and both styles — no beading needed.',
+    upload: 'Upload photo',
+    change: 'Change photo',
+    original: 'Original',
+    tile: (size: string, w: number, h: number, colors: number) => `${size} · ${w}×${h} · ${colors} colors`,
+    tapToZoom: 'Tap any result to enlarge and compare with the original.',
+    useThis: 'Bead this one',
+    autoSays: (style: string) => `Auto would pick: ${style}`,
+  },
   privacy: {
     title: 'Privacy, in plain words',
     points: [

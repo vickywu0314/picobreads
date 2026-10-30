@@ -67,6 +67,9 @@ export function SiteFooter() {
           <Link href="/progress/" className="hover:text-fg">
             {t.nav.progress}
           </Link>
+          <Link href="/lab/" className="hover:text-fg">
+            {t.lab.nav}
+          </Link>
           <Link href="/admin/" className="hover:text-fg">
             {t.nav.admin}
           </Link>

@@ -58,7 +58,10 @@ export default function SettingsPage() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={photo} alt={t.common.yourPhoto} className="h-14 w-14 rounded-xl object-cover" />
                 )}
-                <p className="text-xs text-muted">{t.settings.sampleNote}</p>
+                <p className="flex-1 text-xs text-muted">{t.settings.sampleNote}</p>
+                <Link href="/lab/" className="shrink-0 text-xs font-semibold text-accent underline">
+                  {t.lab.nav}
+                </Link>
               </div>
             </div>
           </section>

@@ -30,11 +30,11 @@ export function BrandPicker({ value, onChange }: { value: string; onChange: (id:
             <span className="flex items-center gap-2">
               <span className="font-bold">{p.brand}</span>
               {p.id === RECOMMENDED_PALETTE_ID && (
-                <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold uppercase text-accent-fg">
+                <span className="whitespace-nowrap rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold uppercase text-accent-fg">
                   {t.brands.recommended}
                 </span>
               )}
-              <span className="ml-auto text-xs text-muted">{t.brands.colorCount(regular.length)}</span>
+              <span className="ml-auto whitespace-nowrap text-xs text-muted">{t.brands.colorCount(regular.length)}</span>
               {active && <Check className="h-4 w-4 text-accent" aria-hidden />}
             </span>
             <span className="mt-2 flex gap-0.5" aria-hidden>

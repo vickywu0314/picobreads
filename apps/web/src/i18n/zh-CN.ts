@@ -298,6 +298,19 @@ export const zhCN: Messages = {
     kitBrands: '销售材料包的品牌',
     kitBrandsHint: '其他品牌仍可用于免费图纸和在线拼。',
   },
+  lab: {
+    nav: '熨烫效果实验室（临时）',
+    title: '熨烫效果实验室',
+    badge: '临时工具',
+    intro: '上传照片，直接看各个尺寸、两种生成方式熨烫完成后的样子，不用自己拼。',
+    upload: '上传照片',
+    change: '换一张',
+    original: '原图',
+    tile: (size: string, w: number, h: number, colors: number) => `${size} · ${w}×${h} · ${colors} 色`,
+    tapToZoom: '点任意一张放大，和原图对比。',
+    useThis: '用这个去拼',
+    autoSays: (style: string) => `自动模式会选：${style}`,
+  },
   privacy: {
     title: '隐私说明（大白话版）',
     points: [
