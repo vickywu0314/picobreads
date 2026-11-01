@@ -13,8 +13,8 @@ import type { Settings } from './store'
 export function useGeneratedPattern(
   photo: string | null,
   settings: Settings,
-  aspectId: AspectId,
-  tier: TierId = settings.tier,
+  aspectId: AspectId | number,
+  tier: TierId | number = settings.tier,
   enabled = true,
 ) {
   const [pattern, setPattern] = useState<Pattern | null>(null)

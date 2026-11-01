@@ -1,9 +1,11 @@
 import { siteEn } from './site-en'
+import { v11En } from './v11-en'
 // en-US copy. This object defines the `Messages` shape every other locale must match.
 const plural = (n: number, one: string, many = one + 's') => `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`
 
 export const enUS = {
   ...siteEn,
+  v11: v11En,
   common: {
     prototype: 'Prototype',
     prototypeBanner: 'Prototype — patterns are real; orders, emails and admin use sample data.',

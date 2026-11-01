@@ -1,0 +1,45 @@
+// Copy for the v1.1 (Pipixel) site. Merged into en-US.ts as `v11`.
+export const v11En = {
+  nav: { home: 'Home', plaza: 'Bead Plaza', community: 'Community', signIn: 'Sign in', signOut: 'Sign out', language: 'Language', bag: 'Bag', menu: 'Menu' },
+  comingSoon: 'Coming soon',
+  hero: {
+    tag: 'Free online bead pattern maker',
+    title1: 'Turn your photo',
+    title2pre: 'into ',
+    title2: 'beads, one by one',
+    body: 'Pets, family, little travel moments — turned into a bead pattern with color codes in one click.',
+    cta: 'Upload a photo & start',
+    check1: 'Color codes counted for you',
+    check2: 'Several sizes to choose',
+    photoToPattern: ['Your photo', 'Your pattern'],
+    list: (colors: number, beads: number) => `Bead list · ${colors} colors · ${beads.toLocaleString('en-US')} beads`,
+    beads: (n: number) => `${n.toLocaleString('en-US')}`,
+    more: (n: number) => `${n} more colors — see the full list`,
+    colors: (n: number) => `${n} colors`,
+  },
+  features: [
+    { title: 'See it first', body: 'Preview before you bead' },
+    { title: 'Know your size', body: 'Compare finished sizes' },
+    { title: 'Colors counted', body: 'No guesswork on supplies' },
+  ],
+  picks: {
+    title1: 'No idea? ',
+    title2: 'Pick one and start',
+    body: 'Open any to see the full pattern and color list',
+    more: 'Go to Bead Plaza',
+    names: { 'tabby-cat': 'Ginger Dumpling', caishen: 'Lucky Fortune', coffee: 'Morning Coffee' } as Record<string, string>,
+    stats: (w: number, h: number, colors: number, beads: number) => `${w}×${h} · ${colors} colors · ${beads.toLocaleString('en-US')} beads`,
+  },
+  steps: {
+    title1: 'Three steps, ',
+    title2: 'photo to finished',
+    items: [
+      { title: 'Pick a photo', body: 'A clear subject and simple background work best.' },
+      { title: 'Choose your size', body: '' },
+      { title: 'Bead from the list', body: 'Prep by color code — not one bead more or less.' },
+    ],
+  },
+  banner: { title: 'Your next piece is in your camera roll', body: 'Free to use, nothing to download', cta: 'Generate a pattern now' },
+  footer: { rights: (y: number, name: string) => `© ${y} ${name}. All rights reserved.` },
+  sample: 'Sample',
+}

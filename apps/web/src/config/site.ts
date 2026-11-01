@@ -74,8 +74,9 @@ export const ASPECTS = [
 
 export type AspectId = (typeof ASPECTS)[number]['id']
 
-export function gridSize(tier: TierId, aspect: number): { width: number; height: number } {
-  const long = getTier(tier).longSide
+/** Grid for a tier (or an explicit long side in beads) at a width / height ratio. */
+export function gridSize(tier: TierId | number, aspect: number): { width: number; height: number } {
+  const long = typeof tier === 'number' ? tier : getTier(tier).longSide
   if (aspect >= 1) return { width: long, height: Math.max(1, Math.round(long / aspect)) }
   return { width: Math.max(1, Math.round(long * aspect)), height: long }
 }

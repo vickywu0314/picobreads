@@ -1,10 +1,12 @@
 import type { Messages } from './en-US'
 import { siteZh } from './site-zh'
+import { v11Zh } from './v11-zh'
 
 const n = (v: number) => v.toLocaleString('zh-CN')
 
 export const zhCN: Messages = {
   ...siteZh,
+  v11: v11Zh,
   common: {
     prototype: '原型',
     prototypeBanner: '原型演示 · 图纸是真实生成的；下单、邮件、后台为示例数据',

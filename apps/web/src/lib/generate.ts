@@ -91,7 +91,8 @@ export async function generateFromPhoto(
   settings: Settings,
   /** A crop preset, or a raw width / height ratio. */
   aspectId: AspectId | number,
-  tier: TierId = settings.tier,
+  /** Size tier, or the long side in beads (v1.1 uses its own sizes). */
+  tier: TierId | number = settings.tier,
 ): Promise<Pattern> {
   const { width, height } = gridSize(tier, typeof aspectId === 'number' ? aspectId : aspectValue(aspectId))
   const img = await photoPixels(photo ?? SAMPLE_PHOTO_URL, width, height)

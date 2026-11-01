@@ -2,6 +2,8 @@
 
 *Your moments, made personal.* Personalized gifts — custom fuse bead art first, storybooks coming soon. Milestone 0: clickable prototype — fully static, no backend. Commerce will run on Shopify.
 
+**Versions:** v1.0 at `/` (frozen), v1.1 "Pipixel" redesign at `/v1-1/` (all new work) — see `docs/versions.md`.
+
 See `CLAUDE.md` for the product spec, `docs/sitemap.md` for the site structure and `docs/prototype-notes.md` (中文) for what is real vs. mocked.
 
 ## Structure
@@ -13,6 +15,7 @@ apps/web/                  Next.js 15 (App Router, static export), Tailwind CSS 
   src/config/site.ts       business knobs: size tiers, prices (placeholder), allowance, bag sizes, limits
   src/i18n/                UI copy: en-US.ts + zh-CN.ts; locale follows the browser, switchable in the header
   src/config/catalog.ts    PROTOTYPE content: pattern library, community posts, purchase forms
+  src/app/v1-1/            v1.1 pages (home + 6-step flow, bag, login); src/v11/ = v1.1 header/footer/toast/config
   src/mock/                PROTOTYPE ONLY: sample pattern generator, fake admin orders
   public/patterns/         sample illustrations used by the library / community
 packages/pattern-engine/   pure TypeScript, no UI deps: types, palettes, sections, stats, bag picking

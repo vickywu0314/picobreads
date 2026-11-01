@@ -104,3 +104,84 @@ html[data-locale-pending] body {
 @utility container-page {
   @apply mx-auto w-full max-w-5xl px-4 sm:px-6;
 }
+
+/* ---------------------------------------------------------------------------
+ * v1.1 (Pipixel) theme — scoped to `.v11`, so v1.0 pages are unaffected.
+ * Pink dotted paper, chunky ink borders with offset shadows, rounded display font.
+ * Light only for now.
+ * ------------------------------------------------------------------------- */
+.v11 {
+  --bg: #fff1f5;
+  --surface: #ffffff;
+  --surface-2: #fde6ee;
+  --fg: #3b2a30;
+  --muted: #86707a;
+  --border: #f0cfdb;
+  --accent: #d9467a;
+  --accent-hover: #c43769;
+  --accent-fg: #ffffff;
+  --accent-soft: #fde0ea;
+  --ok: #2f8a57;
+  --warn: #b26a00;
+  --ink: #3b2a30;
+  --sun: #ffd84d;
+  --canvas-bg: #fbe9ef;
+  --board: #f6dfe7;
+  /* Latin glyphs from Baloo 2, Chinese falls through to ZCOOL KuaiLe. */
+  --font-display: 'Baloo 2', 'ZCOOL KuaiLe', ui-rounded, 'PingFang SC', system-ui, sans-serif;
+  color-scheme: light;
+  color: var(--fg);
+  background-color: var(--bg);
+  background-image: radial-gradient(circle, #f6c5d5 1.6px, transparent 1.8px);
+  background-size: 26px 26px;
+  font-family: 'Noto Sans SC', ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif;
+}
+body:has(.v11) {
+  background: #fff1f5;
+}
+.v11 .font-display,
+.v11 .font-serif {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+.v11 .font-pixel {
+  font-family: 'Pixelify Sans', 'Baloo 2', ui-rounded, system-ui, sans-serif;
+}
+/* Chunky "sticker" look for cards and buttons. */
+.v11 .card,
+.v11 .ink-card {
+  border: 2px solid var(--ink);
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.v11 .btn-primary,
+.v11 .btn-secondary {
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.v11 .btn-primary:active,
+.v11 .btn-secondary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+.v11 .btn-secondary {
+  background: var(--surface);
+}
+.v11 .input {
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+}
+
+@keyframes v11-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
