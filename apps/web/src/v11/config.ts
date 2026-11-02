@@ -24,14 +24,30 @@ export const v11Tier = (id: TierId) => V11_TIERS.find((t) => t.id === id) ?? V11
 export const v11Price = (form: 'digital' | 'kit' | 'finished', tier: TierId) =>
   form === 'digital' ? 0 : form === 'finished' ? v11Tier(tier).finishedPriceUsd : v11Tier(tier).priceUsd
 
-const img = (id: string) => `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/patterns/${id}.jpg`
+const asset = (path: string) => `${process.env.NEXT_PUBLIC_BASE_PATH || ''}${path}`
 
-/** "No idea? Pick one" — sample picks on the home page (48 × 48 as in the design). */
-export const V11_PICKS: (LibraryPattern & { longSide: number })[] = [
-  { id: 'tabby-cat', image: img('tabby-cat'), themes: ['pets'], tier: 'standard', difficulty: 'medium', maxColors: 22, longSide: 48 },
-  { id: 'caishen', image: img('caishen'), themes: ['family'], tier: 'standard', difficulty: 'medium', maxColors: 24, longSide: 48 },
-  { id: 'coffee', image: img('coffee'), themes: ['friends'], tier: 'standard', difficulty: 'easy', maxColors: 25, longSide: 48 },
+/**
+ * "No idea? Pick one" — shown exactly as in the v1.1 design (images cropped from the design file,
+ * numbers as designed). Picking one starts the flow with that image as the source.
+ * TODO: replace the crops with the original PNG exports from the design.
+ */
+export const V11_PICKS: (LibraryPattern & { stats: { w: number; h: number; colors: number; beads: number }; tint: string })[] = [
+  { id: 'tabby-cat', image: asset('/v11/pick-cat.png'), themes: ['pets'], tier: 'standard', difficulty: 'medium', maxColors: 22, stats: { w: 48, h: 48, colors: 22, beads: 1103 }, tint: '#fdf3ea' },
+  { id: 'caishen', image: asset('/v11/pick-caishen.png'), themes: ['family'], tier: 'standard', difficulty: 'medium', maxColors: 24, stats: { w: 48, h: 48, colors: 24, beads: 1231 }, tint: '#fdf1c9' },
+  { id: 'coffee', image: asset('/v11/pick-coffee.png'), themes: ['friends'], tier: 'standard', difficulty: 'easy', maxColors: 25, stats: { w: 48, h: 48, colors: 25, beads: 1140 }, tint: '#e7f2e9' },
 ]
 
-/** Hero demo: "your photo → your pattern". */
-export const V11_HERO = { image: img('corgi'), longSide: 44, maxColors: 34 }
+/** Hero "your photo → your pattern", exactly as designed (static images + bead list). */
+export const V11_HERO = {
+  photo: asset('/v11/hero-photo.png'),
+  pattern: asset('/v11/hero-pattern.png'),
+  size: '44×44',
+  colors: 34,
+  beads: 1936,
+  list: [
+    { code: 'C30', color: '#82ceff', count: 788 },
+    { code: 'A21', color: '#4c2c15', count: 111 },
+    { code: 'G1', color: '#f5e5d7', count: 97 },
+    { code: 'A17', color: '#e49151', count: 84 },
+  ],
+}

@@ -19,6 +19,7 @@ export default function PreviewStep() {
   const pattern = useStore((s) => s.pattern)
   const photo = useStore((s) => s.photo)
   const beadSize = useStore((s) => s.settings.beadSize)
+  const iron = useStore((s) => s.settings.iron ?? 'normal')
   const user = useStore((s) => s.user)
   const source = useStore((s) => s.source)
   const currentDesignId = useStore((s) => s.currentDesignId)
@@ -68,7 +69,7 @@ export default function PreviewStep() {
           </figure>
           <figure className="card p-3">
             <div className="grid aspect-square place-items-center rounded-2xl bg-[repeating-conic-gradient(rgba(128,128,128,0.12)_0_25%,transparent_0_50%)] bg-[length:20px_20px] p-3">
-              <Ironed pattern={pattern} view={view} />
+              <Ironed pattern={pattern} view={view} iron={iron} />
             </div>
             <figcaption className="mt-2 flex justify-center">
               <div className="w-64">

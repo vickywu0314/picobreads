@@ -16,6 +16,8 @@ export interface Settings {
   dithering: boolean
   /** Engine style; older saved settings may not have it (treated as auto). */
   style?: 'auto' | 'illustration' | 'photo'
+  /** Ironing finish shown in previews (v1.1). */
+  iron?: 'normal' | 'towel' | 'scrub' | 'glitter'
 }
 
 export interface CartItem {

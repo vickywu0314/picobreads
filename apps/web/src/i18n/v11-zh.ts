@@ -43,4 +43,26 @@ export const v11Zh: typeof v11En = {
   banner: { title: '下一个作品，就在你的相册里', body: '免费使用，无需下载', cta: '立即生成图纸' },
   footer: { rights: (y: number, name: string) => `© ${y} ${name}. All rights reserved.` },
   sample: '示例',
+  settings: {
+    pickTitle: '选一个你喜欢的效果',
+    pickHint: '三个尺寸熨烫完成后的样子，点选的那张就是你的最终图纸。',
+    selected: '已选',
+    iron: '熨烫效果',
+    ironNote: '效果为示意，实际以熨斗和垫布为准。',
+    irons: {
+      normal: { title: '普通烫', hint: '垫烘焙纸，表面平整光滑' },
+      towel: { title: '毛巾烫', hint: '垫毛巾，绒绒的磨砂质感' },
+      scrub: { title: '澡巾烫', hint: '垫澡巾，复古格纹肌理' },
+      glitter: { title: '闪片烫', hint: '垫格力特布，亮晶晶的闪光' },
+    },
+  },
+  product: {
+    yourChoice: '你的图纸',
+    materials: '材料清单',
+    materialsHint: (spare: number) => `每色所需颗数；材料包多放 ${spare}% 备用`,
+    cols: { color: '颜色', beads: '图纸用量', kit: '材料包内' },
+    total: '合计',
+    pegboards: (n: number) => `底板 ${n} 块（29 × 29）`,
+    edit: '修改',
+  },
 }

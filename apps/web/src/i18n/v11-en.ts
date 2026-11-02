@@ -42,4 +42,26 @@ export const v11En = {
   banner: { title: 'Your next piece is in your camera roll', body: 'Free to use, nothing to download', cta: 'Generate a pattern now' },
   footer: { rights: (y: number, name: string) => `© ${y} ${name}. All rights reserved.` },
   sample: 'Sample',
+  settings: {
+    pickTitle: 'Pick your favorite',
+    pickHint: 'The finished, ironed piece in three sizes. The one you pick becomes your pattern.',
+    selected: 'Selected',
+    iron: 'Ironing finish',
+    ironNote: 'Illustrative — the real finish depends on your iron and cloth.',
+    irons: {
+      normal: { title: 'Classic', hint: 'Baking paper: smooth and flat' },
+      towel: { title: 'Towel', hint: 'Towel: soft, fuzzy matte texture' },
+      scrub: { title: 'Retro weave', hint: 'Scrub cloth: vintage cross-hatch texture' },
+      glitter: { title: 'Glitter', hint: 'Glitter cloth: sparkly shine' },
+    },
+  },
+  product: {
+    yourChoice: 'Your pattern',
+    materials: 'Materials list',
+    materialsHint: (spare: number) => `Beads per color, +${spare}% spare for the kit`,
+    cols: { color: 'Color', beads: 'Beads', kit: 'In the kit' },
+    total: 'Total',
+    pegboards: (n: number) => `${n} pegboard${n === 1 ? '' : 's'} (29 × 29)`,
+    edit: 'Change',
+  },
 }

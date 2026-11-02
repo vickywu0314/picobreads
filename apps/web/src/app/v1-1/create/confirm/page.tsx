@@ -19,6 +19,7 @@ export default function ConfirmStep() {
   const router = useRouter()
   const hydrated = useHydrated()
   const draft = useStore((s) => s.draft)
+  const iron = useStore((s) => s.settings.iron ?? 'normal')
   const user = useStore((s) => s.user)
   const [email, setEmail] = useState<string | null>(null)
   const [consent, setConsent] = useState(false)
@@ -53,7 +54,7 @@ export default function ConfirmStep() {
         <div className="mt-6 grid gap-6 md:grid-cols-[1fr_1.2fr]">
           <div className="card p-4">
             <div className="rounded-2xl bg-[repeating-conic-gradient(rgba(128,128,128,0.12)_0_25%,transparent_0_50%)] bg-[length:20px_20px] p-4">
-              <Ironed pattern={pattern} />
+              <Ironed pattern={pattern} iron={iron} />
             </div>
           </div>
           <div>

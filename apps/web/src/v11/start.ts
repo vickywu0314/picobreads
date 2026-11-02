@@ -13,7 +13,7 @@ export function useV11StartFrom() {
     (p: LibraryPattern) => {
       const s = useStore.getState()
       s.setPhoto(p.image, '1:1')
-      s.setSettings({ ...defaultSettings, maxColors: p.maxColors, style: 'illustration' })
+      s.setSettings({ ...defaultSettings, maxColors: p.maxColors })
       s.setSource({ kind: 'library', id: p.id })
       router.push(v11Href('/create/settings/'))
     },

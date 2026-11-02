@@ -9,6 +9,23 @@ import { useT } from '@/i18n'
 export type PreviewView = 'board' | 'ironed' | 'final'
 
 /**
+ * Ironing finish, i.e. what is laid over the beads while ironing (illustrative):
+ * normal  = baking paper, smooth and slightly glossy
+ * towel   = towel, soft fuzzy texture
+ * scrub   = exfoliating cloth, retro cross-hatched texture
+ * glitter = glitter cloth, sparkles
+ */
+export type IronStyle = 'normal' | 'towel' | 'scrub' | 'glitter'
+export const IRON_STYLES: IronStyle[] = ['normal', 'towel', 'scrub', 'glitter']
+
+/** Small deterministic hash → [0, 1) so textures don't flicker between redraws. */
+const rand = (i: number, k: number) => {
+  let x = (i * 374761393 + k * 668265263) | 0
+  x = Math.imul(x ^ (x >>> 13), 1274126177)
+  return ((x ^ (x >>> 16)) >>> 0) / 4294967296
+}
+
+/**
  * Draws the work as it really looks: only placed beads (no color guide).
  * board  = beads sitting on the pegboard, empty pegs where nothing is placed yet
  * ironed = placed beads fused together
@@ -22,6 +39,7 @@ export function drawWork(
   palette: Palette,
   placed: string,
   view: PreviewView,
+  iron: IronStyle = 'normal',
 ) {
   const W = pattern.width
   const H = pattern.height
@@ -75,7 +93,7 @@ export function drawWork(
         ctx.beginPath()
         ctx.roundRect(cx - cell * 0.53, cy - cell * 0.53, cell * 1.06, cell * 1.06, cell * 0.28)
         ctx.fill()
-        if (cell >= 8) {
+        if (cell >= 8 && iron !== 'towel') {
           ctx.fillStyle = 'rgba(0,0,0,0.14)'
           ctx.beginPath()
           ctx.arc(cx, cy, cell * 0.1, 0, Math.PI * 2)
@@ -84,6 +102,96 @@ export function drawWork(
       }
     }
   }
+  if (view !== 'board') drawFinish(ctx, pattern, placed, view, iron, ox, oy, cell)
+}
+
+/** Surface texture of the ironing finish, drawn over the fused beads. */
+function drawFinish(
+  ctx: CanvasRenderingContext2D,
+  pattern: Pattern,
+  placed: string,
+  view: PreviewView,
+  iron: IronStyle,
+  ox: number,
+  oy: number,
+  cell: number,
+) {
+  const W = pattern.width
+  const H = pattern.height
+  const on = (i: number) => view === 'final' || placed[i] === '1'
+  ctx.save()
+  // Clip to the fused piece so textures never spill onto the background.
+  ctx.beginPath()
+  for (let i = 0; i < W * H; i++) if (on(i)) ctx.rect(ox + (i % W) * cell - 0.5, oy + Math.floor(i / W) * cell - 0.5, cell + 1, cell + 1)
+  ctx.clip()
+
+  if (iron === 'normal') {
+    // Baking paper: smooth, a soft sheen across the piece.
+    const g = ctx.createLinearGradient(ox, oy, ox + W * cell, oy + H * cell)
+    g.addColorStop(0, 'rgba(255,255,255,0.16)')
+    g.addColorStop(0.5, 'rgba(255,255,255,0)')
+    g.addColorStop(1, 'rgba(0,0,0,0.05)')
+    ctx.fillStyle = g
+    ctx.fillRect(ox, oy, W * cell, H * cell)
+  } else if (iron === 'towel') {
+    // Towel: matte, fuzzy fibres.
+    ctx.fillStyle = 'rgba(255,255,255,0.08)'
+    ctx.fillRect(ox, oy, W * cell, H * cell)
+    const per = Math.max(3, Math.min(28, Math.round((cell * cell) / 7)))
+    for (let i = 0; i < W * H; i++) {
+      if (!on(i)) continue
+      const x0 = ox + (i % W) * cell
+      const y0 = oy + Math.floor(i / W) * cell
+      for (let k = 0; k < per; k++) {
+        const light = rand(i, k * 3) > 0.5
+        ctx.fillStyle = light ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.13)'
+        const r = Math.max(0.5, cell * (0.04 + rand(i, k * 3 + 1) * 0.05))
+        ctx.beginPath()
+        ctx.arc(x0 + rand(i, k * 3 + 2) * cell, y0 + rand(i, k * 3 + 7) * cell, r, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+  } else if (iron === 'scrub') {
+    // Exfoliating cloth: fine cross-hatched weave.
+    const step = Math.max(3, cell * 0.45)
+    const span = (W + H) * cell
+    ctx.lineWidth = Math.max(0.6, cell * 0.06)
+    for (const [dir, color] of [
+      [1, 'rgba(0,0,0,0.13)'],
+      [-1, 'rgba(255,255,255,0.14)'],
+    ] as const) {
+      ctx.strokeStyle = color
+      ctx.beginPath()
+      for (let d = -span; d < span; d += step) {
+        ctx.moveTo(ox + d, oy)
+        ctx.lineTo(ox + d + dir * H * cell, oy + H * cell)
+      }
+      ctx.stroke()
+    }
+  } else {
+    // Glitter cloth: scattered sparkles.
+    const colors = ['rgba(255,255,255,0.95)', 'rgba(255,224,130,0.95)', 'rgba(255,190,220,0.9)']
+    for (let i = 0; i < W * H; i++) {
+      if (!on(i) || rand(i, 1) > 0.45) continue
+      const x = ox + ((i % W) + rand(i, 2)) * cell
+      const y = oy + (Math.floor(i / W) + rand(i, 3)) * cell
+      const r = Math.max(0.8, cell * (0.06 + rand(i, 4) * 0.12))
+      ctx.fillStyle = colors[Math.floor(rand(i, 5) * colors.length)]
+      ctx.beginPath()
+      // four-point star
+      ctx.moveTo(x, y - r * 2)
+      ctx.lineTo(x + r * 0.5, y - r * 0.5)
+      ctx.lineTo(x + r * 2, y)
+      ctx.lineTo(x + r * 0.5, y + r * 0.5)
+      ctx.lineTo(x, y + r * 2)
+      ctx.lineTo(x - r * 0.5, y + r * 0.5)
+      ctx.lineTo(x - r * 2, y)
+      ctx.lineTo(x - r * 0.5, y - r * 0.5)
+      ctx.closePath()
+      ctx.fill()
+    }
+  }
+  ctx.restore()
 }
 
 export function ProgressPreview({

@@ -3,17 +3,11 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { ArrowRight, Check, Eye, Palette, Ruler, Sparkles } from 'lucide-react'
-import { getPalette, type Pattern } from '@picobreads/pattern-engine'
-import { Ironed } from '@/components/Ironed'
 import { useT } from '@/i18n'
-import { legendOf } from '@/lib/pattern'
-import { defaultSettings } from '@/lib/store'
-import { useGeneratedPattern } from '@/lib/useGenerated'
 import { V11Page } from '@/v11/Chrome'
 import { V11_HERO, V11_PICKS, V11_TIERS, v11Href } from '@/v11/config'
 import { useV11StartFrom } from '@/v11/start'
 import { useToast } from '@/v11/Toast'
-import { css } from '@/lib/pattern'
 
 /** Four-point sparkle used as decoration. */
 function Spark({ className = '', color = 'var(--sun)' }: { className?: string; color?: string }) {
@@ -26,18 +20,9 @@ function Spark({ className = '', color = 'var(--sun)' }: { className?: string; c
 
 function Hero() {
   const t = useT()
-  const { pattern } = useGeneratedPattern(
-    V11_HERO.image,
-    { ...defaultSettings, maxColors: V11_HERO.maxColors, style: 'illustration' },
-    '1:1',
-    V11_HERO.longSide,
-  )
-  const legend = pattern ? legendOf(pattern) : []
-  const palette = pattern ? getPalette(pattern.paletteId) : null
-  const beads = pattern ? pattern.width * pattern.height : 0
-
+  const h = V11_HERO
   return (
-    <section className="mx-auto grid w-full max-w-6xl items-center gap-12 px-4 pb-10 pt-4 sm:px-6 md:grid-cols-[1fr_1.05fr] md:pt-8">
+    <section className="mx-auto grid w-full max-w-6xl items-center gap-10 px-4 pb-10 pt-4 sm:px-6 md:grid-cols-[1fr_1.05fr] md:pt-8">
       <div>
         <span className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--ink)] bg-white px-4 py-1.5 text-sm font-medium">
           <Sparkles className="h-4 w-4 text-[var(--accent)]" aria-hidden /> {t.v11.hero.tag}
@@ -61,43 +46,43 @@ function Hero() {
         </p>
       </div>
 
-      {/* Photo → pattern composition */}
-      <div className="relative mx-auto h-[440px] w-full max-w-[480px] sm:h-[460px]">
-        <p className="font-display absolute inset-x-0 top-0 text-center text-xl">
+      {/* Photo → pattern, laid out like the design (cards overlap in the same places). */}
+      <div className="mx-auto w-full max-w-[500px]">
+        <p className="font-display mb-2 text-center text-xl">
           {t.v11.hero.photoToPattern[0]} <span className="text-[var(--accent)]">→ {t.v11.hero.photoToPattern[1]}</span>
         </p>
-        <Spark className="absolute right-0 top-6 h-10 w-10" />
-        <div className="ink-card absolute left-0 top-12 w-[46%] -rotate-6 overflow-hidden p-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={V11_HERO.image} alt={t.v11.hero.photoToPattern[0]} className="aspect-[4/5] w-full rounded-[14px] object-cover" />
-        </div>
-        <div className="ink-card absolute right-2 top-12 w-[56%] rotate-3 p-2.5">
-          <div className="rounded-[14px] bg-[#eaf3fb] p-1">{pattern ? <Ironed pattern={pattern} view="board" /> : <div className="aspect-square" />}</div>
-          <p className="mt-2 flex justify-between px-1 text-sm text-[var(--muted)]">
-            <span>{pattern ? `${pattern.width}×${pattern.height}` : ''}</span>
-            <span>{t.v11.hero.colors(legend.length)}</span>
-          </p>
-        </div>
-        <span className="absolute left-[44%] top-[30%] grid h-12 w-12 place-items-center rounded-full border-2 border-[var(--ink)] bg-[var(--accent)] text-white shadow-[3px_3px_0_var(--ink)]">
-          <ArrowRight className="h-5 w-5" aria-hidden />
-        </span>
-        <div className="ink-card absolute bottom-0 left-[6%] w-[58%] -rotate-2 p-4">
-          <p className="text-xs text-[var(--muted)]">{t.v11.hero.list(legend.length, beads)}</p>
-          <ul className="mt-2 space-y-1.5">
-            {palette &&
-              legend.slice(0, 4).map((l) => (
-                <li key={l.color} className="flex items-center gap-2 text-sm">
-                  <span className="h-4 w-4 rounded-full ring-1 ring-black/20" style={{ background: css(palette.colors[l.color].rgb) }} />
-                  <span className="font-semibold">{palette.colors[l.color].code}</span>
+        <div className="relative aspect-[50/44] w-full">
+          <div className="ink-card absolute left-[1%] top-[2%] w-[42%] -rotate-6 overflow-hidden p-[1.6%]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={h.photo} alt={t.v11.hero.photoToPattern[0]} className="block w-full rounded-[12px]" />
+          </div>
+          <div className="ink-card absolute left-[40%] top-[1%] w-[54%] rotate-[4deg] p-[1.6%]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={h.pattern} alt={t.v11.hero.photoToPattern[1]} className="block w-full rounded-[12px]" />
+            <p className="mt-1.5 flex justify-between px-1 text-xs text-[var(--muted)] sm:text-sm">
+              <span>{h.size}</span>
+              <span>{t.v11.hero.colors(h.colors)}</span>
+            </p>
+          </div>
+          <span className="absolute left-[42.6%] top-[37%] grid aspect-square w-[9%] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-[var(--ink)] bg-[var(--accent)] text-white">
+            <ArrowRight className="h-1/2 w-1/2" aria-hidden />
+          </span>
+          <Spark className="absolute right-[1%] top-[-3%] w-[9%]" />
+          <div className="ink-card absolute left-[6%] top-[49%] w-[56%] -rotate-3 px-[3.5%] py-[3%]">
+            <p className="text-[11px] text-[var(--muted)] sm:text-xs">{t.v11.hero.list(h.colors, h.beads)}</p>
+            <ul className="mt-1.5 space-y-1 sm:space-y-1.5">
+              {h.list.map((l) => (
+                <li key={l.code} className="flex items-center gap-2 text-xs sm:text-sm">
+                  <span className="h-3.5 w-3.5 rounded-full ring-1 ring-black/25 sm:h-4 sm:w-4" style={{ background: l.color }} />
+                  <span className="font-semibold">{l.code}</span>
                   <span className="ml-auto text-[var(--muted)]">{t.v11.hero.beads(l.count)}</span>
                 </li>
               ))}
-          </ul>
-          {legend.length > 4 && (
-            <Link href={v11Href('/create/')} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[var(--accent)]">
-              {t.v11.hero.more(legend.length - 4)} <ArrowRight className="h-3 w-3" aria-hidden />
+            </ul>
+            <Link href={v11Href('/create/')} className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--accent)] sm:text-xs">
+              {t.v11.hero.more(h.colors - h.list.length)} <ArrowRight className="h-3 w-3" aria-hidden />
             </Link>
-          )}
+          </div>
         </div>
       </div>
     </section>
@@ -136,23 +121,17 @@ function Features() {
 function PickCard({ p, tilt }: { p: (typeof V11_PICKS)[number]; tilt: string }) {
   const t = useT()
   const start = useV11StartFrom()
-  const { pattern } = useGeneratedPattern(p.image, { ...defaultSettings, maxColors: p.maxColors, style: 'illustration' }, '1:1', p.longSide)
-  const tint: Record<string, string> = { 'tabby-cat': '#fff3e0', caishen: '#fff4cf', coffee: '#e3f2e8' }
+  const { w, h, colors, beads } = p.stats
   return (
     <button type="button" onClick={() => start(p)} className={`ink-card group block p-4 text-left transition-transform hover:-translate-y-1 ${tilt}`}>
-      <div className="rounded-[16px] p-3" style={{ background: tint[p.id] }}>
-        {pattern ? <Ironed pattern={pattern} view="board" /> : <div className="aspect-square" />}
+      <div className="overflow-hidden rounded-[16px]" style={{ background: p.tint }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={p.image} alt={t.v11.picks.names[p.id]} className="block aspect-square w-full object-cover" />
       </div>
       <p className="font-display mt-3 text-xl">{t.v11.picks.names[p.id]}</p>
-      {pattern && <p className="mt-0.5 text-sm text-[var(--muted)]">{t.v11.picks.stats(pattern.width, pattern.height, legendOf(pattern).length, countBeads(pattern))}</p>}
+      <p className="mt-0.5 text-sm text-[var(--muted)]">{t.v11.picks.stats(w, h, colors, beads)}</p>
     </button>
   )
-}
-
-/** Beads actually used = everything except the most common (background) color. */
-const countBeads = (p: Pattern) => {
-  const top = legendOf(p)[0]?.count ?? 0
-  return p.width * p.height - top
 }
 
 function Picks() {
