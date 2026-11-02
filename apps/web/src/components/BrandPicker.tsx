@@ -2,7 +2,7 @@
 
 import { Check, FileImage, Package } from 'lucide-react'
 import { PALETTES, regularColorIndices } from '@picobreads/pattern-engine'
-import { RECOMMENDED_PALETTE_ID, isKitBrand } from '@/config/site'
+import { RECOMMENDED_PALETTE_ID, V11_PALETTE_ID, isKitBrand } from '@/config/site'
 import { useT } from '@/i18n'
 import { css } from '@/lib/pattern'
 
@@ -11,7 +11,8 @@ export function BrandPicker({ value, onChange }: { value: string; onChange: (id:
   const t = useT()
   return (
     <div role="radiogroup" aria-label={t.settings.palette} className="grid gap-2 sm:grid-cols-2">
-      {PALETTES.map((p) => {
+      {/* The v1.1 bead set is fixed there; v1.0 keeps its original brand list. */}
+      {PALETTES.filter((p) => p.id !== V11_PALETTE_ID).map((p) => {
         const regular = regularColorIndices(p)
         // A spread of the chart's colors as a visual hint.
         const strip = Array.from({ length: 12 }, (_, i) => p.colors[regular[Math.floor((i * regular.length) / 12)]])

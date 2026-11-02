@@ -8,6 +8,7 @@
 | `artkal-s.json` | Artkal S 系列 5mm | 199 | 色数最全，玩家与图纸网站常用；另有 2.6mm C 系列 | MIT（maxcleme/beadcolors） |
 | `hama.json` | Hama Midi 5mm | 92 | 丹麦老牌，欧洲主流，品质口碑好 | MIT（maxcleme/beadcolors） |
 | `mard-221.json` | MARD 5mm 221 色 | 221 | 国内拼豆 App / 供应链通用标准 | CC BY 4.0（MakeBead） |
+| `mard-264.json` | MARD 264 色盒 | 264 | **v1.1 固定使用**。221 色 + 43 个 P/Q/R/T/Y 系列特殊色；色号按 MARD 264 色盒清单（craft-color-codes `data/sets/mard-kits.json`），颜色值来自 craft-color-codes `mard-291`。特殊系列没有厂商编号色卡，为三方数据比对值 | CC BY 4.0（MakeBead） |
 
 - `specialty` 字段标记夜光 / 闪粉 / 荧光 / 珠光 / 透明等特殊豆，自动生成图纸时默认不使用。
 - 色号与产品名归各厂商所有；本项目仅用于颜色匹配参考。

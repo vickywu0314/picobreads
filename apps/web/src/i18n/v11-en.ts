@@ -44,12 +44,14 @@ export const v11En = {
   sample: 'Sample',
   settings: {
     pickTitle: 'Pick your favorite',
-    pickHint: 'The finished, ironed piece in three sizes. The one you pick becomes your pattern.',
+    pickHint: 'We suggest as many boards as your picture needs: a simple one is crisp on a single board, a detailed photo gets more boards. The one you pick becomes your pattern.',
     selected: 'Selected',
-    beadHints: {
-      '5mm': 'Classic size, easiest for kids and beginners.',
-      '2.6mm': 'Same finished size with about twice the beads per side — much sharper detail.',
-    } as Record<string, string>,
+    tierTitle: (n: number) => (n === 1 ? '1 pegboard' : `${n * n} pegboards (${n}×${n})`),
+    recommended: 'Recommended',
+    bigger: 'Bigger, but no sharper',
+    smaller: 'Loses some detail',
+    analyzing: 'Checking the detail in your picture…',
+    beadSet: (colors: number) => `Full ${colors}-color MARD set · one board = 64 × 64 pegs ≈ 14 × 14 cm`,
     iron: 'Ironing finish',
     ironNote: 'Illustrative — the real finish depends on your iron and cloth.',
     irons: {
@@ -65,7 +67,9 @@ export const v11En = {
     materialsHint: (spare: number) => `Beads per color, +${spare}% spare for the kit`,
     cols: { color: 'Color', beads: 'Beads', kit: 'In the kit' },
     total: 'Total',
-    pegboards: (n: number) => `${n} pegboard${n === 1 ? '' : 's'} (29 × 29)`,
+    pegboards: (n: number) => `${n} pegboard${n === 1 ? '' : 's'} (64 × 64 pegs)`,
+    board: 'Pegboard',
+    boardSpec: '64 × 64 pegs ≈ 14 × 14 cm',
     edit: 'Change',
   },
 }

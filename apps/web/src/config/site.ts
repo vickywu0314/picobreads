@@ -43,6 +43,13 @@ export const getTier = (id: TierId) => TIERS.find((t) => t.id === id) ?? TIERS[1
 /** Cells per pegboard edge, used to split patterns into sections. */
 export const BOARD_CELLS = 29
 
+/** v1.1 bead set (MARD 264-color box) uses 64 × 64-peg boards. */
+export const V11_PALETTE_ID = 'mard-264'
+export const V11_BOARD_PEGS = 64
+
+/** Pegs per board edge for a pattern's bead set. */
+export const boardCellsFor = (paletteId?: string) => (paletteId === V11_PALETTE_ID ? V11_BOARD_PEGS : BOARD_CELLS)
+
 /** Pegboard hole pitch in millimetres. */
 export const BEAD_PITCH_MM: Record<BeadSize, number> = { '5mm': 5, '2.6mm': 2.6 }
 

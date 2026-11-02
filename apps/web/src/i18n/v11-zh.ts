@@ -45,12 +45,14 @@ export const v11Zh: typeof v11En = {
   sample: '示例',
   settings: {
     pickTitle: '选一个你喜欢的效果',
-    pickHint: '三个尺寸熨烫完成后的样子，点选的那张就是你的最终图纸。',
+    pickHint: '按图片的细节推荐底板数：简单的图一块板就足够清楚，细节多的照片才用多块板拼大。点选的那张就是你的最终图纸。',
     selected: '已选',
-    beadHints: {
-      '5mm': '经典尺寸，最适合小朋友和新手。',
-      '2.6mm': '成品大小不变，每边颗数约翻倍，细节清楚很多。',
-    },
+    tierTitle: (n: number) => (n === 1 ? '1 块底板' : `${n * n} 块底板（${n}×${n}）`),
+    recommended: '推荐',
+    bigger: '更大，但不会更清楚',
+    smaller: '会丢掉一些细节',
+    analyzing: '正在分析图片细节…',
+    beadSet: (colors: number) => `MARD ${colors} 色全色 · 一块底板 64×64 钉 ≈ 14×14 cm`,
     iron: '熨烫效果',
     ironNote: '效果为示意，实际以熨斗和垫布为准。',
     irons: {
@@ -66,7 +68,9 @@ export const v11Zh: typeof v11En = {
     materialsHint: (spare: number) => `每色所需颗数；材料包多放 ${spare}% 备用`,
     cols: { color: '颜色', beads: '图纸用量', kit: '材料包内' },
     total: '合计',
-    pegboards: (n: number) => `底板 ${n} 块（29 × 29）`,
+    pegboards: (n: number) => `底板 ${n} 块（64 × 64 钉）`,
+    board: '底板',
+    boardSpec: '64 × 64 钉 ≈ 14 × 14 cm',
     edit: '修改',
   },
 }

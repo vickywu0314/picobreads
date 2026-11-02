@@ -1,5 +1,4 @@
-import { BEAD_PITCH_MM, type TierId } from '@/config/site'
-import type { BeadSize } from '@picobreads/pattern-engine'
+import { V11_BOARD_PEGS, V11_PALETTE_ID, type TierId } from '@/config/site'
 import type { LibraryPattern } from '@/config/catalog'
 
 // v1.1 ("Pipixel" redesign). Everything new goes into v1.1; v1.0 stays as it was.
@@ -14,28 +13,46 @@ export const V11 = {
 export const v11Href = (path = '/') => `${V11.base}${path.startsWith('/') ? path : `/${path}`}`
 
 /**
- * v1.1 size tiers. A tier is a finished size: `longSide` is the long side in beads with
- * 5 mm beads (29 / 44 / 58 per the design ≈ 14.5 / 22 / 29 cm). Smaller beads fit more
- * beads into the same finished size — see v11Beads. Prices are placeholders.
+ * v1.1 bead set and pegboard: MARD 264-color box, one board = 64 × 64 pegs ≈ 14 × 14 cm
+ * (product decision). Physical sizes are derived from the board, not from a bead-size setting.
  */
-export const V11_TIERS: { id: TierId; longSide: number; priceUsd: number; finishedPriceUsd: number }[] = [
-  { id: 'small', longSide: 29, priceUsd: 24, finishedPriceUsd: 69 },
-  { id: 'standard', longSide: 44, priceUsd: 36, finishedPriceUsd: 109 },
-  { id: 'large', longSide: 58, priceUsd: 49, finishedPriceUsd: 149 },
+export const V11_BOARD = { pegs: V11_BOARD_PEGS, cm: 14 }
+export const V11_PITCH_MM = (V11_BOARD.cm * 10) / V11_BOARD.pegs
+
+/**
+ * v1.1 sizes = how many boards per side: 1 board, 2 × 2, 3 × 3. More boards only when the
+ * picture has detail one board would lose (see recommendBoards); a simple picture stays on one.
+ * Prices are placeholders.
+ */
+export const V11_TIERS: { id: TierId; perSide: number; longSide: number; priceUsd: number; finishedPriceUsd: number }[] = [
+  { id: 'small', perSide: 1, longSide: V11_BOARD_PEGS, priceUsd: 24, finishedPriceUsd: 69 },
+  { id: 'standard', perSide: 2, longSide: V11_BOARD_PEGS * 2, priceUsd: 49, finishedPriceUsd: 159 },
+  { id: 'large', perSide: 3, longSide: V11_BOARD_PEGS * 3, priceUsd: 89, finishedPriceUsd: 299 },
 ]
 
 /**
- * v1.1 defaults when a design starts: keep every color the brand has and full detail;
- * the bead count comes from the size, never from trading away clarity. Users can still lower them.
- * (maxColors above the brand's count is clamped to "all colors".)
+ * v1.1 defaults when a design starts: the full 264-color set, full detail; the bead count
+ * comes from the boards, never from trading away clarity.
+ * (maxColors above the set's count is clamped to "all colors".)
  */
-export const V11_DEFAULTS = { maxColors: 999, detail: 5, dithering: false }
+export const V11_DEFAULTS = { paletteId: V11_PALETTE_ID, maxColors: 999, detail: 5, dithering: false }
 
-export const v11Tier = (id: TierId) => V11_TIERS.find((t) => t.id === id) ?? V11_TIERS[1]
+export const v11Tier = (id: TierId) => V11_TIERS.find((t) => t.id === id) ?? V11_TIERS[0]
 
-/** Long side in beads for a tier with the given bead size (same finished size, more beads when smaller). */
-export const v11Beads = (id: TierId, beadSize: BeadSize) =>
-  Math.round((v11Tier(id).longSide * BEAD_PITCH_MM['5mm']) / BEAD_PITCH_MM[beadSize])
+export const v11TierByBoards = (perSide: number) => V11_TIERS.find((t) => t.perSide === perSide) ?? V11_TIERS[V11_TIERS.length - 1]
+
+/** Long side in beads (pegs) for a tier. */
+export const v11Beads = (id: TierId) => v11Tier(id).longSide
+
+/** Pegboards needed for a grid. */
+export const v11Boards = (width: number, height: number) => Math.ceil(width / V11_BOARD.pegs) * Math.ceil(height / V11_BOARD.pegs)
+
+/** Finished size of a grid on v1.1 boards. */
+export function v11Size(width: number, height: number) {
+  const cm = (n: number) => ((n * V11_PITCH_MM) / 10).toFixed(n * V11_PITCH_MM >= 1000 ? 0 : 1)
+  const inch = (n: number) => ((n * V11_PITCH_MM) / 25.4).toFixed(1)
+  return { cm: `${cm(width)} × ${cm(height)}`, inch: `${inch(width)} × ${inch(height)}` }
+}
 
 export const v11Price = (form: 'digital' | 'kit' | 'finished', tier: TierId) =>
   form === 'digital' ? 0 : form === 'finished' ? v11Tier(tier).finishedPriceUsd : v11Tier(tier).priceUsd

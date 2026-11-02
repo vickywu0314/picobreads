@@ -11,7 +11,7 @@ import { BeadTray } from '@/components/bead/BeadTray'
 import { ToolLayer, useToolLayer, type Flight } from '@/components/bead/ToolLayer'
 import { MiniPreview, ProgressPreview } from '@/components/bead/ProgressPreview'
 import { PEN_CAPACITY, ToolIcon, type ToolId } from '@/components/bead/tools'
-import { BOARD_CELLS } from '@/config/site'
+import { boardCellsFor } from '@/config/site'
 import { useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
 import { usePatternData } from '@/lib/usePattern'
@@ -354,7 +354,7 @@ export default function BeadPage() {
           placed={placed}
           selected={tool === 'fix' ? null : focusColor}
           section={section}
-          boardCells={BOARD_CELLS}
+          boardCells={boardCellsFor(pattern.paletteId)}
           editMode={tool === 'fix'}
           toolMode={toolActive}
           onTool={onTool}

@@ -28,7 +28,7 @@ export function finishedSize(width: number, height: number, bead: BeadSize) {
   return { cm: `${cm(width)} × ${cm(height)}`, inch: `${inch(width)} × ${inch(height)}` }
 }
 
-export const boardCount = (width: number, height: number) => Math.ceil(width / BOARD_CELLS) * Math.ceil(height / BOARD_CELLS)
+export const boardCount = (width: number, height: number, board = BOARD_CELLS) => Math.ceil(width / board) * Math.ceil(height / board)
 
 export const colorLabel = (palette: Palette, i: number) => `${palette.colors[i].name} · ${palette.colors[i].code}`
 

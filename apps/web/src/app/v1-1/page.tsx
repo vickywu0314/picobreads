@@ -186,7 +186,7 @@ function Steps() {
                     onClick={() => setSize(k)}
                     className={`rounded-full border-2 border-[var(--ink)] px-3.5 py-1 text-sm ${size === k ? 'bg-[var(--accent)] text-white' : 'bg-white'}`}
                   >
-                    {tier.longSide}×{tier.longSide}
+                    {t.v11.settings.tierTitle(tier.perSide)}
                   </button>
                 ))}
               </div>

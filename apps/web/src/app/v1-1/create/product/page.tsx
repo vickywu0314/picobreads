@@ -9,13 +9,13 @@ import { V11Page } from '@/v11/Chrome'
 import { Ironed } from '@/components/Ironed'
 import { NoPattern } from '@/components/NoPattern'
 import { Stepper, Swatch } from '@/components/ui'
-import { ASSEMBLED_VARIANT_ENABLED, KIT_PALETTE_IDS, PICKING, isKitBrand } from '@/config/site'
+import { ASSEMBLED_VARIANT_ENABLED, KIT_PALETTE_IDS, PICKING, V11_PALETTE_ID, isKitBrand } from '@/config/site'
 import { PRODUCT_FORMS, type ProductForm } from '@/config/catalog'
-import { v11Price as priceOf } from '@/v11/config'
+import { v11Boards, v11Price as priceOf, v11Size, v11Tier } from '@/v11/config'
 import { useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
 import { generateFromPhoto } from '@/lib/generate'
-import { boardCount, finishedSize, legendOf } from '@/lib/pattern'
+import { legendOf } from '@/lib/pattern'
 
 const ICONS = { digital: Download, kit: Package, finished: Sparkles }
 
@@ -46,9 +46,9 @@ export default function ProductStep() {
   const legend = legendOf(pattern)
   const tier = settings.tier
   const iron = settings.iron ?? 'normal'
-  const fin = finishedSize(pattern.width, pattern.height, settings.beadSize)
+  const fin = v11Size(pattern.width, pattern.height)
   const physical = form !== 'digital'
-  const sellable = !physical || isKitBrand(pattern.paletteId)
+  const sellable = !physical || pattern.paletteId === V11_PALETTE_ID || isKitBrand(pattern.paletteId)
   const available = (f: ProductForm) => f !== 'finished' || ASSEMBLED_VARIANT_ENABLED
   const spare = Math.round(PICKING.allowance * 100)
   const total = pattern.width * pattern.height
@@ -56,10 +56,10 @@ export default function ProductStep() {
   const price = (f: ProductForm) => (f === 'digital' ? t.flow.free : `$${priceOf(f, tier)}`)
 
   const specs: [string, string][] = [
-    [t.settings.size, `${t.tiers[tier]} · ${pattern.width} × ${pattern.height}`],
+    [t.settings.size, `${t.v11.settings.tierTitle(v11Tier(tier).perSide)} · ${pattern.width} × ${pattern.height}`],
     [t.library.finishedSize, `≈ ${fin.cm} cm (${fin.inch} in)`],
-    [t.settings.beadSize, t.settings.beadSizes[settings.beadSize].label],
-    [t.settings.palette, palette.brand],
+    [t.v11.product.board, `${t.settings.boards(v11Boards(pattern.width, pattern.height))} · ${t.v11.product.boardSpec}`],
+    [t.settings.palette, `${palette.brand} ${palette.colors.length}`],
     [t.pattern.stats.colors, String(legend.length)],
     [t.v11.settings.iron, t.v11.settings.irons[iron].title],
   ]
@@ -152,7 +152,7 @@ export default function ProductStep() {
           <div className="px-5 pt-5">
             <h2 className="font-display text-2xl">{t.v11.product.materials}</h2>
             <p className="mt-0.5 text-sm text-muted">
-              {t.v11.product.materialsHint(spare)} · {t.v11.product.pegboards(boardCount(pattern.width, pattern.height))}
+              {t.v11.product.materialsHint(spare)} · {t.v11.product.pegboards(v11Boards(pattern.width, pattern.height))}
             </p>
           </div>
           <table className="mt-3 w-full text-left text-sm">
@@ -196,7 +196,7 @@ export default function ProductStep() {
         <div className="sticky bottom-0 z-20 -mx-4 mt-8 flex items-center justify-between gap-4 border-t-2 border-[var(--ink)] bg-[var(--bg)] px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0">
           <div>
             <p className="font-bold">
-              {t.flow.forms[form].title} · {t.tiers[tier]}
+              {t.flow.forms[form].title} · {t.v11.settings.tierTitle(v11Tier(tier).perSide)}
             </p>
             <p className="text-sm text-muted">
               {price(form)} · {palette.brand}

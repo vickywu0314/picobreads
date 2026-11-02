@@ -10,7 +10,8 @@ import { NoPattern } from '@/components/NoPattern'
 import { Segmented, Stepper } from '@/components/ui'
 import { useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
-import { finishedSize, legendOf } from '@/lib/pattern'
+import { legendOf } from '@/lib/pattern'
+import { v11Size } from '@/v11/config'
 import { getLibraryPattern } from '@/config/catalog'
 
 export default function PreviewStep() {
@@ -18,7 +19,6 @@ export default function PreviewStep() {
   const hydrated = useHydrated()
   const pattern = useStore((s) => s.pattern)
   const photo = useStore((s) => s.photo)
-  const beadSize = useStore((s) => s.settings.beadSize)
   const iron = useStore((s) => s.settings.iron ?? 'normal')
   const user = useStore((s) => s.user)
   const source = useStore((s) => s.source)
@@ -35,7 +35,7 @@ export default function PreviewStep() {
       </V11Page>
     )
 
-  const fin = finishedSize(pattern.width, pattern.height, beadSize)
+  const fin = v11Size(pattern.width, pattern.height)
   const saved = justSaved || !!currentDesignId
   const save = () => {
     const name =

@@ -12,7 +12,8 @@ import { NoPattern } from '@/components/NoPattern'
 import { Stepper } from '@/components/ui'
 import { useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
-import { finishedSize, legendOf } from '@/lib/pattern'
+import { legendOf } from '@/lib/pattern'
+import { v11Size, v11Tier } from '@/v11/config'
 
 export default function ConfirmStep() {
   const t = useT()
@@ -34,12 +35,12 @@ export default function ConfirmStep() {
     )
 
   const { pattern, form, tier, beadSize, priceUsd } = draft
-  const fin = finishedSize(pattern.width, pattern.height, beadSize)
+  const fin = v11Size(pattern.width, pattern.height)
   const rows: [string, string, string?][] = [
     [t.flow.product, t.flow.forms[form].title, '/v1-1/create/product/'],
     [
       t.flow.specs,
-      `${t.tiers[tier]} · ${pattern.width} × ${pattern.height} · ${form === 'digital' ? '' : `${beadSize} · ≈ ${fin.cm} cm · `}${t.common.colors(legendOf(pattern).length)} · ${getPalette(pattern.paletteId).brand}`,
+      `${t.v11.settings.tierTitle(v11Tier(tier).perSide)} · ${pattern.width} × ${pattern.height} · ${form === 'digital' ? '' : `≈ ${fin.cm} cm · `}${t.common.colors(legendOf(pattern).length)} · ${getPalette(pattern.paletteId).brand}`,
       '/v1-1/create/settings/',
     ],
     [t.flow.price, form === 'digital' ? t.flow.free : `$${priceUsd}`],
