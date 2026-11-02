@@ -48,6 +48,10 @@ Milestone 0 needs none. See `.env.example`.
 2. **Root Directory**: `apps/web` (Vercel detects Next.js and pnpm automatically).
 3. Deploy. Every push to `main` redeploys; the URL works on phone and tablet.
 
+## Deploy to your own server
+
+Static files only (no Node server needed): build, copy `apps/web/out/` to the server, serve with Nginx. Steps, Nginx config and mainland-China notes: `docs/deploy-server.md`.
+
 ## Color data credit
 
 Color data: craft-color-codes by MakeBead (https://makebead.com). Perler / Artkal / Hama values from maxcleme/beadcolors (MIT). Community-measured approximations, not official manufacturer colors.
