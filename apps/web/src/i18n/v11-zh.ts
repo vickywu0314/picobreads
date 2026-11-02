@@ -47,6 +47,10 @@ export const v11Zh: typeof v11En = {
     pickTitle: '选一个你喜欢的效果',
     pickHint: '三个尺寸熨烫完成后的样子，点选的那张就是你的最终图纸。',
     selected: '已选',
+    beadHints: {
+      '5mm': '经典尺寸，最适合小朋友和新手。',
+      '2.6mm': '成品大小不变，每边颗数约翻倍，细节清楚很多。',
+    },
     iron: '熨烫效果',
     ironNote: '效果为示意，实际以熨斗和垫布为准。',
     irons: {

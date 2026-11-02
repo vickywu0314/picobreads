@@ -145,3 +145,29 @@ describe('many colors', () => {
     expect(n).toBeLessThanOrEqual(120)
   })
 })
+
+describe('dithering', () => {
+  it('does not scatter far-off colors into a near-white background', () => {
+    // Off-white background with a soft pink blob: dithering must not drop pink beads far from the blob.
+    let seed = 3
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647 - 0.5) * 10
+    const img = image(160, 160, (x, y) => {
+      const inBlob = (x - 80) ** 2 + (y - 80) ** 2 < 30 ** 2
+      return inBlob ? [235, 120, 150] : [236 + rnd(), 236 + rnd(), 232 + rnd()]
+    })
+    const r = generatePattern(img, { ...base, width: 40, height: 40, maxColors: 40, detail: 5, dithering: true, style: 'photo' })
+    const blob = r.cells[20 * 40 + 20]
+    // corners are far from the blob: none of them may be the blob's pink
+    const corners = [0, 1, 40, 41, 38, 39, 78, 79, 1520, 1521, 1560, 1561, 1598, 1599]
+    expect(corners.every((i) => r.cells[i] !== blob)).toBe(true)
+    const pinkOutside = r.cells.filter((c, i) => c === blob && ((i % 40) - 20) ** 2 + (Math.floor(i / 40) - 20) ** 2 > 10 ** 2).length
+    expect(pinkOutside).toBe(0)
+  })
+})
+
+describe('bead counts', () => {
+  it('handles large mini-bead grids', () => {
+    const r = generatePattern(image(400, 400, (x, y) => [x % 256, y % 256, 120]), { ...base, width: 112, height: 112, maxColors: 60, detail: 4, dithering: false })
+    expect(r.cells).toHaveLength(112 * 112)
+  })
+})

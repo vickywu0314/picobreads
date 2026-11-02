@@ -5,6 +5,7 @@ import { useCallback, useRef, useState } from 'react'
 import Cropper, { type Area } from 'react-easy-crop'
 import { ImagePlus, Lock, Sparkles } from 'lucide-react'
 import { V11Page } from '@/v11/Chrome'
+import { V11_DEFAULTS } from '@/v11/config'
 import { ProtoTag } from '@/components/PrototypeBanner'
 import { Stepper, Toggle } from '@/components/ui'
 import { ASPECTS, FREE_PREVIEWS_PER_DAY, type AspectId } from '@/config/site'
@@ -198,6 +199,7 @@ export default function CreatePage() {
                   if (!area.current) return
                   setPhoto(await cropToDataUrl(src, area.current), aspectId)
                   useStore.getState().setSource({ kind: 'upload' })
+                  useStore.getState().setSettings(V11_DEFAULTS)
                   router.push('/v1-1/create/settings/')
                 }}
               >

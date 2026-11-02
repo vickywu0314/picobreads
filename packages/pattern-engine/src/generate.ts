@@ -446,7 +446,14 @@ export function generatePattern(img: ImageInput, opts: GenerateOptions): Generat
   return { width: W, height: H, paletteId: palette.id, cells }
 }
 
-/** Serpentine Floyd–Steinberg in Lab, error clamped so saturated areas don't streak. */
+/** Extra Lab distance a dithered bead may be from the original color, beyond its nearest bead color. */
+const DITHER_REACH = 8
+
+/**
+ * Serpentine Floyd–Steinberg in Lab, error clamped so saturated areas don't streak.
+ * Each bead may only use colors close to its original color, so accumulated error
+ * can't drop a stray pink bead into a white background.
+ */
 function ditherLab(labs: Lab[], W: number, H: number, chosen: number[], paletteLabs: Lab[]): number[] {
   const err = labs.map((l) => l.slice() as Lab)
   const out = new Array<number>(W * H)
@@ -456,7 +463,11 @@ function ditherLab(labs: Lab[], W: number, H: number, chosen: number[], paletteL
       const x = ltr ? s : W - 1 - s
       const i = y * W + x
       const target = err[i]
-      const c = nearestColor(target, chosen, paletteLabs)
+      let nearest = Infinity
+      for (const c of chosen) nearest = Math.min(nearest, dist2(labs[i], paletteLabs[c]))
+      const reach = (Math.sqrt(nearest) + DITHER_REACH) ** 2
+      const allowed = chosen.filter((c) => dist2(labs[i], paletteLabs[c]) <= reach)
+      const c = nearestColor(target, allowed, paletteLabs)
       out[i] = c
       const p = paletteLabs[c]
       const e = [0, 1, 2].map((j) => Math.max(-20, Math.min(20, target[j] - p[j])))

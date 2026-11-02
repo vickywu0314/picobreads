@@ -46,6 +46,10 @@ export const v11En = {
     pickTitle: 'Pick your favorite',
     pickHint: 'The finished, ironed piece in three sizes. The one you pick becomes your pattern.',
     selected: 'Selected',
+    beadHints: {
+      '5mm': 'Classic size, easiest for kids and beginners.',
+      '2.6mm': 'Same finished size with about twice the beads per side — much sharper detail.',
+    } as Record<string, string>,
     iron: 'Ironing finish',
     ironNote: 'Illustrative — the real finish depends on your iron and cloth.',
     irons: {

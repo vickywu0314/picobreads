@@ -11,7 +11,7 @@ import { IRON_STYLES, type IronStyle } from '@/components/bead/ProgressPreview'
 import { Segmented, Stepper, Toggle } from '@/components/ui'
 import { BrandPicker } from '@/components/BrandPicker'
 import { COLOR_LIMITS, gridSize, type TierId } from '@/config/site'
-import { V11_TIERS } from '@/v11/config'
+import { V11_TIERS, v11Beads } from '@/v11/config'
 import { useT } from '@/i18n'
 import { aspectValue, useHydrated, useStore } from '@/lib/store'
 import { generateFromPhoto } from '@/lib/generate'
@@ -36,9 +36,9 @@ export default function SettingsPage() {
   const gen = { ...settings, style: 'auto' as const }
   const iron: IronStyle = settings.iron ?? 'normal'
   const variants: Record<TierId, ReturnType<typeof useGeneratedPattern>> = {
-    small: useGeneratedPattern(photo, gen, aspectId, V11_TIERS[0].longSide, hydrated),
-    standard: useGeneratedPattern(photo, gen, aspectId, V11_TIERS[1].longSide, hydrated),
-    large: useGeneratedPattern(photo, gen, aspectId, V11_TIERS[2].longSide, hydrated),
+    small: useGeneratedPattern(photo, gen, aspectId, v11Beads('small', settings.beadSize), hydrated),
+    standard: useGeneratedPattern(photo, gen, aspectId, v11Beads('standard', settings.beadSize), hydrated),
+    large: useGeneratedPattern(photo, gen, aspectId, v11Beads('large', settings.beadSize), hydrated),
   }
   const aspect = aspectValue(aspectId)
   const anyBusy = Object.values(variants).some((v) => v.busy)
@@ -61,7 +61,7 @@ export default function SettingsPage() {
           <div role="radiogroup" aria-label={t.settings.size} className="mt-4 grid gap-4 sm:grid-cols-3">
             {V11_TIERS.map((tier) => {
               const v = variants[tier.id].pattern
-              const { width, height } = gridSize(tier.longSide, aspect)
+              const { width, height } = gridSize(v11Beads(tier.id, settings.beadSize), aspect)
               const fin = finishedSize(width, height, settings.beadSize)
               const on = settings.tier === tier.id
               return (
@@ -128,7 +128,7 @@ export default function SettingsPage() {
                 onChange={(beadSize) => setSettings({ beadSize })}
                 options={(['5mm', '2.6mm'] as const).map((v) => ({ value: v, label: t.settings.beadSizes[v].label }))}
               />
-              <p className="mt-2 text-sm text-muted">{t.settings.beadSizes[settings.beadSize].hint}</p>
+              <p className="mt-2 text-sm text-muted">{t.v11.settings.beadHints[settings.beadSize]}</p>
             </div>
 
             <label className="block">
@@ -191,7 +191,7 @@ export default function SettingsPage() {
               try {
                 // Use exactly the result the user picked; generate only if it isn't ready yet.
                 const tier = V11_TIERS.find((x) => x.id === settings.tier) ?? V11_TIERS[1]
-                const picked = variants[tier.id].pattern ?? (await generateFromPhoto(photo, gen, aspectId, tier.longSide))
+                const picked = variants[tier.id].pattern ?? (await generateFromPhoto(photo, gen, aspectId, v11Beads(tier.id, settings.beadSize)))
                 applyPattern(picked)
                 router.push('/v1-1/create/preview/')
               } finally {
