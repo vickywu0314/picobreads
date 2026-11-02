@@ -108,6 +108,7 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
       for (let x = x0; x < x1; x++) {
         const i = y * W + x
         const c = pattern.cells[i]
+        if (c < 0) continue // empty cell (removed backdrop): bare board
         const s = colorStyles[c]
         const inSection = !section || (x >= section.x && x < section.x + section.w && y >= section.y && y < section.y + section.h)
         const isPlaced = placed[i] === '1'

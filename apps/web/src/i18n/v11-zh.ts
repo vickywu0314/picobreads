@@ -57,8 +57,10 @@ export const v11Zh: typeof v11En = {
       '2.6mm': { title: '迷你豆 2.6 mm', hint: '一块底板 52×52 钉，约 13.5 cm。同样大小能放的豆子约是标准豆的 3 倍，细节更清楚、成品更精致。' },
       '5mm': { title: '标准豆 5 mm', hint: '一块底板 29×29 钉，约 14.5 cm。豆子大、好拿好拼，适合小朋友和新手；同样大小细节少一些。' },
     } as Record<string, { title: string; hint: string }>,
-    cropTighter: (pct: number) => `主体只占画面约 ${pct}%，四周空白也要用豆子拼。把图裁紧一点，同样的底板就能把主体拼得更清楚。`,
+    cropTighter: (pct: number) => `主体只占画面约 ${pct}%，打开「自动裁掉空白边」或把图裁紧一点，同样的底板就能把主体拼得更清楚。`,
     recrop: '回去重新裁剪',
+    removeBg: { title: '去掉背景', hint: '纯色背景留空不拼，省豆子，也不进材料清单。主体里面的同色部分（比如白肚皮）会保留。' },
+    trim: { title: '自动裁掉空白边', hint: '把主体四周多余的空白裁掉，同样的底板上主体更大、更清楚。' },
     iron: '熨烫效果',
     ironNote: '效果为示意，实际以熨斗和垫布为准。',
     irons: {

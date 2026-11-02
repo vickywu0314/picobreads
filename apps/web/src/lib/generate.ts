@@ -1,6 +1,6 @@
 'use client'
 
-import { generatePattern, getPalette, type Pattern } from '@picobreads/pattern-engine'
+import { generatePattern, getPalette, subjectBox, type Pattern } from '@picobreads/pattern-engine'
 import { gridSize, type AspectId, type TierId } from '@/config/site'
 import { aspectValue, type Settings } from './store'
 
@@ -19,6 +19,7 @@ export interface GenerateRequest {
     detail: number
     dithering: boolean
     style: 'auto' | 'illustration' | 'photo'
+    removeBackground: boolean
   }
 }
 
@@ -60,23 +61,52 @@ function getWorker(): Worker | null {
 
 const pixelCache = new Map<string, Promise<ImageData>>()
 
-/** Decode the (already cropped) photo and scale it to roughly SAMPLES_PER_BEAD px per bead. */
-export function photoPixels(photo: string, gridW: number, gridH: number): Promise<ImageData> {
-  const key = `${photo.length}:${photo.slice(-64)}:${gridW}x${gridH}`
+const trimCache = new Map<string, Promise<{ x: number; y: number; w: number; h: number } | null>>()
+
+/** Where the subject sits in the photo (natural pixels), if empty margins can be trimmed. */
+function trimBox(photo: string, img: HTMLImageElement) {
+  const key = `${photo.length}:${photo.slice(-64)}`
+  let p = trimCache.get(key)
+  if (!p) {
+    p = (async () => {
+      const scale = Math.min(1, 256 / Math.max(img.naturalWidth, img.naturalHeight))
+      const w = Math.max(1, Math.round(img.naturalWidth * scale))
+      const h = Math.max(1, Math.round(img.naturalHeight * scale))
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })!
+      ctx.drawImage(img, 0, 0, w, h)
+      const box = subjectBox(ctx.getImageData(0, 0, w, h))
+      return box && { x: box.x / scale, y: box.y / scale, w: box.w / scale, h: box.h / scale }
+    })()
+    if (trimCache.size > 12) trimCache.clear()
+    trimCache.set(key, p)
+  }
+  return p
+}
+
+/**
+ * Decode the (already cropped) photo and scale it to roughly SAMPLES_PER_BEAD px per bead.
+ * With `trim`, empty margins around the subject are cut first (same aspect ratio).
+ */
+export function photoPixels(photo: string, gridW: number, gridH: number, trim = false): Promise<ImageData> {
+  const key = `${photo.length}:${photo.slice(-64)}:${gridW}x${gridH}:${trim}`
   let p = pixelCache.get(key)
   if (!p) {
     p = (async () => {
       const img = new Image()
       img.src = photo
       await img.decode()
-      const w = Math.min(img.naturalWidth, gridW * SAMPLES_PER_BEAD)
-      const h = Math.min(img.naturalHeight, gridH * SAMPLES_PER_BEAD)
+      const box = (trim && (await trimBox(photo, img))) || { x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight }
+      const w = Math.max(1, Math.round(Math.min(box.w, gridW * SAMPLES_PER_BEAD)))
+      const h = Math.max(1, Math.round(Math.min(box.h, gridH * SAMPLES_PER_BEAD)))
       const canvas = document.createElement('canvas')
       canvas.width = w
       canvas.height = h
       const ctx = canvas.getContext('2d', { willReadFrequently: true })!
       ctx.imageSmoothingQuality = 'high'
-      ctx.drawImage(img, 0, 0, w, h)
+      ctx.drawImage(img, box.x, box.y, box.w, box.h, 0, 0, w, h)
       return ctx.getImageData(0, 0, w, h)
     })()
     if (pixelCache.size > 12) pixelCache.clear()
@@ -95,7 +125,7 @@ export async function generateFromPhoto(
   tier: TierId | number = settings.tier,
 ): Promise<Pattern> {
   const { width, height } = gridSize(tier, typeof aspectId === 'number' ? aspectId : aspectValue(aspectId))
-  const img = await photoPixels(photo ?? SAMPLE_PHOTO_URL, width, height)
+  const img = await photoPixels(photo ?? SAMPLE_PHOTO_URL, width, height, !!settings.trim)
   const opts = {
     paletteId: settings.paletteId,
     width,
@@ -104,6 +134,7 @@ export async function generateFromPhoto(
     detail: settings.detail,
     dithering: settings.dithering,
     style: settings.style ?? 'auto',
+    removeBackground: !!settings.removeBg,
   }
   const w = getWorker()
   let cells: number[]

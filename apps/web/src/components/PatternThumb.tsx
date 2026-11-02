@@ -39,7 +39,9 @@ export function PatternThumb({
       const round = beads && cell >= 4
       for (let y = 0; y < H; y++) {
         for (let x = 0; x < W; x++) {
-          ctx.fillStyle = styles[cells[y * W + x]]
+          const c = cells[y * W + x]
+          if (c < 0) continue // empty: no bead
+          ctx.fillStyle = styles[c]
           const px = ox + x * cell
           const py = oy + y * cell
           if (round) {

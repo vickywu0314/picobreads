@@ -213,6 +213,7 @@ export default function LightboxPage() {
       for (let x = section.x; x < section.x + section.w; x++) {
         const i = y * data.pattern.width + x
         const c = data.pattern.cells[i]
+        if (c < 0) continue
         present.add(c)
         if (placed[i] !== '1') left.set(c, (left.get(c) ?? 0) + 1)
       }

@@ -1,4 +1,5 @@
 import { deltaE2000, linearRgbToLab, rgbToLab, srgbToLinear, type Lab } from './color'
+import { removeBackdrop } from './background'
 import { regularColorIndices } from './palettes'
 import type { Palette } from './types'
 
@@ -30,6 +31,8 @@ export interface GenerateOptions {
    * neighbour. Defaults depend on `detail`.
    */
   minShare?: number
+  /** Leave the plain backdrop empty (no beads), see removeBackdrop. */
+  removeBackground?: boolean
 }
 
 export interface GenerateResult {
@@ -443,6 +446,7 @@ export function generatePattern(img: ImageInput, opts: GenerateOptions): Generat
   }
 
   if (detail <= DESPECKLE_MAX_DETAIL && !opts.dithering) cells = despeckle(cells, W, H)
+  if (opts.removeBackground) cells = removeBackdrop(cells, W, H, paletteLabs)
   return { width: W, height: H, paletteId: palette.id, cells }
 }
 

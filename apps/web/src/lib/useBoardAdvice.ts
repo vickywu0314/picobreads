@@ -14,9 +14,9 @@ export interface BoardAdviceResult {
 const cache = new Map<string, BoardAdviceResult>()
 
 /** Picture-side measures for choosing the board count; `null` while they are being worked out. */
-export function useBoardAdvice(photo: string | null, aspect: number, pegs: number, maxPerSide: number, enabled = true): BoardAdviceResult | null {
+export function useBoardAdvice(photo: string | null, aspect: number, pegs: number, maxPerSide: number, enabled = true, trim = false): BoardAdviceResult | null {
   const src = photo ?? SAMPLE_PHOTO_URL
-  const key = `${src.length}:${src.slice(-48)}:${aspect.toFixed(3)}:${pegs}:${maxPerSide}`
+  const key = `${src.length}:${src.slice(-48)}:${aspect.toFixed(3)}:${pegs}:${maxPerSide}:${trim}`
   const [advice, setAdvice] = useState<{ key: string; result: BoardAdviceResult } | null>(null)
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export function useBoardAdvice(photo: string | null, aspect: number, pegs: numbe
     const long = (pegs * maxPerSide * 2) / 8 // photoPixels samples 8 px per cell
     const gw = aspect >= 1 ? long : Math.max(1, Math.round(long * aspect))
     const gh = aspect >= 1 ? Math.max(1, Math.round(long / aspect)) : long
-    photoPixels(src, Math.ceil(gw), Math.ceil(gh))
+    photoPixels(src, Math.ceil(gw), Math.ceil(gh), trim)
       .then((img) => {
         // maxLoss 0 → measure every candidate; the page combines them with the generated patterns.
         const { losses, subjectShare } = recommendBoards(img, pegs, aspect, maxPerSide, 0)
@@ -43,7 +43,7 @@ export function useBoardAdvice(photo: string | null, aspect: number, pegs: numbe
     return () => {
       cancelled = true
     }
-  }, [key, src, aspect, pegs, maxPerSide, enabled])
+  }, [key, src, aspect, pegs, maxPerSide, enabled, trim])
 
   return advice?.key === key ? advice.result : null
 }

@@ -36,7 +36,7 @@ export const V11_TIERS: { id: TierId; perSide: number; priceUsd: number; finishe
  * comes from the boards, never from trading away clarity.
  * (maxColors above the set's count is clamped to "all colors".)
  */
-export const V11_DEFAULTS = { paletteId: V11_PALETTE_ID, beadSize: V11_BEAD_SIZE, maxColors: 999, detail: 5, dithering: false }
+export const V11_DEFAULTS = { paletteId: V11_PALETTE_ID, beadSize: V11_BEAD_SIZE, maxColors: 999, detail: 5, dithering: false, removeBg: true, trim: true }
 
 export const v11Tier = (id: TierId) => V11_TIERS.find((t) => t.id === id) ?? V11_TIERS[0]
 

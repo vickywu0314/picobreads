@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
-import type { Palette, Pattern } from '@picobreads/pattern-engine'
+import { beadCount, type Palette, type Pattern } from '@picobreads/pattern-engine'
 import { Segmented } from '@/components/ui'
 import { useT } from '@/i18n'
 
@@ -61,7 +61,7 @@ export function drawWork(
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const i = y * W + x
-      const on = view === 'final' || placed[i] === '1'
+      const on = pattern.cells[i] >= 0 && (view === 'final' || placed[i] === '1')
       const cx = ox + (x + 0.5) * cell
       const cy = oy + (y + 0.5) * cell
       if (view === 'board') {
@@ -118,7 +118,7 @@ function drawFinish(
 ) {
   const W = pattern.width
   const H = pattern.height
-  const on = (i: number) => view === 'final' || placed[i] === '1'
+  const on = (i: number) => pattern.cells[i] >= 0 && (view === 'final' || placed[i] === '1')
   ctx.save()
   // Clip to the fused piece so textures never spill onto the background.
   ctx.beginPath()
@@ -211,7 +211,7 @@ export function ProgressPreview({
   const [view, setView] = useState<PreviewView>('board')
   const ref = useRef<HTMLCanvasElement>(null)
   const done = placed ? [...placed].filter((c) => c === '1').length : 0
-  const pct = Math.round((done / pattern.cells.length) * 100)
+  const pct = Math.round((done / Math.max(1, beadCount(pattern))) * 100)
 
   useEffect(() => {
     if (!open) return
@@ -249,7 +249,7 @@ export function ProgressPreview({
         </button>
         <div className="min-w-0 flex-1">
           <p className="font-bold">{t.editor.preview.title}</p>
-          <p className="text-xs text-muted">{t.editor.preview.progress(done, pattern.cells.length, pct)}</p>
+          <p className="text-xs text-muted">{t.editor.preview.progress(done, beadCount(pattern), pct)}</p>
         </div>
       </div>
       <div className="relative min-h-0 flex-1 px-3">
@@ -295,7 +295,7 @@ export function MiniPreview({
   const t = useT()
   const ref = useRef<HTMLCanvasElement>(null)
   const done = placed ? [...placed].filter((c) => c === '1').length : 0
-  const pct = Math.round((done / pattern.cells.length) * 100)
+  const pct = Math.round((done / Math.max(1, beadCount(pattern))) * 100)
 
   useEffect(() => {
     const canvas = ref.current

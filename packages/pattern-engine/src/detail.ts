@@ -1,5 +1,6 @@
-import { deltaE2000, linearRgbToLab, type Lab } from './color'
-import { downsampleLinear, type ImageInput } from './generate'
+import { backdropOf, labGrid } from './background'
+import { deltaE2000, type Lab } from './color'
+import type { ImageInput } from './generate'
 
 /**
  * How much of the picture is lost when it is beaded at `width × height` instead of twice
@@ -15,9 +16,9 @@ export function detailLoss(img: ImageInput, width: number, height: number, delta
 function measure(img: ImageInput, width: number, height: number, deltaE: number): { loss: number; subject: number } {
   const fw = width * 2
   const fh = height * 2
-  const fine = toLab(downsampleLinear(img, fw, fh))
-  const coarse = toLab(downsampleLinear(img, width, height))
-  const bg = backgroundOf(fine, fw, fh, deltaE)
+  const fine = labGrid(img, fw, fh)
+  const coarse = labGrid(img, width, height)
+  const bg = backdropOf(fine, fw, fh, deltaE)
   let lost = 0
   let subject = 0
   for (let y = 0; y < fh; y++) {
@@ -46,34 +47,6 @@ function measure(img: ImageInput, width: number, height: number, deltaE: number)
   // Measure against the subject, not the whole frame: a small toy on a big white backdrop
   // must not look "simple" just because most of the frame is empty.
   return { loss: lost / Math.max(subject, fw * fh * 0.15), subject: subject / (fw * fh) }
-}
-
-/**
- * The plain backdrop color (Lab), if the picture has one: most of the outer edge within `deltaE`
- * of the edge's median color. Null for pictures that fill the frame.
- */
-function backgroundOf(lab: Float32Array, w: number, h: number, deltaE: number): [number, number, number] | null {
-  const edge: number[] = []
-  for (let x = 0; x < w; x++) edge.push(x, (h - 1) * w + x)
-  for (let y = 1; y < h - 1; y++) edge.push(y * w, y * w + w - 1)
-  const median = (k: number) => {
-    const v = edge.map((i) => lab[i * 3 + k]).sort((a, b) => a - b)
-    return v[v.length >> 1]
-  }
-  const bg: [number, number, number] = [median(0), median(1), median(2)]
-  const near = edge.filter((i) => Math.hypot(lab[i * 3] - bg[0], lab[i * 3 + 1] - bg[1], lab[i * 3 + 2] - bg[2]) <= deltaE).length
-  return near >= edge.length * 0.6 ? bg : null
-}
-
-function toLab(rgb: Float32Array): Float32Array {
-  const out = new Float32Array(rgb.length)
-  for (let i = 0; i < rgb.length; i += 3) {
-    const [L, a, b] = linearRgbToLab(rgb[i], rgb[i + 1], rgb[i + 2])
-    out[i] = L
-    out[i + 1] = a
-    out[i + 2] = b
-  }
-  return out
 }
 
 export interface BoardAdvice {
@@ -115,8 +88,8 @@ export interface Grid {
 
 /**
  * What a finished pattern loses against a finer pattern of the same picture: the share of the
- * fine pattern's subject beads whose color (within `deltaE`, CIEDE2000 — how different two beads look) appears nowhere in the 3 × 3
- * coarse beads at the same spot. Both patterns come from the real generator, so outlines and
+ * fine pattern's subject beads whose color (within `deltaE`, CIEDE2000 — how different two beads look) appears nowhere in the 2 × 2
+ * coarse beads nearest to the same spot. Both patterns come from the real generator, so outlines and
  * eyes it keeps on the small grid count as kept, and so do blends of two nearby coarse colors
  * (anti-aliased edges). The plain backdrop is left out of the share.
  */
@@ -137,42 +110,46 @@ export function gridLoss(coarse: Grid, fine: Grid, paletteLabs: Lab[], deltaE = 
   for (let x = 0; x < fine.width; x++) edge.push(fine.cells[x], fine.cells[(fine.height - 1) * fine.width + x])
   for (let y = 1; y < fine.height - 1; y++) edge.push(fine.cells[y * fine.width], fine.cells[y * fine.width + fine.width - 1])
   const freq = new Map<number, number>()
-  for (const c of edge) freq.set(c, (freq.get(c) ?? 0) + 1)
+  for (const c of edge) if (c >= 0) freq.set(c, (freq.get(c) ?? 0) + 1)
   let bg = -1
   let best = 0
   for (const [c, n] of freq) if (n > best) [bg, best] = [c, n]
-  const nearBg = edge.filter((c) => near(c, bg)).length
+  const nearBg = bg < 0 ? 0 : edge.filter((c) => c >= 0 && near(c, bg)).length
   if (nearBg < edge.length * 0.6) bg = -1
 
   const sx = coarse.width / fine.width
   const sy = coarse.height / fine.height
-  let lost = 0
+  const lostAt = new Uint8Array(fine.width * fine.height)
   let subject = 0
   for (let y = 0; y < fine.height; y++) {
-    const cy = Math.min(coarse.height - 1, Math.floor((y + 0.5) * sy))
+    // The 2 × 2 coarse beads nearest to this fine bead's center (an edge moves by at most half a bead).
+    const cy0 = Math.max(0, Math.min(coarse.height - 2, Math.floor((y + 0.5) * sy - 0.5)))
     for (let x = 0; x < fine.width; x++) {
       const c = fine.cells[y * fine.width + x]
-      if (bg >= 0 && near(c, bg)) continue
+      if (c < 0 || (bg >= 0 && near(c, bg))) continue
       subject++
-      const cx = Math.min(coarse.width - 1, Math.floor((x + 0.5) * sx))
+      const cx0 = Math.max(0, Math.min(coarse.width - 2, Math.floor((x + 0.5) * sx - 0.5)))
       const around: number[] = []
-      for (let dy = -1; dy <= 1; dy++) {
-        const yy = cy + dy
-        if (yy < 0 || yy >= coarse.height) continue
-        for (let dx = -1; dx <= 1; dx++) {
-          const xx = cx + dx
-          if (xx >= 0 && xx < coarse.width) {
-            const k = coarse.cells[yy * coarse.width + xx]
-            if (!around.includes(k)) around.push(k)
-          }
+      for (let yy = cy0; yy <= Math.min(coarse.height - 1, cy0 + 1); yy++)
+        for (let xx = cx0; xx <= Math.min(coarse.width - 1, cx0 + 1); xx++) {
+          const k = coarse.cells[yy * coarse.width + xx]
+          if (k >= 0 && !around.includes(k)) around.push(k)
         }
-      }
       let kept = around.some((k) => near(k, c))
       // A blend of two neighbouring colors (anti-aliased edge) is not new detail either.
       for (let i = 0; i < around.length && !kept; i++)
         for (let j = i + 1; j < around.length && !kept; j++) kept = segmentDistance(paletteLabs[c], paletteLabs[around[i]], paletteLabs[around[j]]) <= deltaE
-      if (!kept) lost++
+      if (!kept) lostAt[y * fine.width + x] = 1
     }
+  }
+  // A lone lost bead counts half: an eye or a line usually spans several beads, while lone odd
+  // beads are often compression / color noise.
+  let lost = 0
+  for (let i = 0; i < lostAt.length; i++) {
+    if (!lostAt[i]) continue
+    const x = i % fine.width
+    if ((x > 0 && lostAt[i - 1]) || (x < fine.width - 1 && lostAt[i + 1]) || lostAt[i - fine.width] || lostAt[i + fine.width]) lost++
+    else lost += 0.5
   }
   return lost / Math.max(subject, fine.width * fine.height * 0.15)
 }

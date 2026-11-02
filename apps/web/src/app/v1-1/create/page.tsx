@@ -25,7 +25,10 @@ async function cropToDataUrl(src: string, area: Area, maxSide = 900): Promise<st
   canvas.width = Math.round(area.width * k)
   canvas.height = Math.round(area.height * k)
   canvas.getContext('2d')!.drawImage(img, area.x, area.y, area.width, area.height, 0, 0, canvas.width, canvas.height)
-  return canvas.toDataURL('image/jpeg', 0.85)
+  // Lossless PNG keeps flat cartoons crisp (JPEG noise reads as fake detail); photos fall back to JPEG
+  // so the saved draft stays small.
+  const png = canvas.toDataURL('image/png')
+  return png.length <= 700_000 ? png : canvas.toDataURL('image/jpeg', 0.92)
 }
 
 export default function CreatePage() {

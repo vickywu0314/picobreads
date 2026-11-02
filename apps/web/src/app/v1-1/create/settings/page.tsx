@@ -37,7 +37,9 @@ export default function SettingsPage() {
 
   // v1.1 always uses the full MARD 264 set; the engine picks illustration vs photo by itself.
   // (tier / iron are left out so picking a tile or a finish doesn't regenerate all three.)
-  const gen = { ...settings, tier: 'small' as const, iron: undefined, paletteId: V11_PALETTE_ID, maxColors: V11_DEFAULTS.maxColors, style: 'auto' as const }
+  const removeBg = settings.removeBg ?? V11_DEFAULTS.removeBg
+  const trim = settings.trim ?? V11_DEFAULTS.trim
+  const gen = { ...settings, tier: 'small' as const, iron: undefined, removeBg, trim, paletteId: V11_PALETTE_ID, maxColors: V11_DEFAULTS.maxColors, style: 'auto' as const }
   const iron: IronStyle = settings.iron ?? 'normal'
   const bead = settings.beadSize
   const variants: Record<TierId, ReturnType<typeof useGeneratedPattern>> = {
@@ -52,7 +54,7 @@ export default function SettingsPage() {
   // Fewest boards that keep the picture clear; pre-select it once per picture and bead size.
   // Two measures, both must agree before adding boards: the picture itself, and the real
   // generated patterns (does the bigger pattern show anything the smaller one can't?).
-  const advice = useBoardAdvice(photo, aspect, BOARD_PEGS[bead], V11_TIERS.length, hydrated)
+  const advice = useBoardAdvice(photo, aspect, BOARD_PEGS[bead], V11_TIERS.length, hydrated, trim)
   const patterns = V11_TIERS.map((tier) => {
     const v = variants[tier.id].pattern
     const want = gridSize(v11Beads(tier.id, bead), aspect)
@@ -66,14 +68,14 @@ export default function SettingsPage() {
     return chooseBoards(advice.imageLosses, gridLosses, V11_TIERS.length)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, advice, ...patterns])
-  const adviceKey = `${photo?.length}:${photo?.slice(-48)}:${aspectId}:${bead}`
+  const adviceKey = `${photo?.length}:${photo?.slice(-48)}:${aspectId}:${bead}:${trim}:${removeBg}`
   useEffect(() => {
     if (perSide == null || autoPicked.has(adviceKey)) return
     autoPicked.add(adviceKey)
     setSettings({ tier: v11TierByBoards(perSide).id, paletteId: V11_PALETTE_ID, maxColors: V11_DEFAULTS.maxColors })
   }, [perSide, adviceKey, setSettings])
   // A small subject on a wide plain backdrop wastes beads on the backdrop.
-  const loose = advice != null && advice.subjectShare < 0.45
+  const loose = !trim && advice != null && advice.subjectShare < 0.45
 
   if (!hydrated) return <V11Page footer={false}>{null}</V11Page>
 
@@ -101,6 +103,18 @@ export default function SettingsPage() {
               options={V11_BEAD_SIZES.map((v) => ({ value: v, label: t.v11.settings.beads[v].title }))}
             />
             <p className="mt-2 text-sm text-muted">{t.v11.settings.beads[bead].hint}</p>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {(['removeBg', 'trim'] as const).map((k) => (
+              <div key={k} className="flex items-start justify-between gap-3 rounded-2xl border-2 border-[var(--border)] bg-white px-4 py-3">
+                <div>
+                  <span className="label">{t.v11.settings[k].title}</span>
+                  <p className="text-xs text-muted">{t.v11.settings[k].hint}</p>
+                </div>
+                <Toggle label={t.v11.settings[k].title} checked={k === 'trim' ? trim : removeBg} onChange={(v) => setSettings({ [k]: v })} />
+              </div>
+            ))}
           </div>
 
           {loose && (

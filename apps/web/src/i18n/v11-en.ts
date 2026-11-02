@@ -56,8 +56,10 @@ export const v11En = {
       '2.6mm': { title: 'Mini 2.6 mm', hint: 'One board = 52 × 52 pegs ≈ 13.5 cm. About 3× the beads of standard in the same size — sharper, more refined.' },
       '5mm': { title: 'Standard 5 mm', hint: 'One board = 29 × 29 pegs ≈ 14.5 cm. Big, easy-to-handle beads, great for kids and beginners; less detail at the same size.' },
     } as Record<string, { title: string; hint: string }>,
-    cropTighter: (pct: number) => `Your subject fills only about ${pct}% of the picture, and the empty space takes beads too. Crop tighter and the same boards show it much sharper.`,
+    cropTighter: (pct: number) => `Your subject fills only about ${pct}% of the picture. Turn on “Trim empty margins” or crop tighter, and the same boards show it much sharper.`,
     recrop: 'Crop again',
+    removeBg: { title: 'Remove background', hint: 'A plain background is left empty — fewer beads, not in the materials list. Same-colored parts inside the subject (a white belly) stay.' },
+    trim: { title: 'Trim empty margins', hint: 'Cuts the extra space around your subject, so it comes out bigger and sharper on the same boards.' },
     iron: 'Ironing finish',
     ironNote: 'Illustrative — the real finish depends on your iron and cloth.',
     irons: {

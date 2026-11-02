@@ -12,6 +12,7 @@ import { useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
 import { usePatternData } from '@/lib/usePattern'
 import { finishedSize } from '@/lib/pattern'
+import { beadCount } from '@picobreads/pattern-engine'
 
 export default function PatternPage() {
   const t = useT()
@@ -32,7 +33,7 @@ export default function PatternPage() {
     )
 
   const { pattern, palette, legend, est } = data
-  const total = pattern.width * pattern.height
+  const total = beadCount(pattern)
   const fin = finishedSize(pattern.width, pattern.height, beadSize)
 
   return (

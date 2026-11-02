@@ -18,6 +18,10 @@ export interface Settings {
   style?: 'auto' | 'illustration' | 'photo'
   /** Ironing finish shown in previews (v1.1). */
   iron?: 'normal' | 'towel' | 'scrub' | 'glitter'
+  /** v1.1: leave a plain backdrop empty — no beads, not in the materials list. */
+  removeBg?: boolean
+  /** v1.1: trim empty margins around the subject before generating. */
+  trim?: boolean
 }
 
 export interface CartItem {

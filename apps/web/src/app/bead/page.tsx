@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, CheckCheck, ChevronRight, Cloud, Eye, Lightbulb, Maximize, Minus, Plus, RotateCcw, Undo2, Volume2, VolumeX } from 'lucide-react'
-import { regularColorIndices, sectionCellIndices } from '@picobreads/pattern-engine'
+import { beadCount, regularColorIndices, sectionCellIndices } from '@picobreads/pattern-engine'
 import { PatternCanvas, type PatternCanvasHandle, type ToolPointerEvent } from '@/components/PatternCanvas'
 import { NoPattern } from '@/components/NoPattern'
 import { Modal, ProgressBar, Swatch } from '@/components/ui'
@@ -97,10 +97,11 @@ export default function BeadPage() {
       if (on) placedAll++
       if (!inSec) continue
       const c = pattern.cells[i]
+      if (c < 0) continue
       total.set(c, (total.get(c) ?? 0) + 1)
       if (on) done.set(c, (done.get(c) ?? 0) + 1)
     }
-    return { total, done, placedAll, all: pattern.cells.length }
+    return { total, done, placedAll, all: beadCount(pattern) }
   }, [data, placed, section])
 
   // Celebrate once when the last bead goes in.
@@ -558,10 +559,16 @@ export default function BeadPage() {
           <>
             <p className="mb-2 text-sm font-semibold">{t.editor.current}</p>
             <div className="mb-4 flex items-center gap-2">
-              <Swatch rgb={palette.colors[pattern.cells[fixCell]].rgb} />
-              <span className="text-sm">
-                {palette.colors[pattern.cells[fixCell]].name} <span className="font-mono text-muted">{palette.colors[pattern.cells[fixCell]].code}</span>
-              </span>
+              {pattern.cells[fixCell] >= 0 ? (
+                <>
+                  <Swatch rgb={palette.colors[pattern.cells[fixCell]].rgb} />
+                  <span className="text-sm">
+                    {palette.colors[pattern.cells[fixCell]].name} <span className="font-mono text-muted">{palette.colors[pattern.cells[fixCell]].code}</span>
+                  </span>
+                </>
+              ) : (
+                <span className="text-sm text-muted">—</span>
+              )}
             </div>
             <div className="grid max-h-[45vh] grid-cols-6 gap-2 overflow-y-auto p-1 sm:grid-cols-8">
               {regularColorIndices(palette).map((ci) => {

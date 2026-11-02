@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { ArrowRight, Download, Info, Package, Sparkles } from 'lucide-react'
-import { getPalette, withAllowance } from '@picobreads/pattern-engine'
+import { beadCount, getPalette, withAllowance } from '@picobreads/pattern-engine'
 import { V11Page } from '@/v11/Chrome'
 import { Ironed } from '@/components/Ironed'
 import { NoPattern } from '@/components/NoPattern'
@@ -52,7 +52,7 @@ export default function ProductStep() {
   const sellable = !physical || pattern.paletteId === V11_PALETTE_ID || isKitBrand(pattern.paletteId)
   const available = (f: ProductForm) => f !== 'finished' || ASSEMBLED_VARIANT_ENABLED
   const spare = Math.round(PICKING.allowance * 100)
-  const total = pattern.width * pattern.height
+  const total = beadCount(pattern)
   const totalKit = legend.reduce((n, l) => n + withAllowance(l.count, PICKING.allowance), 0)
   const price = (f: ProductForm) => (f === 'digital' ? t.flow.free : V11_PRICE_PLACEHOLDER)
 

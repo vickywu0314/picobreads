@@ -28,7 +28,10 @@ export interface Palette {
   colors: PaletteColor[]
 }
 
-/** A generated pattern. `cells[y * width + x]` is an index into `palette.colors`. */
+/**
+ * A generated pattern. `cells[y * width + x]` is an index into `palette.colors`,
+ * or EMPTY (-1) for a cell left without a bead (removed backdrop).
+ */
 export interface Pattern {
   id: string
   paletteId: string
