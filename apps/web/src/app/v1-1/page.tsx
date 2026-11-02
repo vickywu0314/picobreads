@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { ArrowRight, Check, Eye, Palette, Ruler, Sparkles } from 'lucide-react'
 import { useT } from '@/i18n'
 import { V11Page } from '@/v11/Chrome'
-import { V11_HERO, V11_PICKS, V11_TIERS, v11Href } from '@/v11/config'
+import { V11_BEAD_SIZE, V11_HERO, V11_PICKS, V11_TIERS, v11Beads, v11Href, v11Size } from '@/v11/config'
 import { useV11StartFrom } from '@/v11/start'
 import { useToast } from '@/v11/Toast'
 
@@ -186,7 +186,7 @@ function Steps() {
                     onClick={() => setSize(k)}
                     className={`rounded-full border-2 border-[var(--ink)] px-3.5 py-1 text-sm ${size === k ? 'bg-[var(--accent)] text-white' : 'bg-white'}`}
                   >
-                    {t.v11.settings.tierTitle(tier.perSide)}
+                    ≈ {v11Size(v11Beads(tier.id, V11_BEAD_SIZE), v11Beads(tier.id, V11_BEAD_SIZE), V11_BEAD_SIZE).cm.split(' × ')[0]} cm
                   </button>
                 ))}
               </div>

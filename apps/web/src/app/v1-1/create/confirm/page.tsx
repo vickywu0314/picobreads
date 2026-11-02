@@ -11,7 +11,7 @@ import { Stepper } from '@/components/ui'
 import { useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
 import { legendOf } from '@/lib/pattern'
-import { V11_PRICE_PLACEHOLDER, v11Size, v11Tier } from '@/v11/config'
+import { V11_PRICE_PLACEHOLDER, v11BoardGrid, v11Size } from '@/v11/config'
 import { PatternDownload } from '@/v11/PatternDownload'
 
 export default function ConfirmStep() {
@@ -35,7 +35,7 @@ export default function ConfirmStep() {
     [t.flow.product, t.v11.product.forms[form].title, '/v1-1/create/product/'],
     [
       t.flow.specs,
-      `${t.v11.settings.tierTitle(v11Tier(tier).perSide)} · ${pattern.width} × ${pattern.height} · ${form === 'digital' ? '' : `${t.v11.settings.beads[beadSize].title} · ≈ ${fin.cm} cm · `}${t.common.colors(legendOf(pattern).length)} · ${getPalette(pattern.paletteId).brand}`,
+      `${t.v11.settings.boardsTitle(v11BoardGrid(pattern.width, pattern.height, beadSize).cols, v11BoardGrid(pattern.width, pattern.height, beadSize).rows)} · ${pattern.width} × ${pattern.height} · ${form === 'digital' ? '' : `${t.v11.settings.beads[beadSize].title} · ≈ ${fin.cm} cm · `}${t.common.colors(legendOf(pattern).length)} · ${getPalette(pattern.paletteId).brand}`,
       '/v1-1/create/settings/',
     ],
     [t.flow.price, form === 'digital' ? t.flow.free : V11_PRICE_PLACEHOLDER],

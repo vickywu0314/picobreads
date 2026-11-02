@@ -45,8 +45,25 @@ export const v11TierByBoards = (perSide: number) => V11_TIERS.find((t) => t.perS
 /** Long side in beads (pegs) for a tier with the given beads. */
 export const v11Beads = (id: TierId, bead: BeadSize) => v11Tier(id).perSide * BOARD_PEGS[bead]
 
-/** Pegboards needed for a grid. */
-export const v11Boards = (width: number, height: number, bead: BeadSize) => Math.ceil(width / BOARD_PEGS[bead]) * Math.ceil(height / BOARD_PEGS[bead])
+/**
+ * What we tell the customer: the standard board we ship is 27 × 27 cm (≈ 104 × 104 pegs for mini
+ * beads, 54 × 54 for standard), so a pattern needs as few joins as possible. Display only — the
+ * size recommendation still works in BOARD_PEGS units (52 / 29), and sheets / online beading are
+ * split into those smaller sections.
+ */
+export const V11_BOARD_CM = 27
+export const v11BoardPegs = (bead: BeadSize) => Math.round((V11_BOARD_CM * 10) / BEAD_PITCH_MM[bead])
+
+/** Standard boards a grid needs, as columns × rows. */
+export function v11BoardGrid(width: number, height: number, bead: BeadSize) {
+  const pegs = v11BoardPegs(bead)
+  const cols = Math.ceil(width / pegs)
+  const rows = Math.ceil(height / pegs)
+  return { cols, rows, n: cols * rows }
+}
+
+/** Number of standard boards a grid needs. */
+export const v11Boards = (width: number, height: number, bead: BeadSize) => v11BoardGrid(width, height, bead).n
 
 /** Finished size of a grid. */
 export function v11Size(width: number, height: number, bead: BeadSize) {

@@ -10,7 +10,7 @@ import { Ironed } from '@/components/Ironed'
 import { IRON_STYLES, type IronStyle } from '@/components/bead/ProgressPreview'
 import { Segmented, Stepper, Toggle } from '@/components/ui'
 import { BOARD_PEGS, V11_PALETTE_ID, gridSize, type TierId } from '@/config/site'
-import { V11_BEAD_SIZES, V11_DEFAULTS, V11_TIERS, v11Beads, v11Boards, v11Size, v11Tier, v11TierByBoards } from '@/v11/config'
+import { V11_BEAD_SIZES, V11_DEFAULTS, V11_TIERS, v11BoardGrid, v11Beads, v11Size, v11TierByBoards } from '@/v11/config'
 import { useT } from '@/i18n'
 import { aspectValue, useHydrated, useStore } from '@/lib/store'
 import { SAMPLE_PHOTO_URL, generateFromPhoto } from '@/lib/generate'
@@ -176,10 +176,10 @@ export default function SettingsPage() {
                     {v ? <Ironed pattern={v} iron={iron} className={variants[tier.id].busy ? 'opacity-70' : ''} /> : <Loader2 className="h-6 w-6 animate-spin text-muted" aria-hidden />}
                   </div>
                   <p className="mt-2 font-bold">
-                    {t.v11.settings.tierTitle(tier.perSide)} · {width}×{height}
+                    {t.v11.settings.boardsTitle(v11BoardGrid(width, height, bead).cols, v11BoardGrid(width, height, bead).rows)} · {width}×{height}
                   </p>
                   <p className="text-xs text-muted">
-                    ≈ {fin.cm} cm{v11Boards(width, height, bead) !== tier.perSide ** 2 && ` · ${t.settings.boards(v11Boards(width, height, bead))}`}
+                    ≈ {fin.cm} cm
                     {v && ` · ${t.common.colors(legendOf(v).length)}`}
                   </p>
                   {note && <p className="mt-1 text-xs font-bold text-muted">{note}</p>}
@@ -219,7 +219,7 @@ export default function SettingsPage() {
             </div>
             {selected && (
               <p className="mt-3 text-center text-sm text-muted">
-                {t.v11.settings.tierTitle(v11Tier(settings.tier).perSide)} · {selected.width} × {selected.height} · ≈ {v11Size(selected.width, selected.height, bead).cm} cm ·{' '}
+                {t.v11.settings.boardsTitle(v11BoardGrid(selected.width, selected.height, bead).cols, v11BoardGrid(selected.width, selected.height, bead).rows)} · {selected.width} × {selected.height} · ≈ {v11Size(selected.width, selected.height, bead).cm} cm ·{' '}
                 {t.common.colors(legendOf(selected).length)} · {t.v11.custom.beads(beadCount(selected))}
               </p>
             )}

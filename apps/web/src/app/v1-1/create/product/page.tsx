@@ -9,9 +9,9 @@ import { V11Page } from '@/v11/Chrome'
 import { Ironed } from '@/components/Ironed'
 import { NoPattern } from '@/components/NoPattern'
 import { Stepper, Swatch } from '@/components/ui'
-import { ASSEMBLED_VARIANT_ENABLED, BOARD_PEGS, KIT_PALETTE_IDS, PICKING, V11_PALETTE_ID, isKitBrand } from '@/config/site'
+import { ASSEMBLED_VARIANT_ENABLED, KIT_PALETTE_IDS, PICKING, V11_PALETTE_ID, isKitBrand } from '@/config/site'
 import { PRODUCT_FORMS, type ProductForm } from '@/config/catalog'
-import { V11_PRICE_PLACEHOLDER, v11Boards, v11Price as priceOf, v11Size, v11Tier } from '@/v11/config'
+import { V11_PRICE_PLACEHOLDER, v11BoardGrid, v11BoardPegs, v11Boards, v11Price as priceOf, v11Size } from '@/v11/config'
 import { useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
 import { generateFromPhoto } from '@/lib/generate'
@@ -57,7 +57,7 @@ export default function ProductStep() {
   const price = (f: ProductForm) => (f === 'digital' ? t.flow.free : V11_PRICE_PLACEHOLDER)
 
   const specs: [string, string][] = [
-    [t.settings.size, `${t.v11.settings.tierTitle(v11Tier(tier).perSide)} · ${pattern.width} × ${pattern.height}`],
+    [t.settings.size, `${t.v11.settings.boardsTitle(v11BoardGrid(pattern.width, pattern.height, bead).cols, v11BoardGrid(pattern.width, pattern.height, bead).rows)} · ${pattern.width} × ${pattern.height}`],
     [t.library.finishedSize, `≈ ${fin.cm} cm (${fin.inch} in)`],
     [t.v11.product.board, `${t.settings.boards(v11Boards(pattern.width, pattern.height, bead))} · ${t.v11.product.boardSpec(bead)}`],
     [t.settings.beadSize, t.v11.settings.beads[bead].title],
@@ -153,7 +153,7 @@ export default function ProductStep() {
           <div className="px-5 pt-5">
             <h2 className="font-display text-2xl">{t.v11.product.materials}</h2>
             <p className="mt-0.5 text-sm text-muted">
-              {t.v11.product.materialsHint(spare)} · {t.v11.product.pegboards(v11Boards(pattern.width, pattern.height, bead), BOARD_PEGS[bead])}
+              {t.v11.product.materialsHint(spare)} · {t.v11.product.pegboards(v11Boards(pattern.width, pattern.height, bead), v11BoardPegs(bead))}
             </p>
           </div>
           <table className="mt-3 w-full text-left text-sm">
@@ -197,7 +197,7 @@ export default function ProductStep() {
         <div className="sticky bottom-0 z-20 -mx-4 mt-8 flex items-center justify-between gap-4 border-t-2 border-[var(--ink)] bg-[var(--bg)] px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0">
           <div>
             <p className="font-bold">
-              {t.v11.product.forms[form].title} · {t.v11.settings.tierTitle(v11Tier(tier).perSide)}
+              {t.v11.product.forms[form].title} · {t.v11.settings.boardsTitle(v11BoardGrid(pattern.width, pattern.height, bead).cols, v11BoardGrid(pattern.width, pattern.height, bead).rows)}
             </p>
             <p className="text-sm text-muted">
               {price(form)} · {palette.brand}

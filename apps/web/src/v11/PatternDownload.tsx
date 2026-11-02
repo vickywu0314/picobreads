@@ -9,7 +9,7 @@ import { useT } from '@/i18n'
 import { legendOf } from '@/lib/pattern'
 import { downloadCanvas, downloadZip, sheetPages } from '@/lib/sheets'
 import { useStore } from '@/lib/store'
-import { V11, v11Boards, v11Size } from './config'
+import { V11, v11BoardPegs, v11Boards, v11Size } from './config'
 
 /**
  * Free pattern download for signed-in users: overview, materials list and one sheet per pegboard
@@ -42,7 +42,7 @@ export function PatternDownload({ pattern, beadSize, next, className = '' }: { p
         cols: d.cols,
         total: d.total,
       },
-      { allowance: PICKING.allowance, boards: t.v11.product.pegboards(boards, BOARD_PEGS[beadSize]) },
+      { allowance: PICKING.allowance, boards: t.v11.product.pegboards(boards, v11BoardPegs(beadSize)) },
     )
   }, [pattern, beadSize, d, t])
 
