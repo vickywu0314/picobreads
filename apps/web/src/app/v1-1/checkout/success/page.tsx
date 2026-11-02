@@ -28,7 +28,7 @@ export default function SuccessPage() {
         <div className="card mt-10 p-6 text-left">
           <h2 className="font-bold">{t.success.next}</h2>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            <Link href="/bead/" className="btn-secondary">
+            <Link href="/v1-1/bead/" className="btn-secondary">
               <Grid3x3 className="h-5 w-5" aria-hidden /> {t.success.keepBeading}
             </Link>
             <Link href="/v1-1/" className="btn-secondary">

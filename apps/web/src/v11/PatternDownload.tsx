@@ -7,7 +7,7 @@ import { beadCount, getPalette, type BeadSize, type Pattern } from '@picobreads/
 import { BOARD_PEGS, PICKING } from '@/config/site'
 import { useT } from '@/i18n'
 import { legendOf } from '@/lib/pattern'
-import { downloadCanvas, downloadZip, sheetPages } from '@/lib/sheets'
+import { downloadCanvas, downloadZip, sheetPages, type SheetPage } from '@/lib/sheets'
 import { useStore } from '@/lib/store'
 import { V11, v11BoardPegs, v11Boards, v11Size } from './config'
 
@@ -15,12 +15,11 @@ import { V11, v11BoardPegs, v11Boards, v11Size } from './config'
  * Free pattern download for signed-in users: overview, materials list and one sheet per pegboard
  * (bead code in every cell). Testing stage: downloaded here, nothing is emailed.
  */
-export function PatternDownload({ pattern, beadSize, next, className = '' }: { pattern: Pattern; beadSize: BeadSize; next: string; className?: string }) {
+/** The downloadable sheets (overview, materials, one per section) for a pattern. */
+export function useSheetPages(pattern: Pattern, beadSize: BeadSize) {
   const t = useT()
   const d = t.v11.download
-  const user = useStore((s) => s.user)
-  const [busy, setBusy] = useState<string | null>(null)
-  const pages = useMemo(() => {
+  return useMemo(() => {
     const palette = getPalette(pattern.paletteId)
     const fin = v11Size(pattern.width, pattern.height, beadSize)
     const boards = v11Boards(pattern.width, pattern.height, beadSize)
@@ -45,6 +44,17 @@ export function PatternDownload({ pattern, beadSize, next, className = '' }: { p
       { allowance: PICKING.allowance, boards: t.v11.product.pegboards(boards, v11BoardPegs(beadSize)) },
     )
   }, [pattern, beadSize, d, t])
+}
+
+/** All sheets in one .zip. */
+export const downloadAllSheets = (pages: SheetPage[], pattern: Pattern) => downloadZip(pages, `${V11.name}-pattern-${pattern.width}x${pattern.height}.zip`)
+
+export function PatternDownload({ pattern, beadSize, next, className = '' }: { pattern: Pattern; beadSize: BeadSize; next: string; className?: string }) {
+  const t = useT()
+  const d = t.v11.download
+  const user = useStore((s) => s.user)
+  const [busy, setBusy] = useState<string | null>(null)
+  const pages = useSheetPages(pattern, beadSize)
 
   const run = async (id: string, job: () => Promise<void>) => {
     setBusy(id)
@@ -76,7 +86,7 @@ export function PatternDownload({ pattern, beadSize, next, className = '' }: { p
             type="button"
             className="btn-primary mt-4 w-full"
             disabled={busy !== null}
-            onClick={() => run('zip', () => downloadZip(pages, `${V11.name}-pattern-${pattern.width}x${pattern.height}.zip`))}
+            onClick={() => run('zip', () => downloadAllSheets(pages, pattern))}
           >
             {busy === 'zip' ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <FileArchive className="h-5 w-5" aria-hidden />} {d.zip(pages.length)}
           </button>

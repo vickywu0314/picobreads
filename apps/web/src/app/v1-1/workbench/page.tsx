@@ -71,7 +71,7 @@ export default function WorkbenchPage() {
                     </div>
                     <p className="mt-1 text-xs text-muted">{w.progress(done, total, pct)}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <button type="button" className="btn-primary btn-sm" onClick={() => open(d.id, '/bead/')}>
+                      <button type="button" className="btn-primary btn-sm" onClick={() => open(d.id, '/v1-1/bead/')}>
                         <Grid3x3 className="h-4 w-4" aria-hidden /> {w.continueBead}
                       </button>
                       <button type="button" className="btn-secondary btn-sm" onClick={() => open(d.id, '/v1-1/create/settings/')}>

@@ -185,3 +185,41 @@ body:has(.v11) {
     transform: scale(1);
   }
 }
+
+/* v1.1 online beading: sticker-style floating bars, panel and tools. */
+.v11-bead {
+  background-image: none;
+}
+.v11 .bead-chrome {
+  border: 2px solid var(--ink);
+  background: #fff;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.v11 .bead-aside {
+  border-color: var(--ink);
+  border-width: 2px 0 0 0;
+  background-color: var(--bg);
+  background-image: radial-gradient(circle, #f6c5d5 1.4px, transparent 1.6px);
+  background-size: 22px 22px;
+}
+@media (min-width: 768px) {
+  .v11 .bead-aside {
+    border-width: 0 0 0 2px;
+  }
+}
+.v11 .bead-panel {
+  border: 2px solid var(--ink);
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.v11 .bead-tool {
+  border: 2px solid var(--ink);
+  background: #fff;
+  color: var(--fg);
+}
+.v11 .bead-tool[aria-checked='true'] {
+  background: var(--accent-soft);
+  box-shadow: 2px 2px 0 var(--ink);
+  transform: translate(-1px, -1px);
+}

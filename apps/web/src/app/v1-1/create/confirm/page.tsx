@@ -71,7 +71,7 @@ export default function ConfirmStep() {
               <>
                 <PatternDownload pattern={pattern} beadSize={beadSize} next="/v1-1/create/confirm/" className="mt-6" />
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Link href="/bead/" className="btn-secondary btn-sm">
+                  <Link href="/v1-1/bead/" className="btn-secondary btn-sm">
                     <Grid3x3 className="h-4 w-4" aria-hidden /> {t.flow.tryOnline}
                   </Link>
                   <Link href="/v1-1/create/product/" className="btn-secondary btn-sm">

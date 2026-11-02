@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowRight, Check, Crop, Grid3x3, Loader2, Lock, Sparkles } from 'lucide-react'
+import { Check, Crop, Download, Grid3x3, Loader2, Lock, Sparkles } from 'lucide-react'
 import { beadCount, chooseBoards, getPalette, gridLoss, rgbToLab, type Pattern } from '@picobreads/pattern-engine'
 import { V11Page } from '@/v11/Chrome'
 import { Ironed } from '@/components/Ironed'
@@ -280,11 +280,11 @@ export default function SettingsPage() {
             {t.common.back}
           </Link>
           <div className="flex flex-wrap gap-2">
-            <button type="button" className="btn-secondary" disabled={busy !== null} onClick={() => go('/bead/', 'bead')}>
-              {busy === 'bead' ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Grid3x3 className="h-5 w-5" aria-hidden />} {t.v11.custom.beadOnline}
+            <button type="button" className="btn-primary min-w-40" disabled={busy !== null} onClick={() => go('/v1-1/create/product/?form=digital', 'next')}>
+              {busy === 'next' ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Download className="h-5 w-5" aria-hidden />} {t.v11.custom.next}
             </button>
-            <button type="button" className="btn-primary min-w-40" disabled={busy !== null} onClick={() => go('/v1-1/create/product/', 'next')}>
-              {busy === 'next' ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : null} {t.v11.custom.next} <ArrowRight className="h-5 w-5" aria-hidden />
+            <button type="button" className="btn-secondary" disabled={busy !== null} onClick={() => go('/v1-1/bead/', 'bead')}>
+              {busy === 'bead' ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Grid3x3 className="h-5 w-5" aria-hidden />} {t.v11.custom.beadOnline}
             </button>
           </div>
         </div>
