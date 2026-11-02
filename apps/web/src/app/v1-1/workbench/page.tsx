@@ -9,9 +9,9 @@ import { PatternThumb } from '@/components/PatternThumb'
 import { useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
 import { V11Page } from '@/v11/Chrome'
-import { V11_PRICE_PLACEHOLDER, v11Size } from '@/v11/config'
+import { v11Size } from '@/v11/config'
 
-/** "My workspace": the signed-in user's drafts (saved from online beading) and orders. */
+/** "My workspace": the signed-in user's drafts (saved from online beading). Orders come once ordering opens. */
 export default function WorkbenchPage() {
   const t = useT()
   const w = t.v11.workbench
@@ -19,7 +19,6 @@ export default function WorkbenchPage() {
   const hydrated = useHydrated()
   const user = useStore((s) => s.user)
   const designs = useStore((s) => s.designs)
-  const orders = useStore((s) => s.orders)
 
   useEffect(() => {
     if (hydrated && !user) router.replace(`/v1-1/login/?next=${encodeURIComponent('/v1-1/workbench/')}`)
@@ -93,30 +92,6 @@ export default function WorkbenchPage() {
           )}
         </section>
 
-        <section className="mt-10" aria-labelledby="orders">
-          <h2 id="orders" className="font-display text-2xl">
-            {t.account.tabs.orders}
-          </h2>
-          {orders.length === 0 ? (
-            <p className="card mt-4 p-6 text-sm text-muted">{t.account.noOrders}</p>
-          ) : (
-            <ul className="card mt-4 divide-y divide-[var(--border)]">
-              {orders.map((o) => (
-                <li key={o.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
-                  <div>
-                    <p className="font-bold">
-                      {t.account.order} {o.id}
-                    </p>
-                    <p className="text-sm text-muted">
-                      {o.date} · {t.account.items(o.items.reduce((n, i) => n + i.qty, 0))} · {V11_PRICE_PLACEHOLDER}
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-accent-soft px-3 py-1 text-sm font-semibold">{t.account.status[o.status]}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
       </main>
     </V11Page>
   )

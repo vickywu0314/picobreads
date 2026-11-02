@@ -555,7 +555,7 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
             <Cloud className="h-4 w-4" aria-hidden /> {t.editor.saved}
           </span>
           <div className="flex gap-1">
-            <Link href="/lightbox/" className="btn-ghost btn-sm">
+            <Link href={v11 ? "/v1-1/lightbox/" : "/lightbox/"} className="btn-ghost btn-sm">
               <Lightbulb className="h-4 w-4" aria-hidden /> {t.pattern.lightbox}
             </Link>
             <button type="button" className="btn-ghost btn-sm" onClick={() => confirm(t.editor.resetConfirm) && resetProgress()}>

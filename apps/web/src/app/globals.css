@@ -223,3 +223,28 @@ body:has(.v11) {
   box-shadow: 2px 2px 0 var(--ink);
   transform: translate(-1px, -1px);
 }
+
+/* v1.1 light box: stays dark (it shines through the pegboard), with v1.1 type and sticker buttons. */
+.v11-lightbox {
+  font-family: 'Noto Sans SC', ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif;
+}
+.v11-lightbox .font-display {
+  font-family: 'Baloo 2', 'ZCOOL KuaiLe', ui-rounded, 'PingFang SC', system-ui, sans-serif;
+  font-weight: 400;
+}
+.v11-lightbox .lb-btn {
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  border-radius: 20px;
+  box-shadow: 3px 3px 0 #d9467a;
+}
+.v11-lightbox .lb-primary {
+  background: #d9467a;
+  color: #fff;
+  border-color: #fff;
+  box-shadow: 3px 3px 0 #fff;
+}
+.v11-lightbox .lb-warning {
+  background: #ffd84d;
+  color: #3b2a30;
+  border-bottom: 2px solid #3b2a30;
+}

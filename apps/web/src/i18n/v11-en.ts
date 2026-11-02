@@ -94,7 +94,7 @@ export const v11En = {
     saved: 'Saved to drafts — continue any time from My workspace',
     name: (n: number) => `Draft ${n}`,
   },
-  flowSteps: ['Upload', 'Crop', 'Customize', 'Choose', 'Confirm'],
+  flowSteps: ['Upload', 'Crop', 'Customize', 'Choose'],
   auth: { codeNote: 'Testing: any 6-digit code signs you in.' },
   download: {
     title: 'Download your pattern',

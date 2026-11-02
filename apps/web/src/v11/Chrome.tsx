@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, Globe, LayoutGrid, LogOut, Menu, ShoppingBag, UserRound, X } from 'lucide-react'
+import { ChevronDown, Globe, LayoutGrid, LogOut, Menu, UserRound, X } from 'lucide-react'
 import { LOCALES, useLocaleStore, useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
 import { markV11Flow } from '@/lib/flow'
@@ -131,7 +131,6 @@ export function V11Header() {
   const path = usePathname()
   const hydrated = useHydrated()
   const user = useStore((s) => s.user)
-  const bag = useStore((s) => s.cart.reduce((n, c) => n + c.qty, 0))
   const toast = useToast((s) => s.show)
   const [menu, setMenu] = useState(false)
   useEffect(() => setMenu(false), [path])
@@ -170,12 +169,7 @@ export function V11Header() {
         <nav className="hidden items-center gap-7 md:flex">{links.map((l) => navItem(l))}</nav>
         <div className="flex items-center gap-1 sm:gap-1.5">
           <LanguageMenu />
-          {hydrated && bag > 0 && (
-            <Link href={v11Href('/cart/')} className="icon-btn relative" aria-label={`${t.v11.nav.bag} (${bag})`}>
-              <ShoppingBag className="h-5 w-5" aria-hidden />
-              <span className="absolute right-0.5 top-0.5 grid h-4.5 min-w-4.5 place-items-center rounded-full bg-[var(--accent)] px-1 text-[10px] font-bold text-white">{bag}</span>
-            </Link>
-          )}
+          {/* No bag while ordering isn't open. */}
           {hydrated && user ? (
             <UserMenu name={user.name} />
           ) : (

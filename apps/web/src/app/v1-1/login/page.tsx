@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useState } from 'react'
 import { MailCheck } from 'lucide-react'
@@ -83,16 +82,10 @@ function Login() {
             </div>
           </>
         )}
-        <p className="border-t border-border pt-4 text-xs text-muted">{t.auth.guest}</p>
-        <p className="flex items-center gap-2 text-xs text-muted">
+        <p className="flex items-center gap-2 border-t border-border pt-4 text-xs text-muted">
           {t.v11.auth.codeNote}
         </p>
       </form>
-      <p className="mt-4 text-center text-sm">
-        <Link href="/v1-1/cart/" className="text-muted hover:text-fg">
-          {t.nav.bag} →
-        </Link>
-      </p>
     </main>
   )
 }

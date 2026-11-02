@@ -1,99 +1,12 @@
 'use client'
 
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Grid3x3, ShoppingBag } from 'lucide-react'
-import { getPalette } from '@picobreads/pattern-engine'
+import { useEffect } from 'react'
 import { V11Page } from '@/v11/Chrome'
-import { Ironed } from '@/components/Ironed'
-import { NoPattern } from '@/components/NoPattern'
-import { Stepper } from '@/components/ui'
-import { useT } from '@/i18n'
-import { useHydrated, useStore } from '@/lib/store'
-import { legendOf } from '@/lib/pattern'
-import { V11_PRICE_PLACEHOLDER, v11BoardGrid, v11Size } from '@/v11/config'
-import { PatternDownload } from '@/v11/PatternDownload'
 
-export default function ConfirmStep() {
-  const t = useT()
+/** The confirm step was removed (free patterns download on the previous step; ordering isn't open yet). */
+export default function Moved() {
   const router = useRouter()
-  const hydrated = useHydrated()
-  const draft = useStore((s) => s.draft)
-  const iron = useStore((s) => s.settings.iron ?? 'normal')
-
-  if (!hydrated) return <V11Page footer={false}>{null}</V11Page>
-  if (!draft)
-    return (
-      <V11Page>
-        <NoPattern href="/v1-1/create/" />
-      </V11Page>
-    )
-
-  const { pattern, form, tier, beadSize, priceUsd } = draft
-  const fin = v11Size(pattern.width, pattern.height, beadSize)
-  const rows: [string, string, string?][] = [
-    [t.flow.product, t.v11.product.forms[form].title, '/v1-1/create/product/'],
-    [
-      t.flow.specs,
-      `${t.v11.settings.boardsTitle(v11BoardGrid(pattern.width, pattern.height, beadSize).cols, v11BoardGrid(pattern.width, pattern.height, beadSize).rows)} · ${pattern.width} × ${pattern.height} · ${form === 'digital' ? '' : `${t.v11.settings.beads[beadSize].title} · ≈ ${fin.cm} cm · `}${t.common.colors(legendOf(pattern).length)} · ${getPalette(pattern.paletteId).brand}`,
-      '/v1-1/create/settings/',
-    ],
-    [t.flow.price, form === 'digital' ? t.flow.free : V11_PRICE_PLACEHOLDER],
-    [t.flow.timing, form === 'digital' ? t.v11.product.digitalTime : t.flow.delivery[form]],
-  ]
-
-  return (
-    <V11Page>
-      <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
-        <Stepper step={4} steps={t.v11.flowSteps} />
-        <h1 className="mt-6 font-serif text-4xl">{form === 'digital' ? t.v11.product.confirmDigital : t.flow.confirmTitle}</h1>
-        <div className="mt-6 grid gap-6 md:grid-cols-[1fr_1.2fr]">
-          <div className="card p-4">
-            <div className="rounded-2xl bg-[repeating-conic-gradient(rgba(128,128,128,0.12)_0_25%,transparent_0_50%)] bg-[length:20px_20px] p-4">
-              <Ironed pattern={pattern} iron={iron} />
-            </div>
-          </div>
-          <div>
-            <dl className="card divide-y divide-border">
-              {rows.map(([k, v, edit]) => (
-                <div key={k} className="flex items-start gap-4 p-4">
-                  <dt className="w-32 shrink-0 text-sm text-muted">{k}</dt>
-                  <dd className="flex-1 font-semibold">{v}</dd>
-                  {edit && (
-                    <Link href={edit} className="text-sm font-semibold text-accent hover:underline">
-                      {t.flow.edit}
-                    </Link>
-                  )}
-                </div>
-              ))}
-            </dl>
-            {form === 'digital' ? (
-              <>
-                <PatternDownload pattern={pattern} beadSize={beadSize} next="/v1-1/create/confirm/" className="mt-6" />
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Link href="/v1-1/bead/" className="btn-secondary btn-sm">
-                    <Grid3x3 className="h-4 w-4" aria-hidden /> {t.flow.tryOnline}
-                  </Link>
-                  <Link href="/v1-1/create/product/" className="btn-secondary btn-sm">
-                    <ShoppingBag className="h-4 w-4" aria-hidden /> {t.v11.product.forms.kit.title}
-                  </Link>
-                </div>
-              </>
-            ) : (
-              <button
-                type="button"
-                className="btn-primary mt-6 h-14 w-full text-lg"
-                onClick={() => {
-                  useStore.getState().addToCart({ form, tier, beadSize, priceUsd, pattern })
-                  router.push('/v1-1/cart/')
-                }}
-              >
-                <ShoppingBag className="h-5 w-5" aria-hidden /> {t.flow.addToBag}
-              </button>
-            )}
-          </div>
-        </div>
-      </main>
-    </V11Page>
-  )
+  useEffect(() => router.replace('/v1-1/create/product/'), [router])
+  return <V11Page footer={false}>{null}</V11Page>
 }

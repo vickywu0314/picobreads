@@ -95,7 +95,7 @@ export const v11Zh: typeof v11En = {
     saved: '已存到草稿，可在「我的工作台」继续',
     name: (n: number) => `草稿 ${n}`,
   },
-  flowSteps: ['上传', '裁剪', '定制', '购买形式', '确认'],
+  flowSteps: ['上传', '裁剪', '定制', '购买形式'],
   auth: { codeNote: '测试期：输入任意 6 位数字即可登录。' },
   download: {
     title: '下载图纸',
