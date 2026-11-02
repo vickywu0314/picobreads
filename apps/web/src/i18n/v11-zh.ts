@@ -70,6 +70,19 @@ export const v11Zh: typeof v11En = {
       glitter: { title: '闪片烫', hint: '垫格力特布，亮晶晶的闪光' },
     },
   },
+  download: {
+    title: '下载图纸 PNG',
+    testNote: '测试期间不发邮件，直接下载。每块底板一张，每格印色号，带坐标和用量清单。',
+    all: '全部下载',
+    overview: '总览（整张图 + 底板编号 + 用量清单）',
+    board: (n: number, total: number, row: number, col: number) => `底板 ${n}/${total}（第 ${row} 行第 ${col} 列）`,
+    range: (x0: number, x1: number, y0: number, y1: number) => `第 ${x0}–${x1} 列，第 ${y0}–${y1} 行（与总览坐标一致）· 粗线每 10 格，中线每 5 格`,
+    legend: '用量清单',
+    beads: (n: number) => `${n.toLocaleString()} 颗`,
+    empty: '这块底板没有豆子',
+    summary: (w: number, h: number, bead: string, cm: string, boards: number, colors: number, beads: number) =>
+      `${w} × ${h} 格 · ${bead} · 成品约 ${cm} cm · ${boards} 块底板 · ${colors} 种颜色 · 共 ${beads.toLocaleString()} 颗 · MARD 264 色号`,
+  },
   product: {
     yourChoice: '你的图纸',
     materials: '材料清单',

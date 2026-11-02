@@ -12,6 +12,7 @@ import { useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
 import { legendOf } from '@/lib/pattern'
 import { v11Size } from '@/v11/config'
+import { PatternDownload } from '@/v11/PatternDownload'
 import { getLibraryPattern } from '@/config/catalog'
 
 export default function PreviewStep() {
@@ -114,6 +115,7 @@ export default function PreviewStep() {
             {t.flow.toProduct} <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         </div>
+        <PatternDownload pattern={pattern} beadSize={beadSize} className="mt-8" />
       </main>
     </V11Page>
   )

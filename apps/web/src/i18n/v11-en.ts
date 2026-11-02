@@ -69,6 +69,19 @@ export const v11En = {
       glitter: { title: 'Glitter', hint: 'Glitter cloth: sparkly shine' },
     },
   },
+  download: {
+    title: 'Download pattern PNGs',
+    testNote: 'Testing: no email for now — download directly. One sheet per pegboard with the color code in every cell, coordinates and bead counts.',
+    all: 'Download all',
+    overview: 'Overview (whole picture, board numbers, bead counts)',
+    board: (n: number, total: number, row: number, col: number) => `Board ${n}/${total} (row ${row}, column ${col})`,
+    range: (x0: number, x1: number, y0: number, y1: number) => `Columns ${x0}–${x1}, rows ${y0}–${y1} (same as the overview) · bold line every 10, medium every 5`,
+    legend: 'Bead counts',
+    beads: (n: number) => `${n.toLocaleString()} beads`,
+    empty: 'No beads on this board',
+    summary: (w: number, h: number, bead: string, cm: string, boards: number, colors: number, beads: number) =>
+      `${w} × ${h} · ${bead} · ≈ ${cm} cm · ${boards} board${boards === 1 ? '' : 's'} · ${colors} colors · ${beads.toLocaleString()} beads · MARD 264 codes`,
+  },
   product: {
     yourChoice: 'Your pattern',
     materials: 'Materials list',
