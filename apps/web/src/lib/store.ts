@@ -45,6 +45,8 @@ export interface SavedDesign {
   settings: Settings
   pattern: Pattern
   placed: string
+  /** Email of the signed-in user who saved it (older designs: none). */
+  owner?: string
 }
 
 export interface Order {
@@ -252,10 +254,11 @@ export const useStore = create<State>()(
       signIn: (email, name) => set({ user: { email, name: name || email.split('@')[0] } }),
       signOut: () => set({ user: null }),
       saveDesign: (name) => {
-        const { pattern, photo, aspectId, settings, placed, designs, currentDesignId } = get()
+        const { pattern, photo, aspectId, settings, placed, designs, currentDesignId, user } = get()
         if (!pattern) return null
         const id = currentDesignId ?? `d_${Math.random().toString(36).slice(2, 9)}`
-        const design: SavedDesign = { id, name, updatedAt: new Date().toISOString(), photo, aspectId, settings, pattern, placed }
+        const prev = designs.find((d) => d.id === id)
+        const design: SavedDesign = { id, name: prev?.name ?? name, updatedAt: new Date().toISOString(), photo, aspectId, settings, pattern, placed, owner: user?.email ?? prev?.owner }
         set({ designs: [design, ...designs.filter((d) => d.id !== id)], currentDesignId: id })
         return id
       },

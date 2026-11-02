@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, CheckCheck, ChevronRight, Cloud, Eye, Lightbulb, Maximize, Minus, Plus, RotateCcw, Undo2, Volume2, VolumeX } from 'lucide-react'
+import { ArrowLeft, CheckCheck, ChevronRight, Cloud, Eye, Lightbulb, Maximize, Minus, Plus, RotateCcw, Save, Undo2, Volume2, VolumeX } from 'lucide-react'
 import { beadCount, regularColorIndices, sectionCellIndices } from '@picobreads/pattern-engine'
 import { PatternCanvas, type PatternCanvasHandle, type ToolPointerEvent } from '@/components/PatternCanvas'
 import { NoPattern } from '@/components/NoPattern'
@@ -17,6 +18,7 @@ import { useHydrated, useStore } from '@/lib/store'
 import { usePatternData } from '@/lib/usePattern'
 import { css } from '@/lib/pattern'
 import { buzz, isMuted, setMuted, sfx } from '@/lib/sfx'
+import { isV11Flow } from '@/lib/flow'
 
 type Pt = { x: number; y: number }
 
@@ -40,6 +42,20 @@ export default function BeadPage() {
   const [tool, setToolState] = useState<ToolId>('pen')
   const [load, setLoadState] = useState<{ color: number | null; count: number }>({ color: null, count: 0 })
   const [toast, setToast] = useState<string | null>(null)
+  // Opened from v1.1: back goes to its Customize step, and drafts can be saved to the account.
+  const [v11, setV11] = useState(false)
+  useEffect(() => setV11(isV11Flow()), [])
+  const router = useRouter()
+  const saveDraft = () => {
+    const s = useStore.getState()
+    if (!s.user) {
+      router.push(`/v1-1/login/?next=${encodeURIComponent('/bead/')}`)
+      return
+    }
+    const mine = s.designs.filter((d) => !d.owner || d.owner === s.user!.email)
+    s.saveDesign(t.v11.draft.name(mine.length + 1))
+    setToast(t.v11.draft.saved)
+  }
   const [fixCell, setFixCell] = useState<number | null>(null)
   const [finished, setFinished] = useState(false)
   const [muted, setMutedState] = useState(false)
@@ -365,10 +381,19 @@ export default function BeadPage() {
         />
         <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between gap-2 p-2">
           <div className="pointer-events-auto flex items-center gap-1 rounded-full bg-surface/90 p-1 shadow backdrop-blur">
-            <Link href="/pattern/" className="icon-btn" aria-label={t.common.back}>
+            <Link href={v11 ? '/v1-1/create/settings/' : '/pattern/'} className="icon-btn" aria-label={t.common.back}>
               <ArrowLeft className="h-5 w-5" aria-hidden />
             </Link>
             <span className="pr-1 text-sm font-bold">{t.editor.title}</span>
+            {v11 && (
+              <button
+                type="button"
+                onClick={saveDraft}
+                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-sm font-bold"
+              >
+                <Save className="h-4 w-4" aria-hidden /> {t.v11.draft.save}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setPreviewOpen(true)}

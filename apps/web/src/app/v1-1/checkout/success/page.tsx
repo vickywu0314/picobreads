@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { CheckCircle2, Grid3x3, Mail } from 'lucide-react'
 import { V11Page } from '@/v11/Chrome'
-import { ProtoTag } from '@/components/PrototypeBanner'
 import { useT } from '@/i18n'
 import { useStore } from '@/lib/store'
 
@@ -24,7 +23,7 @@ export default function SuccessPage() {
         <h1 className="mt-4 font-serif text-4xl">{t.success.title}</h1>
         <p className="mt-2 text-muted">{t.success.body}</p>
         <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-surface-2 px-4 py-2 font-mono text-sm">
-          {t.success.order} {order} <ProtoTag />
+          {t.success.order} {order}
         </p>
         <div className="card mt-10 p-6 text-left">
           <h2 className="font-bold">{t.success.next}</h2>

@@ -3,17 +3,17 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
-import { Check, Crop, Loader2, Lock, Sparkles, Wand2 } from 'lucide-react'
-import { chooseBoards, getPalette, gridLoss, rgbToLab, type Pattern } from '@picobreads/pattern-engine'
+import { ArrowRight, Check, Crop, Grid3x3, Loader2, Lock, Sparkles } from 'lucide-react'
+import { beadCount, chooseBoards, getPalette, gridLoss, rgbToLab, type Pattern } from '@picobreads/pattern-engine'
 import { V11Page } from '@/v11/Chrome'
 import { Ironed } from '@/components/Ironed'
 import { IRON_STYLES, type IronStyle } from '@/components/bead/ProgressPreview'
 import { Segmented, Stepper, Toggle } from '@/components/ui'
 import { BOARD_PEGS, V11_PALETTE_ID, gridSize, type TierId } from '@/config/site'
-import { V11_BEAD_SIZES, V11_DEFAULTS, V11_TIERS, v11Beads, v11Boards, v11Size, v11TierByBoards } from '@/v11/config'
+import { V11_BEAD_SIZES, V11_DEFAULTS, V11_TIERS, v11Beads, v11Boards, v11Size, v11Tier, v11TierByBoards } from '@/v11/config'
 import { useT } from '@/i18n'
 import { aspectValue, useHydrated, useStore } from '@/lib/store'
-import { generateFromPhoto } from '@/lib/generate'
+import { SAMPLE_PHOTO_URL, generateFromPhoto } from '@/lib/generate'
 import { useGeneratedPattern } from '@/lib/useGenerated'
 import { legendOf, maxColorsFor } from '@/lib/pattern'
 import { useBoardAdvice } from '@/lib/useBoardAdvice'
@@ -33,7 +33,8 @@ export default function SettingsPage() {
   const settings = useStore((s) => s.settings)
   const setSettings = useStore((s) => s.setSettings)
   const applyPattern = useStore((s) => s.applyPattern)
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState<'bead' | 'next' | null>(null)
+  const [view, setView] = useState<'final' | 'board' | 'photo'>('final')
 
   // v1.1 always uses the full MARD 264 set; the engine picks illustration vs photo by itself.
   // (tier / iron are left out so picking a tile or a finish doesn't regenerate all three.)
@@ -77,13 +78,31 @@ export default function SettingsPage() {
   // A small subject on a wide plain backdrop wastes beads on the backdrop.
   const loose = !trim && advice != null && advice.subjectShare < 0.45
 
+  const selected = variants[settings.tier]?.pattern ?? null
+
+  // Make the picked result the pattern (generate only if it isn't ready yet), then move on.
+  const go = async (href: string, which: 'bead' | 'next') => {
+    setBusy(which)
+    try {
+      const tier = V11_TIERS.find((x) => x.id === settings.tier) ?? V11_TIERS[0]
+      const picked = variants[tier.id].pattern ?? (await generateFromPhoto(photo, gen, aspectId, v11Beads(tier.id, bead)))
+      const current = useStore.getState().pattern
+      // Keep beading progress when the pattern didn't change (e.g. back from online beading).
+      if (!current || current.cells.length !== picked.cells.length || current.cells.some((c, i) => c !== picked.cells[i])) applyPattern(picked)
+      router.push(href)
+    } finally {
+      setBusy(null)
+    }
+  }
+
   if (!hydrated) return <V11Page footer={false}>{null}</V11Page>
 
   return (
     <V11Page>
       <main className="container-page py-6">
-        <Stepper step={2} />
-        <h1 className="mt-6 font-serif text-4xl">{t.flow.sizeTitle}</h1>
+        <Stepper step={2} steps={t.v11.flowSteps} />
+        <h1 className="mt-6 font-serif text-4xl">{t.v11.custom.title}</h1>
+        <p className="mt-2 text-muted">{t.v11.custom.body}</p>
 
         {/* Three ironed results to choose from — the chosen one becomes the pattern. */}
         <section className="mt-6" aria-label={t.v11.settings.pickTitle}>
@@ -170,7 +189,42 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        <div className="mt-8 max-w-2xl">
+        {/* Live result of the selected size, next to the photo — this replaces the old preview step. */}
+        <div className="mt-8 grid items-start gap-8 md:grid-cols-[1.1fr_1fr]">
+          <section className="card p-3" aria-label={t.v11.custom.previewTitle}>
+            <div className="flex flex-wrap items-center justify-between gap-2 px-1 pb-3">
+              <h2 className="font-display text-xl">{t.v11.custom.previewTitle}</h2>
+              <div className="w-full max-w-72">
+                <Segmented
+                  label={t.v11.custom.previewTitle}
+                  value={view}
+                  onChange={setView}
+                  options={[
+                    { value: 'final', label: t.flow.finished },
+                    { value: 'board', label: t.flow.onBoard },
+                    { value: 'photo', label: t.flow.yourPhoto },
+                  ]}
+                />
+              </div>
+            </div>
+            <div className="grid aspect-square place-items-center overflow-hidden rounded-2xl bg-[repeating-conic-gradient(rgba(128,128,128,0.12)_0_25%,transparent_0_50%)] bg-[length:20px_20px] p-3">
+              {view === 'photo' ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photo ?? SAMPLE_PHOTO_URL} alt={t.flow.yourPhoto} className="max-h-full max-w-full rounded-xl object-contain" />
+              ) : selected ? (
+                <Ironed pattern={selected} view={view} iron={iron} className={variants[settings.tier]?.busy ? 'opacity-70' : ''} />
+              ) : (
+                <Loader2 className="h-8 w-8 animate-spin text-muted" aria-hidden />
+              )}
+            </div>
+            {selected && (
+              <p className="mt-3 text-center text-sm text-muted">
+                {t.v11.settings.tierTitle(v11Tier(settings.tier).perSide)} · {selected.width} × {selected.height} · ≈ {v11Size(selected.width, selected.height, bead).cm} cm ·{' '}
+                {t.common.colors(legendOf(selected).length)} · {t.v11.custom.beads(beadCount(selected))}
+              </p>
+            )}
+          </section>
+
           <section className="flex flex-col gap-6">
             <div>
               <h2 className="label mb-2">{t.v11.settings.iron}</h2>
@@ -225,25 +279,14 @@ export default function SettingsPage() {
           <Link href="/v1-1/create/" className="btn-secondary">
             {t.common.back}
           </Link>
-          <button
-            type="button"
-            className="btn-primary min-w-48"
-            disabled={busy}
-            onClick={async () => {
-              setBusy(true)
-              try {
-                // Use exactly the result the user picked; generate only if it isn't ready yet.
-                const tier = V11_TIERS.find((x) => x.id === settings.tier) ?? V11_TIERS[0]
-                const picked = variants[tier.id].pattern ?? (await generateFromPhoto(photo, gen, aspectId, v11Beads(tier.id, bead)))
-                applyPattern(picked)
-                router.push('/v1-1/create/preview/')
-              } finally {
-                setBusy(false)
-              }
-            }}
-          >
-            {busy ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Wand2 className="h-5 w-5" aria-hidden />} {t.flow.toPreview}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="btn-secondary" disabled={busy !== null} onClick={() => go('/bead/', 'bead')}>
+              {busy === 'bead' ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Grid3x3 className="h-5 w-5" aria-hidden />} {t.v11.custom.beadOnline}
+            </button>
+            <button type="button" className="btn-primary min-w-40" disabled={busy !== null} onClick={() => go('/v1-1/create/product/', 'next')}>
+              {busy === 'next' ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : null} {t.v11.custom.next} <ArrowRight className="h-5 w-5" aria-hidden />
+            </button>
+          </div>
         </div>
         <p className="mt-3 flex items-center gap-2 text-xs text-muted">
           <Lock className="h-3.5 w-3.5" aria-hidden /> {t.common.privacyLine}

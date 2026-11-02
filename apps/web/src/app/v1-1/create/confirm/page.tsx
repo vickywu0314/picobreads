@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { Grid3x3, ShoppingBag } from 'lucide-react'
 import { getPalette } from '@picobreads/pattern-engine'
 import { V11Page } from '@/v11/Chrome'
-import { ProtoTag } from '@/components/PrototypeBanner'
 import { Ironed } from '@/components/Ironed'
 import { NoPattern } from '@/components/NoPattern'
 import { Stepper } from '@/components/ui'
@@ -33,21 +32,21 @@ export default function ConfirmStep() {
   const { pattern, form, tier, beadSize, priceUsd } = draft
   const fin = v11Size(pattern.width, pattern.height, beadSize)
   const rows: [string, string, string?][] = [
-    [t.flow.product, t.flow.forms[form].title, '/v1-1/create/product/'],
+    [t.flow.product, t.v11.product.forms[form].title, '/v1-1/create/product/'],
     [
       t.flow.specs,
       `${t.v11.settings.tierTitle(v11Tier(tier).perSide)} · ${pattern.width} × ${pattern.height} · ${form === 'digital' ? '' : `${t.v11.settings.beads[beadSize].title} · ≈ ${fin.cm} cm · `}${t.common.colors(legendOf(pattern).length)} · ${getPalette(pattern.paletteId).brand}`,
       '/v1-1/create/settings/',
     ],
     [t.flow.price, form === 'digital' ? t.flow.free : V11_PRICE_PLACEHOLDER],
-    [t.flow.timing, t.flow.delivery[form]],
+    [t.flow.timing, form === 'digital' ? t.v11.product.digitalTime : t.flow.delivery[form]],
   ]
 
   return (
     <V11Page>
       <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
-        <Stepper step={5} />
-        <h1 className="mt-6 font-serif text-4xl">{t.flow.confirmTitle}</h1>
+        <Stepper step={4} steps={t.v11.flowSteps} />
+        <h1 className="mt-6 font-serif text-4xl">{form === 'digital' ? t.v11.product.confirmDigital : t.flow.confirmTitle}</h1>
         <div className="mt-6 grid gap-6 md:grid-cols-[1fr_1.2fr]">
           <div className="card p-4">
             <div className="rounded-2xl bg-[repeating-conic-gradient(rgba(128,128,128,0.12)_0_25%,transparent_0_50%)] bg-[length:20px_20px] p-4">
@@ -68,16 +67,15 @@ export default function ConfirmStep() {
                 </div>
               ))}
             </dl>
-            <p className="mt-2 text-xs text-muted">{t.flow.placeholderPrices}</p>
             {form === 'digital' ? (
               <>
-                <PatternDownload pattern={pattern} beadSize={beadSize} className="mt-6" />
+                <PatternDownload pattern={pattern} beadSize={beadSize} next="/v1-1/create/confirm/" className="mt-6" />
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link href="/bead/" className="btn-secondary btn-sm">
                     <Grid3x3 className="h-4 w-4" aria-hidden /> {t.flow.tryOnline}
                   </Link>
                   <Link href="/v1-1/create/product/" className="btn-secondary btn-sm">
-                    <ShoppingBag className="h-4 w-4" aria-hidden /> {t.flow.forms.kit.title}
+                    <ShoppingBag className="h-4 w-4" aria-hidden /> {t.v11.product.forms.kit.title}
                   </Link>
                 </div>
               </>
@@ -93,9 +91,6 @@ export default function ConfirmStep() {
                 <ShoppingBag className="h-5 w-5" aria-hidden /> {t.flow.addToBag}
               </button>
             )}
-            <p className="mt-3 flex justify-center">
-              <ProtoTag />
-            </p>
           </div>
         </div>
       </main>

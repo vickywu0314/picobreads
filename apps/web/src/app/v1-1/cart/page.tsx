@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { Lock, Minus, Plus, Trash2 } from 'lucide-react'
 import { V11Page } from '@/v11/Chrome'
 import { V11_PRICE_PLACEHOLDER, v11Tier } from '@/v11/config'
-import { ProtoTag } from '@/components/PrototypeBanner'
 import { Ironed } from '@/components/Ironed'
 import { getPalette } from '@picobreads/pattern-engine'
 import { useT } from '@/i18n'
@@ -23,7 +22,7 @@ export default function CartPage() {
       <main className="container-page py-6">
         <div className="flex items-center gap-3">
           <h1 className="font-serif text-4xl">{t.bag.title}</h1>
-          <ProtoTag />
+         
         </div>
         {!hydrated ? null : cart.length === 0 ? (
           <div className="card mt-6 p-10 text-center">
@@ -43,7 +42,7 @@ export default function CartPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-bold">{t.bag.itemTitle(t.flow.forms[item.form ?? 'kit'].title, t.v11.settings.tierTitle(v11Tier(item.tier).perSide))}</p>
+                        <p className="font-bold">{t.bag.itemTitle(t.v11.product.forms[item.form ?? 'kit'].title, t.v11.settings.tierTitle(v11Tier(item.tier).perSide))}</p>
                         <p className="text-sm text-muted">
                           {item.pattern.width} × {item.pattern.height} · {t.v11.settings.beads[item.beadSize].title} · {getPalette(item.pattern.paletteId).brand}
                         </p>

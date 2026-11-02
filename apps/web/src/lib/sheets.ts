@@ -14,6 +14,17 @@ export interface SheetText {
   legend: string
   beads: (n: number) => string
   empty: string
+  /** Materials sheet. */
+  materials: string
+  materialsNote: string
+  cols: { code: string; name: string; need: string; kit: string }
+  total: string
+}
+
+/** Extra beads per color in the materials list (share), and the board line printed under it. */
+export interface MaterialsInfo {
+  allowance: number
+  boards: string
 }
 
 export interface SheetPage {
@@ -31,18 +42,19 @@ const css = (rgb: [number, number, number]) => `rgb(${rgb[0]} ${rgb[1]} ${rgb[2]
 const textOn = (rgb: [number, number, number]) => (luminance(rgb) > 0.6 ? '#1b1b1b' : '#ffffff')
 
 /** Sheets for printing / beading: an overview page plus one page per pegboard with a color code in every cell. */
-export function sheetPages(pattern: Pattern, palette: Palette, boardPegs: number, text: SheetText): SheetPage[] {
+export function sheetPages(pattern: Pattern, palette: Palette, boardPegs: number, text: SheetText, materials: MaterialsInfo): SheetPage[] {
   const sections = splitSections(pattern.width, pattern.height, boardPegs).filter((s) =>
     sectionCellIndices(s, pattern.width).some((i) => pattern.cells[i] >= 0),
   )
   const pages: SheetPage[] = [
-    { id: 'overview', name: 'pattern-overview', label: text.overview, render: () => drawOverview(pattern, palette, boardPegs, sections, text) },
+    { id: 'overview', name: '00-overview', label: text.overview, render: () => drawOverview(pattern, palette, boardPegs, sections, text) },
+    { id: 'materials', name: '01-materials', label: text.materials, render: () => drawMaterials(pattern, palette, text, materials) },
   ]
   sections.forEach((s, k) => {
     const row = Math.floor(s.y / boardPegs) + 1
     const col = Math.floor(s.x / boardPegs) + 1
     const label = text.board(k + 1, sections.length, row, col)
-    pages.push({ id: s.id, name: `pattern-board-${k + 1}`, label, render: () => drawBoard(pattern, palette, s, label, text) })
+    pages.push({ id: s.id, name: `${String(k + 2).padStart(2, '0')}-board-${k + 1}`, label, render: () => drawBoard(pattern, palette, s, label, text) })
   })
   return pages
 }
@@ -244,6 +256,108 @@ function drawBoard(pattern: Pattern, palette: Palette, s: Section, label: string
   }
   drawLegend(ctx, rows, 32, top + gridH + 48, width - 64, text)
   return canvas
+}
+
+function drawMaterials(pattern: Pattern, palette: Palette, text: SheetText, info: MaterialsInfo) {
+  const rows = legendRows(pattern.cells, palette)
+  const width = 1180
+  const rowH = 40
+  const top = 150
+  const height = top + 44 + rows.length * rowH + 70
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d')!
+  header(ctx, `${text.title} · ${text.materials}`, text.summary, width)
+  ctx.fillStyle = MUTED
+  ctx.font = `600 15px ${FONT}`
+  ctx.fillText(`${text.materialsNote} · ${info.boards}`, 32, 108, width - 64)
+  const col = { code: 32, name: 150, need: 820, kit: 1100 }
+  ctx.font = `700 15px ${FONT}`
+  ctx.fillStyle = INK
+  ctx.textAlign = 'left'
+  ctx.fillText(text.cols.code, col.code, top + 20)
+  ctx.fillText(text.cols.name, col.name, top + 20)
+  ctx.textAlign = 'right'
+  ctx.fillText(text.cols.need, col.need, top + 20)
+  ctx.fillText(text.cols.kit, col.kit, top + 20)
+  ctx.strokeStyle = INK
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.moveTo(32, top + 34)
+  ctx.lineTo(width - 32, top + 34)
+  ctx.stroke()
+  let need = 0
+  let kit = 0
+  rows.forEach((r, i) => {
+    const y = top + 44 + i * rowH
+    const withSpare = Math.ceil(r.count * (1 + info.allowance))
+    need += r.count
+    kit += withSpare
+    if (i % 2) {
+      ctx.fillStyle = '#faf6f7'
+      ctx.fillRect(32, y, width - 64, rowH)
+    }
+    ctx.fillStyle = css(r.color.rgb)
+    ctx.beginPath()
+    ctx.roundRect(col.code, y + 7, 70, 26, 6)
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)'
+    ctx.lineWidth = 1
+    ctx.stroke()
+    ctx.fillStyle = textOn(r.color.rgb)
+    ctx.font = `700 14px ${FONT}`
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(r.color.code, col.code + 35, y + 20.5)
+    ctx.textAlign = 'left'
+    ctx.fillStyle = INK
+    ctx.font = `15px ${FONT}`
+    ctx.fillText(r.color.name, col.name, y + 20.5)
+    ctx.textAlign = 'right'
+    ctx.font = `600 15px ui-monospace, Menlo, monospace`
+    ctx.fillText(r.count.toLocaleString(), col.need, y + 20.5)
+    ctx.fillText(withSpare.toLocaleString(), col.kit, y + 20.5)
+  })
+  const y = top + 44 + rows.length * rowH
+  ctx.strokeStyle = INK
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.moveTo(32, y + 4)
+  ctx.lineTo(width - 32, y + 4)
+  ctx.stroke()
+  ctx.textBaseline = 'middle'
+  ctx.textAlign = 'left'
+  ctx.font = `800 16px ${FONT}`
+  ctx.fillText(`${text.total} · ${rows.length}`, col.code, y + 30)
+  ctx.textAlign = 'right'
+  ctx.fillText(need.toLocaleString(), col.need, y + 30)
+  ctx.fillText(kit.toLocaleString(), col.kit, y + 30)
+  return canvas
+}
+
+const toBlob = (canvas: HTMLCanvasElement) => new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
+
+function saveBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 4000)
+}
+
+/** Every page as PNG in one .zip. */
+export async function downloadZip(pages: SheetPage[], filename: string): Promise<void> {
+  const { zipFiles } = await import('./zip')
+  const files: { name: string; data: Uint8Array }[] = []
+  for (const p of pages) {
+    const blob = await toBlob(p.render())
+    if (blob) files.push({ name: `${p.name}.png`, data: new Uint8Array(await blob.arrayBuffer()) })
+  }
+  saveBlob(zipFiles(files), filename)
 }
 
 /** Save a canvas as a PNG file. */

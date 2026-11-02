@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useState } from 'react'
 import { MailCheck } from 'lucide-react'
 import { V11Page } from '@/v11/Chrome'
-import { ProtoTag } from '@/components/PrototypeBanner'
 import { useT } from '@/i18n'
 import { useStore } from '@/lib/store'
 
@@ -86,7 +85,7 @@ function Login() {
         )}
         <p className="border-t border-border pt-4 text-xs text-muted">{t.auth.guest}</p>
         <p className="flex items-center gap-2 text-xs text-muted">
-          <ProtoTag /> {t.auth.prototypeNote}
+          {t.v11.auth.codeNote}
         </p>
       </form>
       <p className="mt-4 text-center text-sm">

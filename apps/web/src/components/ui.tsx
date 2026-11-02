@@ -58,11 +58,12 @@ export function Swatch({ rgb, number, size = 28, done }: { rgb: Rgb; number?: nu
 }
 
 /** 6-step customization progress (Upload → Crop → Size → Preview → Product → Confirm). */
-export function Stepper({ step }: { step: number }) {
+export function Stepper({ step, steps }: { step: number; steps?: readonly string[] }) {
   const t = useT()
+  const list = steps ?? t.steps
   return (
     <ol className="flex items-center gap-1.5 text-xs font-semibold text-muted" aria-label={t.common.progress}>
-      {t.steps.map((s, i) => (
+      {list.map((s, i) => (
         <li key={s} className="flex items-center gap-1.5" aria-current={i === step ? 'step' : undefined}>
           <span
             className={`grid h-6 w-6 shrink-0 place-items-center rounded-full ${
@@ -72,7 +73,7 @@ export function Stepper({ step }: { step: number }) {
             {i + 1}
           </span>
           <span className={`${i === step ? 'text-fg' : 'hidden md:inline'}`}>{s}</span>
-          {i < t.steps.length - 1 && <span className="h-px w-3 bg-border md:w-5" aria-hidden />}
+          {i < list.length - 1 && <span className="h-px w-3 bg-border md:w-5" aria-hidden />}
         </li>
       ))}
     </ol>

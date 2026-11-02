@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, Globe, LogOut, Menu, ShoppingBag, X } from 'lucide-react'
+import { ChevronDown, Globe, LayoutGrid, LogOut, Menu, ShoppingBag, UserRound, X } from 'lucide-react'
 import { LOCALES, useLocaleStore, useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
+import { markV11Flow } from '@/lib/flow'
 import { V11, v11Href } from './config'
 import { Toast, useToast } from './Toast'
 
@@ -76,6 +77,55 @@ function LanguageMenu() {
   )
 }
 
+function UserMenu({ name }: { name: string }) {
+  const t = useT()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const close = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false)
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [open])
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        className="btn-secondary btn-sm h-10 max-w-40 rounded-full px-4"
+      >
+        <UserRound className="h-4 w-4 shrink-0" aria-hidden />
+        <span className="truncate">{name}</span>
+        <ChevronDown className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      </button>
+      {open && (
+        <ul role="menu" className="absolute right-0 top-12 z-40 w-44 overflow-hidden rounded-2xl border-2 border-[var(--ink)] bg-white py-1 shadow-[4px_4px_0_var(--ink)]">
+          <li>
+            <Link role="menuitem" href={v11Href('/workbench/')} onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-[var(--accent-soft)]">
+              <LayoutGrid className="h-4 w-4" aria-hidden /> {t.v11.workbench.menu}
+            </Link>
+          </li>
+          <li>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false)
+                useStore.getState().signOut()
+              }}
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-[var(--accent-soft)]"
+            >
+              <LogOut className="h-4 w-4" aria-hidden /> {t.v11.nav.signOut}
+            </button>
+          </li>
+        </ul>
+      )}
+    </div>
+  )
+}
+
 export function V11Header() {
   const t = useT()
   const path = usePathname()
@@ -127,15 +177,7 @@ export function V11Header() {
             </Link>
           )}
           {hydrated && user ? (
-            <button
-              type="button"
-              onClick={() => useStore.getState().signOut()}
-              title={t.v11.nav.signOut}
-              className="btn-secondary btn-sm h-10 max-w-36 rounded-full px-4"
-            >
-              <span className="truncate">{user.name}</span>
-              <LogOut className="h-4 w-4 shrink-0" aria-hidden />
-            </button>
+            <UserMenu name={user.name} />
           ) : (
             <Link href={v11Href('/login/')} className="btn-secondary h-10 whitespace-nowrap rounded-full px-4 text-[15px] sm:h-11 sm:px-5">
               {t.v11.nav.signIn}
@@ -186,6 +228,7 @@ export function V11Footer() {
 
 /** Page shell for every v1.1 page: theme scope, header, footer, toast. */
 export function V11Page({ children, footer = true }: { children: React.ReactNode; footer?: boolean }) {
+  useEffect(() => markV11Flow(), [])
   return (
     <div className="v11 min-h-[calc(100dvh-1.75rem)]">
       <V11Header />

@@ -6,7 +6,6 @@ import Cropper, { type Area } from 'react-easy-crop'
 import { ImagePlus, Lock, Sparkles } from 'lucide-react'
 import { V11Page } from '@/v11/Chrome'
 import { V11_DEFAULTS } from '@/v11/config'
-import { ProtoTag } from '@/components/PrototypeBanner'
 import { Stepper, Toggle } from '@/components/ui'
 import { ASPECTS, FREE_PREVIEWS_PER_DAY, type AspectId } from '@/config/site'
 import { useT } from '@/i18n'
@@ -65,7 +64,7 @@ export default function CreatePage() {
   return (
     <V11Page>
       <main className="container-page py-6">
-        <Stepper step={src ? 1 : 0} />
+        <Stepper step={src ? 1 : 0} steps={t.v11.flowSteps} />
         {!src ? (
           <section className="mt-6">
             <h1 className="font-serif text-4xl">{t.create.uploadTitle}</h1>
@@ -107,7 +106,7 @@ export default function CreatePage() {
               </button>
               {hydrated && (
                 <span className="flex items-center gap-2 text-sm text-muted">
-                  {t.create.quota(previewsLeft(previews, FREE_PREVIEWS_PER_DAY), FREE_PREVIEWS_PER_DAY)} <ProtoTag />
+                  {t.create.quota(previewsLeft(previews, FREE_PREVIEWS_PER_DAY), FREE_PREVIEWS_PER_DAY)}
                 </span>
               )}
             </div>

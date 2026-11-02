@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { ArrowRight, Download, Info, Package, Sparkles } from 'lucide-react'
+import { ArrowRight, Download, Grid3x3, Info, Package, Sparkles } from 'lucide-react'
 import { beadCount, getPalette, withAllowance } from '@picobreads/pattern-engine'
 import { V11Page } from '@/v11/Chrome'
 import { Ironed } from '@/components/Ironed'
@@ -69,7 +69,7 @@ export default function ProductStep() {
   return (
     <V11Page>
       <main className="container-page py-6">
-        <Stepper step={4} />
+        <Stepper step={3} steps={t.v11.flowSteps} />
         <h1 className="mt-6 font-serif text-4xl">{t.flow.productTitle}</h1>
 
         <div role="radiogroup" aria-label={t.flow.product} className="mt-6 grid gap-3 md:grid-cols-3">
@@ -89,17 +89,16 @@ export default function ProductStep() {
               >
                 {!ok && <span className="absolute right-3 top-3 rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-bold text-muted">{t.flow.unavailable}</span>}
                 <Icon className="h-7 w-7 text-accent" aria-hidden />
-                <span className="mt-3 font-serif text-xl">{t.flow.forms[f].title}</span>
-                <span className="mt-1 flex-1 text-sm text-muted">{t.flow.forms[f].body}</span>
+                <span className="mt-3 font-serif text-xl">{t.v11.product.forms[f].title}</span>
+                <span className="mt-1 flex-1 text-sm text-muted">{t.v11.product.forms[f].body}</span>
                 <span className="mt-3 flex items-center justify-between text-sm">
                   <span className="text-lg font-bold">{price(f)}</span>
-                  <span className="text-xs text-muted">{t.flow.forms[f].time}</span>
+                  <span className="text-xs text-muted">{f === 'digital' ? t.v11.product.digitalTime : t.flow.forms[f].time}</span>
                 </span>
               </button>
             )
           })}
         </div>
-        <p className="mt-2 text-xs text-muted">{t.flow.placeholderPrices}</p>
 
         {physical && !sellable && (
           <div role="alert" className="mt-6 rounded-2xl border-2 border-warn/40 bg-warn/10 p-4">
@@ -198,12 +197,16 @@ export default function ProductStep() {
         <div className="sticky bottom-0 z-20 -mx-4 mt-8 flex items-center justify-between gap-4 border-t-2 border-[var(--ink)] bg-[var(--bg)] px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0">
           <div>
             <p className="font-bold">
-              {t.flow.forms[form].title} · {t.v11.settings.tierTitle(v11Tier(tier).perSide)}
+              {t.v11.product.forms[form].title} · {t.v11.settings.tierTitle(v11Tier(tier).perSide)}
             </p>
             <p className="text-sm text-muted">
               {price(form)} · {palette.brand}
             </p>
           </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+          <Link href="/bead/" className="btn-secondary">
+            <Grid3x3 className="h-4 w-4" aria-hidden /> {t.v11.product.tryOnline}
+          </Link>
           <button
             type="button"
             className="btn-primary"
@@ -215,6 +218,7 @@ export default function ProductStep() {
           >
             {t.flow.continue} <ArrowRight className="h-4 w-4" aria-hidden />
           </button>
+          </div>
         </div>
       </main>
     </V11Page>
