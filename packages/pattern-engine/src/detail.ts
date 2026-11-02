@@ -62,7 +62,7 @@ export interface BoardAdvice {
  * less than `maxLoss` of the detail a grid twice as fine would show. A small simple picture stays
  * on one board; a detailed photo goes up to `maxPerSide`.
  */
-export function recommendBoards(img: ImageInput, board: number, aspect: number, maxPerSide = 3, maxLoss = 0.04): BoardAdvice {
+export function recommendBoards(img: ImageInput, board: number, aspect: number, maxPerSide = 3, maxLoss = 0.05): BoardAdvice {
   const losses: number[] = []
   for (let n = 1; n <= maxPerSide; n++) {
     const long = board * n

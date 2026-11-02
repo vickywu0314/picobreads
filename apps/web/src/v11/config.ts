@@ -13,11 +13,12 @@ export const V11 = {
 export const v11Href = (path = '/') => `${V11.base}${path.startsWith('/') ? path : `/${path}`}`
 
 /**
- * v1.1 bead set and pegboard: MARD 264-color box, one board = 64 × 64 pegs ≈ 14 × 14 cm
- * (product decision). Physical sizes are derived from the board, not from a bead-size setting.
+ * v1.1 bead set and pegboard (industry standard for MARD mini beads): 2.6 mm beads on a
+ * 52 × 52-peg board → 52 × 2.6 mm ≈ 13.5 cm of picture per board (the plastic board itself is ≈ 14 cm).
  */
-export const V11_BOARD = { pegs: V11_BOARD_PEGS, cm: 14 }
-export const V11_PITCH_MM = (V11_BOARD.cm * 10) / V11_BOARD.pegs
+export const V11_BEAD_SIZE = '2.6mm' as const
+export const V11_PITCH_MM = 2.6
+export const V11_BOARD = { pegs: V11_BOARD_PEGS }
 
 /**
  * v1.1 sizes = how many boards per side: 1 board, 2 × 2, 3 × 3. More boards only when the
@@ -35,7 +36,7 @@ export const V11_TIERS: { id: TierId; perSide: number; longSide: number; priceUs
  * comes from the boards, never from trading away clarity.
  * (maxColors above the set's count is clamped to "all colors".)
  */
-export const V11_DEFAULTS = { paletteId: V11_PALETTE_ID, maxColors: 999, detail: 5, dithering: false }
+export const V11_DEFAULTS = { paletteId: V11_PALETTE_ID, beadSize: V11_BEAD_SIZE, maxColors: 999, detail: 5, dithering: false }
 
 export const v11Tier = (id: TierId) => V11_TIERS.find((t) => t.id === id) ?? V11_TIERS[0]
 
@@ -53,6 +54,9 @@ export function v11Size(width: number, height: number) {
   const inch = (n: number) => ((n * V11_PITCH_MM) / 25.4).toFixed(1)
   return { cm: `${cm(width)} × ${cm(height)}`, inch: `${inch(width)} × ${inch(height)}` }
 }
+
+/** Prices are not decided yet: v1.1 shows this placeholder everywhere a price would go. */
+export const V11_PRICE_PLACEHOLDER = '$xxxx'
 
 export const v11Price = (form: 'digital' | 'kit' | 'finished', tier: TierId) =>
   form === 'digital' ? 0 : form === 'finished' ? v11Tier(tier).finishedPriceUsd : v11Tier(tier).priceUsd

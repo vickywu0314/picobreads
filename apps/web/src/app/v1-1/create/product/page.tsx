@@ -11,7 +11,7 @@ import { NoPattern } from '@/components/NoPattern'
 import { Stepper, Swatch } from '@/components/ui'
 import { ASSEMBLED_VARIANT_ENABLED, KIT_PALETTE_IDS, PICKING, V11_PALETTE_ID, isKitBrand } from '@/config/site'
 import { PRODUCT_FORMS, type ProductForm } from '@/config/catalog'
-import { v11Boards, v11Price as priceOf, v11Size, v11Tier } from '@/v11/config'
+import { V11_PRICE_PLACEHOLDER, v11Boards, v11Price as priceOf, v11Size, v11Tier } from '@/v11/config'
 import { useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
 import { generateFromPhoto } from '@/lib/generate'
@@ -53,7 +53,7 @@ export default function ProductStep() {
   const spare = Math.round(PICKING.allowance * 100)
   const total = pattern.width * pattern.height
   const totalKit = legend.reduce((n, l) => n + withAllowance(l.count, PICKING.allowance), 0)
-  const price = (f: ProductForm) => (f === 'digital' ? t.flow.free : `$${priceOf(f, tier)}`)
+  const price = (f: ProductForm) => (f === 'digital' ? t.flow.free : V11_PRICE_PLACEHOLDER)
 
   const specs: [string, string][] = [
     [t.settings.size, `${t.v11.settings.tierTitle(v11Tier(tier).perSide)} · ${pattern.width} × ${pattern.height}`],

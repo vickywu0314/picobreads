@@ -13,7 +13,7 @@ import { Stepper } from '@/components/ui'
 import { useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
 import { legendOf } from '@/lib/pattern'
-import { v11Size, v11Tier } from '@/v11/config'
+import { V11_PRICE_PLACEHOLDER, v11Size, v11Tier } from '@/v11/config'
 
 export default function ConfirmStep() {
   const t = useT()
@@ -43,7 +43,7 @@ export default function ConfirmStep() {
       `${t.v11.settings.tierTitle(v11Tier(tier).perSide)} · ${pattern.width} × ${pattern.height} · ${form === 'digital' ? '' : `≈ ${fin.cm} cm · `}${t.common.colors(legendOf(pattern).length)} · ${getPalette(pattern.paletteId).brand}`,
       '/v1-1/create/settings/',
     ],
-    [t.flow.price, form === 'digital' ? t.flow.free : `$${priceUsd}`],
+    [t.flow.price, form === 'digital' ? t.flow.free : V11_PRICE_PLACEHOLDER],
     [t.flow.timing, t.flow.delivery[form]],
   ]
 

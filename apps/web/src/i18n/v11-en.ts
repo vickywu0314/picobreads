@@ -51,7 +51,7 @@ export const v11En = {
     bigger: 'Bigger, but no sharper',
     smaller: 'Loses some detail',
     analyzing: 'Checking the detail in your picture…',
-    beadSet: (colors: number) => `Full ${colors}-color MARD set · one board = 64 × 64 pegs ≈ 14 × 14 cm`,
+    beadSet: (colors: number) => `Full ${colors}-color MARD set · one board = 52 × 52 pegs ≈ 14 × 14 cm`,
     iron: 'Ironing finish',
     ironNote: 'Illustrative — the real finish depends on your iron and cloth.',
     irons: {
@@ -67,9 +67,9 @@ export const v11En = {
     materialsHint: (spare: number) => `Beads per color, +${spare}% spare for the kit`,
     cols: { color: 'Color', beads: 'Beads', kit: 'In the kit' },
     total: 'Total',
-    pegboards: (n: number) => `${n} pegboard${n === 1 ? '' : 's'} (64 × 64 pegs)`,
+    pegboards: (n: number) => `${n} pegboard${n === 1 ? '' : 's'} (52 × 52 pegs)`,
     board: 'Pegboard',
-    boardSpec: '64 × 64 pegs ≈ 14 × 14 cm',
+    boardSpec: '52 × 52 pegs · 2.6 mm mini beads ≈ 13.5 × 13.5 cm',
     edit: 'Change',
   },
 }

@@ -54,7 +54,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (perSide == null || autoPicked.has(adviceKey)) return
     autoPicked.add(adviceKey)
-    setSettings({ tier: v11TierByBoards(perSide).id, paletteId: V11_PALETTE_ID, maxColors: V11_DEFAULTS.maxColors })
+    setSettings({ tier: v11TierByBoards(perSide).id, paletteId: V11_PALETTE_ID, beadSize: V11_DEFAULTS.beadSize, maxColors: V11_DEFAULTS.maxColors })
   }, [perSide, adviceKey, setSettings])
 
   if (!hydrated) return <V11Page footer={false}>{null}</V11Page>

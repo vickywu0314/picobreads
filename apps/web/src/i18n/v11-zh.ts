@@ -52,7 +52,7 @@ export const v11Zh: typeof v11En = {
     bigger: '更大，但不会更清楚',
     smaller: '会丢掉一些细节',
     analyzing: '正在分析图片细节…',
-    beadSet: (colors: number) => `MARD ${colors} 色全色 · 一块底板 64×64 钉 ≈ 14×14 cm`,
+    beadSet: (colors: number) => `MARD ${colors} 色全色 · 2.6 mm 小豆 · 一块底板 52×52 钉 ≈ 13.5 cm`,
     iron: '熨烫效果',
     ironNote: '效果为示意，实际以熨斗和垫布为准。',
     irons: {
@@ -68,9 +68,9 @@ export const v11Zh: typeof v11En = {
     materialsHint: (spare: number) => `每色所需颗数；材料包多放 ${spare}% 备用`,
     cols: { color: '颜色', beads: '图纸用量', kit: '材料包内' },
     total: '合计',
-    pegboards: (n: number) => `底板 ${n} 块（64 × 64 钉）`,
+    pegboards: (n: number) => `底板 ${n} 块（52 × 52 钉）`,
     board: '底板',
-    boardSpec: '64 × 64 钉 ≈ 14 × 14 cm',
+    boardSpec: '52 × 52 钉 · 2.6 mm 小豆 ≈ 13.5 × 13.5 cm',
     edit: '修改',
   },
 }

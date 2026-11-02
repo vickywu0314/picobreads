@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Lock, Minus, Plus, Trash2 } from 'lucide-react'
 import { V11Page } from '@/v11/Chrome'
-import { v11Tier } from '@/v11/config'
+import { V11_PRICE_PLACEHOLDER, v11Tier } from '@/v11/config'
 import { ProtoTag } from '@/components/PrototypeBanner'
 import { Ironed } from '@/components/Ironed'
 import { getPalette } from '@picobreads/pattern-engine'
@@ -17,7 +17,6 @@ export default function CartPage() {
   const hydrated = useHydrated()
   const cart = useStore((s) => s.cart)
   const { setQty, removeFromCart } = useStore.getState()
-  const subtotal = cart.reduce((n, c) => n + c.priceUsd * c.qty, 0)
 
   return (
     <V11Page>
@@ -49,7 +48,7 @@ export default function CartPage() {
                           {item.pattern.width} × {item.pattern.height} · {getPalette(item.pattern.paletteId).brand}
                         </p>
                       </div>
-                      <p className="font-bold">${item.priceUsd * item.qty}</p>
+                      <p className="font-bold">{V11_PRICE_PLACEHOLDER}</p>
                     </div>
                     <details className="mt-1 text-xs text-muted">
                       <summary className="cursor-pointer">{t.cart.attrs}</summary>
@@ -82,7 +81,7 @@ export default function CartPage() {
             <aside className="card h-fit p-5">
               <div className="flex items-center justify-between text-lg font-bold">
                 <span>{t.cart.subtotal}</span>
-                <span>${subtotal}</span>
+                <span>{V11_PRICE_PLACEHOLDER}</span>
               </div>
               <p className="mt-1 text-sm text-muted">{t.cart.shippingNote}</p>
               <button type="button" className="btn-primary mt-5 w-full" onClick={() => {

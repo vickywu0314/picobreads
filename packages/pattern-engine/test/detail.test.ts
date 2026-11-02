@@ -29,7 +29,7 @@ describe('recommendBoards', () => {
     const img = image(512, 512, (x, y) => (x % 16 < 5 && y % 16 < 5 ? [30, 30, 30] : [240, 200, 160]))
     const advice = recommendBoards(img, 64, 1)
     expect(advice.perSide).toBeGreaterThan(1)
-    expect(advice.losses[0]).toBeGreaterThan(0.04)
+    expect(advice.losses[0]).toBeGreaterThan(0.05)
   })
 
   it('reports zero loss for a uniform image', () => {
