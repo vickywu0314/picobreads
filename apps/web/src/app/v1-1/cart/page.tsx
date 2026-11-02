@@ -45,7 +45,7 @@ export default function CartPage() {
                       <div>
                         <p className="font-bold">{t.bag.itemTitle(t.flow.forms[item.form ?? 'kit'].title, t.v11.settings.tierTitle(v11Tier(item.tier).perSide))}</p>
                         <p className="text-sm text-muted">
-                          {item.pattern.width} × {item.pattern.height} · {getPalette(item.pattern.paletteId).brand}
+                          {item.pattern.width} × {item.pattern.height} · {t.v11.settings.beads[item.beadSize].title} · {getPalette(item.pattern.paletteId).brand}
                         </p>
                       </div>
                       <p className="font-bold">{V11_PRICE_PLACEHOLDER}</p>

@@ -2,15 +2,15 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { Check, Loader2, Lock, Sparkles, Wand2 } from 'lucide-react'
-import type { Pattern } from '@picobreads/pattern-engine'
+import { useEffect, useMemo, useState } from 'react'
+import { Check, Crop, Loader2, Lock, Sparkles, Wand2 } from 'lucide-react'
+import { chooseBoards, getPalette, gridLoss, rgbToLab, type Pattern } from '@picobreads/pattern-engine'
 import { V11Page } from '@/v11/Chrome'
 import { Ironed } from '@/components/Ironed'
 import { IRON_STYLES, type IronStyle } from '@/components/bead/ProgressPreview'
-import { Stepper, Toggle } from '@/components/ui'
-import { V11_PALETTE_ID, gridSize, type TierId } from '@/config/site'
-import { V11_BOARD, V11_DEFAULTS, V11_TIERS, v11Beads, v11Boards, v11Size, v11TierByBoards } from '@/v11/config'
+import { Segmented, Stepper, Toggle } from '@/components/ui'
+import { BOARD_PEGS, V11_PALETTE_ID, gridSize, type TierId } from '@/config/site'
+import { V11_BEAD_SIZES, V11_DEFAULTS, V11_TIERS, v11Beads, v11Boards, v11Size, v11TierByBoards } from '@/v11/config'
 import { useT } from '@/i18n'
 import { aspectValue, useHydrated, useStore } from '@/lib/store'
 import { generateFromPhoto } from '@/lib/generate'
@@ -39,23 +39,41 @@ export default function SettingsPage() {
   // (tier / iron are left out so picking a tile or a finish doesn't regenerate all three.)
   const gen = { ...settings, tier: 'small' as const, iron: undefined, paletteId: V11_PALETTE_ID, maxColors: V11_DEFAULTS.maxColors, style: 'auto' as const }
   const iron: IronStyle = settings.iron ?? 'normal'
+  const bead = settings.beadSize
   const variants: Record<TierId, ReturnType<typeof useGeneratedPattern>> = {
-    small: useGeneratedPattern(photo, gen, aspectId, v11Beads('small'), hydrated),
-    standard: useGeneratedPattern(photo, gen, aspectId, v11Beads('standard'), hydrated),
-    large: useGeneratedPattern(photo, gen, aspectId, v11Beads('large'), hydrated),
+    small: useGeneratedPattern(photo, gen, aspectId, v11Beads('small', bead), hydrated),
+    standard: useGeneratedPattern(photo, gen, aspectId, v11Beads('standard', bead), hydrated),
+    large: useGeneratedPattern(photo, gen, aspectId, v11Beads('large', bead), hydrated),
   }
   const aspect = aspectValue(aspectId)
   const anyBusy = Object.values(variants).some((v) => v.busy)
   const colorCount = maxColorsFor(V11_PALETTE_ID)
 
-  // Fewest boards that keep the picture clear; pre-select it once per picture.
-  const perSide = useBoardAdvice(photo, aspect, V11_BOARD.pegs, V11_TIERS.length, hydrated)
-  const adviceKey = `${photo?.length}:${photo?.slice(-48)}:${aspectId}`
+  // Fewest boards that keep the picture clear; pre-select it once per picture and bead size.
+  // Two measures, both must agree before adding boards: the picture itself, and the real
+  // generated patterns (does the bigger pattern show anything the smaller one can't?).
+  const advice = useBoardAdvice(photo, aspect, BOARD_PEGS[bead], V11_TIERS.length, hydrated)
+  const patterns = V11_TIERS.map((tier) => {
+    const v = variants[tier.id].pattern
+    const want = gridSize(v11Beads(tier.id, bead), aspect)
+    return v && v.width === want.width && v.height === want.height && v.paletteId === V11_PALETTE_ID ? v : null
+  })
+  const ready = patterns.every(Boolean) && advice != null
+  const perSide = useMemo(() => {
+    if (!ready || !advice) return null
+    const labs = getPalette(V11_PALETTE_ID).colors.map((c) => rgbToLab(c.rgb))
+    const gridLosses = patterns.slice(1).map((fine, i) => gridLoss(patterns[i]!, fine!, labs))
+    return chooseBoards(advice.imageLosses, gridLosses, V11_TIERS.length)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, advice, ...patterns])
+  const adviceKey = `${photo?.length}:${photo?.slice(-48)}:${aspectId}:${bead}`
   useEffect(() => {
     if (perSide == null || autoPicked.has(adviceKey)) return
     autoPicked.add(adviceKey)
-    setSettings({ tier: v11TierByBoards(perSide).id, paletteId: V11_PALETTE_ID, beadSize: V11_DEFAULTS.beadSize, maxColors: V11_DEFAULTS.maxColors })
+    setSettings({ tier: v11TierByBoards(perSide).id, paletteId: V11_PALETTE_ID, maxColors: V11_DEFAULTS.maxColors })
   }, [perSide, adviceKey, setSettings])
+  // A small subject on a wide plain backdrop wastes beads on the backdrop.
+  const loose = advice != null && advice.subjectShare < 0.45
 
   if (!hydrated) return <V11Page footer={false}>{null}</V11Page>
 
@@ -73,11 +91,32 @@ export default function SettingsPage() {
           </div>
           <p className="mt-1 text-sm text-muted">{t.v11.settings.pickHint}</p>
           <p className="mt-1 text-xs font-bold text-[var(--accent)]">{t.v11.settings.beadSet(colorCount)}</p>
+
+          <div className="mt-4">
+            <h3 className="label mb-2">{t.settings.beadSize}</h3>
+            <Segmented
+              label={t.settings.beadSize}
+              value={bead}
+              onChange={(beadSize) => setSettings({ beadSize })}
+              options={V11_BEAD_SIZES.map((v) => ({ value: v, label: t.v11.settings.beads[v].title }))}
+            />
+            <p className="mt-2 text-sm text-muted">{t.v11.settings.beads[bead].hint}</p>
+          </div>
+
+          {loose && (
+            <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-2xl border-2 border-dashed border-[var(--accent)] bg-white/70 px-4 py-2.5 text-sm">
+              <Crop className="h-4 w-4 shrink-0 text-[var(--accent)]" aria-hidden />
+              <span>{t.v11.settings.cropTighter(Math.round(advice.subjectShare * 100))}</span>
+              <Link href="/v1-1/create/" className="font-bold text-[var(--accent)] underline">
+                {t.v11.settings.recrop}
+              </Link>
+            </p>
+          )}
           <div role="radiogroup" aria-label={t.settings.size} className="mt-4 grid gap-4 sm:grid-cols-3">
             {V11_TIERS.map((tier) => {
               const v = variants[tier.id].pattern
-              const { width, height } = gridSize(v11Beads(tier.id), aspect)
-              const fin = v11Size(width, height)
+              const { width, height } = gridSize(v11Beads(tier.id, bead), aspect)
+              const fin = v11Size(width, height, bead)
               const on = settings.tier === tier.id
               const advised = perSide === tier.perSide
               const note = perSide == null || advised ? null : tier.perSide > perSide ? t.v11.settings.bigger : t.v11.settings.smaller
@@ -107,7 +146,7 @@ export default function SettingsPage() {
                     {t.v11.settings.tierTitle(tier.perSide)} · {width}×{height}
                   </p>
                   <p className="text-xs text-muted">
-                    ≈ {fin.cm} cm{v11Boards(width, height) !== tier.perSide ** 2 && ` · ${t.settings.boards(v11Boards(width, height))}`}
+                    ≈ {fin.cm} cm{v11Boards(width, height, bead) !== tier.perSide ** 2 && ` · ${t.settings.boards(v11Boards(width, height, bead))}`}
                     {v && ` · ${t.common.colors(legendOf(v).length)}`}
                   </p>
                   {note && <p className="mt-1 text-xs font-bold text-muted">{note}</p>}
@@ -181,7 +220,7 @@ export default function SettingsPage() {
               try {
                 // Use exactly the result the user picked; generate only if it isn't ready yet.
                 const tier = V11_TIERS.find((x) => x.id === settings.tier) ?? V11_TIERS[0]
-                const picked = variants[tier.id].pattern ?? (await generateFromPhoto(photo, gen, aspectId, v11Beads(tier.id)))
+                const picked = variants[tier.id].pattern ?? (await generateFromPhoto(photo, gen, aspectId, v11Beads(tier.id, bead)))
                 applyPattern(picked)
                 router.push('/v1-1/create/preview/')
               } finally {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { detailLoss, recommendBoards, type ImageInput } from '../src'
+import { chooseBoards, detailLoss, gridLoss, recommendBoards, type ImageInput } from '../src'
 
 function image(w: number, h: number, paint: (x: number, y: number) => [number, number, number]): ImageInput {
   const data = new Uint8ClampedArray(w * h * 4)
@@ -34,5 +34,31 @@ describe('recommendBoards', () => {
 
   it('reports zero loss for a uniform image', () => {
     expect(detailLoss(image(100, 100, () => [10, 120, 200]), 20, 20)).toBe(0)
+  })
+})
+
+describe('chooseBoards', () => {
+  it('stays on one board unless both measures see lost detail', () => {
+    expect(chooseBoards([0.17, 0.02], [0.001, 0], 3)).toBe(1) // outlined cartoon: the generator keeps it
+    expect(chooseBoards([0.02, 0.01], [0.12, 0.05], 3)).toBe(1) // smooth photo: only color noise differs
+    expect(chooseBoards([0.06, 0.03], [0.21, 0.11], 3)).toBe(2) // small detailed subject
+    expect(chooseBoards([0.3, 0.2], [0.3, 0.2], 3)).toBe(3)
+    expect(chooseBoards([0.3, 0.2], [0.3, 0.2], 2)).toBe(2)
+  })
+})
+
+describe('gridLoss', () => {
+  it('is zero when the finer pattern adds nothing', () => {
+    const labs: [number, number, number][] = [[100, 0, 0], [30, 0, 0], [60, 40, 40]]
+    const coarse = { width: 2, height: 2, cells: [0, 1, 1, 0] }
+    const fine = { width: 4, height: 4, cells: [0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0] }
+    expect(gridLoss(coarse, fine, labs)).toBe(0)
+  })
+
+  it('counts colors the coarse pattern has nowhere nearby', () => {
+    const labs: [number, number, number][] = [[100, 0, 0], [30, 0, 0], [60, 40, 40]]
+    const coarse = { width: 4, height: 4, cells: Array(16).fill(0) }
+    const fine = { width: 8, height: 8, cells: Array.from({ length: 64 }, (_, i) => (i === 27 || i === 28 ? 2 : 0)) }
+    expect(gridLoss(coarse, fine, labs)).toBeGreaterThan(0)
   })
 })

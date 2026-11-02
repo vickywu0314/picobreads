@@ -4,22 +4,26 @@ import { useEffect, useState } from 'react'
 import { recommendBoards } from '@picobreads/pattern-engine'
 import { SAMPLE_PHOTO_URL, photoPixels } from './generate'
 
-const cache = new Map<string, number>()
+export interface BoardAdviceResult {
+  /** detailLoss of the picture at 1, 2 … boards per side (see recommendBoards). */
+  imageLosses: number[]
+  /** Share of the frame the subject takes (1 when there is no plain backdrop). */
+  subjectShare: number
+}
 
-/**
- * How many boards per side the picture needs to stay clear (1 → one board, 2 → 2 × 2 …),
- * from recommendBoards in the engine. `null` while it is being worked out.
- */
-export function useBoardAdvice(photo: string | null, aspect: number, pegs: number, maxPerSide: number, enabled = true) {
+const cache = new Map<string, BoardAdviceResult>()
+
+/** Picture-side measures for choosing the board count; `null` while they are being worked out. */
+export function useBoardAdvice(photo: string | null, aspect: number, pegs: number, maxPerSide: number, enabled = true): BoardAdviceResult | null {
   const src = photo ?? SAMPLE_PHOTO_URL
   const key = `${src.length}:${src.slice(-48)}:${aspect.toFixed(3)}:${pegs}:${maxPerSide}`
-  const [advice, setAdvice] = useState<{ key: string; perSide: number } | null>(null)
+  const [advice, setAdvice] = useState<{ key: string; result: BoardAdviceResult } | null>(null)
 
   useEffect(() => {
     if (!enabled) return
     const known = cache.get(key)
     if (known) {
-      setAdvice({ key, perSide: known })
+      setAdvice({ key, result: known })
       return
     }
     let cancelled = false
@@ -29,15 +33,17 @@ export function useBoardAdvice(photo: string | null, aspect: number, pegs: numbe
     const gh = aspect >= 1 ? Math.max(1, Math.round(long / aspect)) : long
     photoPixels(src, Math.ceil(gw), Math.ceil(gh))
       .then((img) => {
-        const { perSide } = recommendBoards(img, pegs, aspect, maxPerSide)
-        cache.set(key, perSide)
-        if (!cancelled) setAdvice({ key, perSide })
+        // maxLoss 0 → measure every candidate; the page combines them with the generated patterns.
+        const { losses, subjectShare } = recommendBoards(img, pegs, aspect, maxPerSide, 0)
+        const result = { imageLosses: losses, subjectShare }
+        cache.set(key, result)
+        if (!cancelled) setAdvice({ key, result })
       })
-      .catch(() => !cancelled && setAdvice({ key, perSide: 1 }))
+      .catch(() => !cancelled && setAdvice({ key, result: { imageLosses: [], subjectShare: 1 } }))
     return () => {
       cancelled = true
     }
   }, [key, src, aspect, pegs, maxPerSide, enabled])
 
-  return advice?.key === key ? advice.perSide : null
+  return advice?.key === key ? advice.result : null
 }

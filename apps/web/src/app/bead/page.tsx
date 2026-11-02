@@ -30,6 +30,7 @@ export default function BeadPage() {
   const hydrated = useHydrated()
   const data = usePatternData()
   const placed = useStore((s) => s.placed)
+  const beadSize = useStore((s) => s.settings.beadSize)
   const activeColor = useStore((s) => s.activeColor)
   const activeSection = useStore((s) => s.activeSection)
   const canUndo = useStore((s) => s.undoStack.length > 0)
@@ -354,7 +355,7 @@ export default function BeadPage() {
           placed={placed}
           selected={tool === 'fix' ? null : focusColor}
           section={section}
-          boardCells={boardCellsFor(pattern.paletteId)}
+          boardCells={boardCellsFor(pattern.paletteId, beadSize)}
           editMode={tool === 'fix'}
           toolMode={toolActive}
           onTool={onTool}

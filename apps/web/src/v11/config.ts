@@ -1,4 +1,5 @@
-import { V11_BOARD_PEGS, V11_PALETTE_ID, type TierId } from '@/config/site'
+import type { BeadSize } from '@picobreads/pattern-engine'
+import { BEAD_PITCH_MM, BOARD_PEGS, V11_PALETTE_ID, type TierId } from '@/config/site'
 import type { LibraryPattern } from '@/config/catalog'
 
 // v1.1 ("Pipixel" redesign). Everything new goes into v1.1; v1.0 stays as it was.
@@ -13,22 +14,21 @@ export const V11 = {
 export const v11Href = (path = '/') => `${V11.base}${path.startsWith('/') ? path : `/${path}`}`
 
 /**
- * v1.1 bead set and pegboard (industry standard for MARD mini beads): 2.6 mm beads on a
- * 52 × 52-peg board → 52 × 2.6 mm ≈ 13.5 cm of picture per board (the plastic board itself is ≈ 14 cm).
+ * v1.1 beads: the user picks mini (2.6 mm) or standard (5 mm). Each uses its industry-standard
+ * board — 52 × 52 pegs ≈ 13.5 cm for mini, 29 × 29 pegs ≈ 14.5 cm for standard (boards ≈ 14–15 cm).
  */
-export const V11_BEAD_SIZE = '2.6mm' as const
-export const V11_PITCH_MM = 2.6
-export const V11_BOARD = { pegs: V11_BOARD_PEGS }
+export const V11_BEAD_SIZES: BeadSize[] = ['2.6mm', '5mm']
+export const V11_BEAD_SIZE: BeadSize = '2.6mm'
 
 /**
  * v1.1 sizes = how many boards per side: 1 board, 2 × 2, 3 × 3. More boards only when the
  * picture has detail one board would lose (see recommendBoards); a simple picture stays on one.
  * Prices are placeholders.
  */
-export const V11_TIERS: { id: TierId; perSide: number; longSide: number; priceUsd: number; finishedPriceUsd: number }[] = [
-  { id: 'small', perSide: 1, longSide: V11_BOARD_PEGS, priceUsd: 24, finishedPriceUsd: 69 },
-  { id: 'standard', perSide: 2, longSide: V11_BOARD_PEGS * 2, priceUsd: 49, finishedPriceUsd: 159 },
-  { id: 'large', perSide: 3, longSide: V11_BOARD_PEGS * 3, priceUsd: 89, finishedPriceUsd: 299 },
+export const V11_TIERS: { id: TierId; perSide: number; priceUsd: number; finishedPriceUsd: number }[] = [
+  { id: 'small', perSide: 1, priceUsd: 24, finishedPriceUsd: 69 },
+  { id: 'standard', perSide: 2, priceUsd: 49, finishedPriceUsd: 159 },
+  { id: 'large', perSide: 3, priceUsd: 89, finishedPriceUsd: 299 },
 ]
 
 /**
@@ -42,16 +42,17 @@ export const v11Tier = (id: TierId) => V11_TIERS.find((t) => t.id === id) ?? V11
 
 export const v11TierByBoards = (perSide: number) => V11_TIERS.find((t) => t.perSide === perSide) ?? V11_TIERS[V11_TIERS.length - 1]
 
-/** Long side in beads (pegs) for a tier. */
-export const v11Beads = (id: TierId) => v11Tier(id).longSide
+/** Long side in beads (pegs) for a tier with the given beads. */
+export const v11Beads = (id: TierId, bead: BeadSize) => v11Tier(id).perSide * BOARD_PEGS[bead]
 
 /** Pegboards needed for a grid. */
-export const v11Boards = (width: number, height: number) => Math.ceil(width / V11_BOARD.pegs) * Math.ceil(height / V11_BOARD.pegs)
+export const v11Boards = (width: number, height: number, bead: BeadSize) => Math.ceil(width / BOARD_PEGS[bead]) * Math.ceil(height / BOARD_PEGS[bead])
 
-/** Finished size of a grid on v1.1 boards. */
-export function v11Size(width: number, height: number) {
-  const cm = (n: number) => ((n * V11_PITCH_MM) / 10).toFixed(n * V11_PITCH_MM >= 1000 ? 0 : 1)
-  const inch = (n: number) => ((n * V11_PITCH_MM) / 25.4).toFixed(1)
+/** Finished size of a grid. */
+export function v11Size(width: number, height: number, bead: BeadSize) {
+  const mm = BEAD_PITCH_MM[bead]
+  const cm = (n: number) => ((n * mm) / 10).toFixed(n * mm >= 1000 ? 0 : 1)
+  const inch = (n: number) => ((n * mm) / 25.4).toFixed(1)
   return { cm: `${cm(width)} × ${cm(height)}`, inch: `${inch(width)} × ${inch(height)}` }
 }
 

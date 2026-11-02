@@ -52,7 +52,13 @@ export const v11Zh: typeof v11En = {
     bigger: '更大，但不会更清楚',
     smaller: '会丢掉一些细节',
     analyzing: '正在分析图片细节…',
-    beadSet: (colors: number) => `MARD ${colors} 色全色 · 2.6 mm 小豆 · 一块底板 52×52 钉 ≈ 13.5 cm`,
+    beadSet: (colors: number) => `MARD ${colors} 色全色`,
+    beads: {
+      '2.6mm': { title: '迷你豆 2.6 mm', hint: '一块底板 52×52 钉，约 13.5 cm。同样大小能放的豆子约是标准豆的 3 倍，细节更清楚、成品更精致。' },
+      '5mm': { title: '标准豆 5 mm', hint: '一块底板 29×29 钉，约 14.5 cm。豆子大、好拿好拼，适合小朋友和新手；同样大小细节少一些。' },
+    } as Record<string, { title: string; hint: string }>,
+    cropTighter: (pct: number) => `主体只占画面约 ${pct}%，四周空白也要用豆子拼。把图裁紧一点，同样的底板就能把主体拼得更清楚。`,
+    recrop: '回去重新裁剪',
     iron: '熨烫效果',
     ironNote: '效果为示意，实际以熨斗和垫布为准。',
     irons: {
@@ -68,9 +74,9 @@ export const v11Zh: typeof v11En = {
     materialsHint: (spare: number) => `每色所需颗数；材料包多放 ${spare}% 备用`,
     cols: { color: '颜色', beads: '图纸用量', kit: '材料包内' },
     total: '合计',
-    pegboards: (n: number) => `底板 ${n} 块（52 × 52 钉）`,
+    pegboards: (n: number, pegs: number) => `底板 ${n} 块（${pegs} × ${pegs} 钉）`,
     board: '底板',
-    boardSpec: '52 × 52 钉 · 2.6 mm 小豆 ≈ 13.5 × 13.5 cm',
+    boardSpec: (bead: string) => (bead === '5mm' ? '29 × 29 钉 ≈ 14.5 × 14.5 cm' : '52 × 52 钉 ≈ 13.5 × 13.5 cm'),
     edit: '修改',
   },
 }

@@ -35,12 +35,12 @@ export default function ConfirmStep() {
     )
 
   const { pattern, form, tier, beadSize, priceUsd } = draft
-  const fin = v11Size(pattern.width, pattern.height)
+  const fin = v11Size(pattern.width, pattern.height, beadSize)
   const rows: [string, string, string?][] = [
     [t.flow.product, t.flow.forms[form].title, '/v1-1/create/product/'],
     [
       t.flow.specs,
-      `${t.v11.settings.tierTitle(v11Tier(tier).perSide)} · ${pattern.width} × ${pattern.height} · ${form === 'digital' ? '' : `≈ ${fin.cm} cm · `}${t.common.colors(legendOf(pattern).length)} · ${getPalette(pattern.paletteId).brand}`,
+      `${t.v11.settings.tierTitle(v11Tier(tier).perSide)} · ${pattern.width} × ${pattern.height} · ${form === 'digital' ? '' : `${t.v11.settings.beads[beadSize].title} · ≈ ${fin.cm} cm · `}${t.common.colors(legendOf(pattern).length)} · ${getPalette(pattern.paletteId).brand}`,
       '/v1-1/create/settings/',
     ],
     [t.flow.price, form === 'digital' ? t.flow.free : V11_PRICE_PLACEHOLDER],

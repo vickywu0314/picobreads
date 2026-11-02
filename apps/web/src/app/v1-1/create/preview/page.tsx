@@ -20,6 +20,7 @@ export default function PreviewStep() {
   const pattern = useStore((s) => s.pattern)
   const photo = useStore((s) => s.photo)
   const iron = useStore((s) => s.settings.iron ?? 'normal')
+  const beadSize = useStore((s) => s.settings.beadSize)
   const user = useStore((s) => s.user)
   const source = useStore((s) => s.source)
   const currentDesignId = useStore((s) => s.currentDesignId)
@@ -35,7 +36,7 @@ export default function PreviewStep() {
       </V11Page>
     )
 
-  const fin = v11Size(pattern.width, pattern.height)
+  const fin = v11Size(pattern.width, pattern.height, beadSize)
   const saved = justSaved || !!currentDesignId
   const save = () => {
     const name =

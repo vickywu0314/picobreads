@@ -51,7 +51,13 @@ export const v11En = {
     bigger: 'Bigger, but no sharper',
     smaller: 'Loses some detail',
     analyzing: 'Checking the detail in your picture…',
-    beadSet: (colors: number) => `Full ${colors}-color MARD set · one board = 52 × 52 pegs ≈ 14 × 14 cm`,
+    beadSet: (colors: number) => `Full ${colors}-color MARD set`,
+    beads: {
+      '2.6mm': { title: 'Mini 2.6 mm', hint: 'One board = 52 × 52 pegs ≈ 13.5 cm. About 3× the beads of standard in the same size — sharper, more refined.' },
+      '5mm': { title: 'Standard 5 mm', hint: 'One board = 29 × 29 pegs ≈ 14.5 cm. Big, easy-to-handle beads, great for kids and beginners; less detail at the same size.' },
+    } as Record<string, { title: string; hint: string }>,
+    cropTighter: (pct: number) => `Your subject fills only about ${pct}% of the picture, and the empty space takes beads too. Crop tighter and the same boards show it much sharper.`,
+    recrop: 'Crop again',
     iron: 'Ironing finish',
     ironNote: 'Illustrative — the real finish depends on your iron and cloth.',
     irons: {
@@ -67,9 +73,9 @@ export const v11En = {
     materialsHint: (spare: number) => `Beads per color, +${spare}% spare for the kit`,
     cols: { color: 'Color', beads: 'Beads', kit: 'In the kit' },
     total: 'Total',
-    pegboards: (n: number) => `${n} pegboard${n === 1 ? '' : 's'} (52 × 52 pegs)`,
+    pegboards: (n: number, pegs: number) => `${n} pegboard${n === 1 ? '' : 's'} (${pegs} × ${pegs} pegs)`,
     board: 'Pegboard',
-    boardSpec: '52 × 52 pegs · 2.6 mm mini beads ≈ 13.5 × 13.5 cm',
+    boardSpec: (bead: string): string => (bead === '5mm' ? '29 × 29 pegs ≈ 14.5 × 14.5 cm' : '52 × 52 pegs ≈ 13.5 × 13.5 cm'),
     edit: 'Change',
   },
 }

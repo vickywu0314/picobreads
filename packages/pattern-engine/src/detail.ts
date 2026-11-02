@@ -1,4 +1,4 @@
-import { linearRgbToLab } from './color'
+import { deltaE2000, linearRgbToLab, type Lab } from './color'
 import { downsampleLinear, type ImageInput } from './generate'
 
 /**
@@ -6,16 +6,24 @@ import { downsampleLinear, type ImageInput } from './generate'
  * that resolution: the share of fine (2×) cells whose color is more than `deltaE` (CIE76 in Lab)
  * away from every coarse bead around it. Near 0 → the coarse grid already keeps everything the
  * image has (flat cartoons, small pixel art); larger → small features would vanish.
+ * The share is taken over the subject only when the picture sits on a plain backdrop.
  */
 export function detailLoss(img: ImageInput, width: number, height: number, deltaE = 10): number {
+  return measure(img, width, height, deltaE).loss
+}
+
+function measure(img: ImageInput, width: number, height: number, deltaE: number): { loss: number; subject: number } {
   const fw = width * 2
   const fh = height * 2
   const fine = toLab(downsampleLinear(img, fw, fh))
   const coarse = toLab(downsampleLinear(img, width, height))
+  const bg = backgroundOf(fine, fw, fh, deltaE)
   let lost = 0
+  let subject = 0
   for (let y = 0; y < fh; y++) {
     for (let x = 0; x < fw; x++) {
       const f = (y * fw + x) * 3
+      if (!bg || Math.hypot(fine[f] - bg[0], fine[f + 1] - bg[1], fine[f + 2] - bg[2]) > deltaE) subject++
       // An edge only moves by half a bead, so its color still exists in a neighbouring bead.
       // Lost detail (an eye, a thin line, a highlight) matches none of the 3 × 3 coarse beads around it.
       const cx = x >> 1
@@ -35,7 +43,26 @@ export function detailLoss(img: ImageInput, width: number, height: number, delta
       if (best > deltaE) lost++
     }
   }
-  return lost / (fw * fh)
+  // Measure against the subject, not the whole frame: a small toy on a big white backdrop
+  // must not look "simple" just because most of the frame is empty.
+  return { loss: lost / Math.max(subject, fw * fh * 0.15), subject: subject / (fw * fh) }
+}
+
+/**
+ * The plain backdrop color (Lab), if the picture has one: most of the outer edge within `deltaE`
+ * of the edge's median color. Null for pictures that fill the frame.
+ */
+function backgroundOf(lab: Float32Array, w: number, h: number, deltaE: number): [number, number, number] | null {
+  const edge: number[] = []
+  for (let x = 0; x < w; x++) edge.push(x, (h - 1) * w + x)
+  for (let y = 1; y < h - 1; y++) edge.push(y * w, y * w + w - 1)
+  const median = (k: number) => {
+    const v = edge.map((i) => lab[i * 3 + k]).sort((a, b) => a - b)
+    return v[v.length >> 1]
+  }
+  const bg: [number, number, number] = [median(0), median(1), median(2)]
+  const near = edge.filter((i) => Math.hypot(lab[i * 3] - bg[0], lab[i * 3 + 1] - bg[1], lab[i * 3 + 2] - bg[2]) <= deltaE).length
+  return near >= edge.length * 0.6 ? bg : null
 }
 
 function toLab(rgb: Float32Array): Float32Array {
@@ -54,6 +81,8 @@ export interface BoardAdvice {
   perSide: number
   /** detailLoss at each candidate, same order as the candidates. */
   losses: number[]
+  /** Share of the frame taken by the subject (1 when there is no plain backdrop). */
+  subjectShare: number
 }
 
 /**
@@ -64,13 +93,111 @@ export interface BoardAdvice {
  */
 export function recommendBoards(img: ImageInput, board: number, aspect: number, maxPerSide = 3, maxLoss = 0.05): BoardAdvice {
   const losses: number[] = []
+  let subjectShare = 1
   for (let n = 1; n <= maxPerSide; n++) {
     const long = board * n
     const w = aspect >= 1 ? long : Math.max(1, Math.round(long * aspect))
     const h = aspect >= 1 ? Math.max(1, Math.round(long / aspect)) : long
-    const loss = detailLoss(img, w, h)
-    losses.push(loss)
-    if (loss < maxLoss) return { perSide: n, losses }
+    const m = measure(img, w, h, 10)
+    if (n === 1) subjectShare = m.subject
+    losses.push(m.loss)
+    if (m.loss < maxLoss) return { perSide: n, losses, subjectShare }
   }
-  return { perSide: maxPerSide, losses }
+  return { perSide: maxPerSide, losses, subjectShare }
+}
+
+/** A bead grid: palette index per cell, row-major. */
+export interface Grid {
+  width: number
+  height: number
+  cells: ArrayLike<number>
+}
+
+/**
+ * What a finished pattern loses against a finer pattern of the same picture: the share of the
+ * fine pattern's subject beads whose color (within `deltaE`, CIEDE2000 — how different two beads look) appears nowhere in the 3 × 3
+ * coarse beads at the same spot. Both patterns come from the real generator, so outlines and
+ * eyes it keeps on the small grid count as kept, and so do blends of two nearby coarse colors
+ * (anti-aliased edges). The plain backdrop is left out of the share.
+ */
+export function gridLoss(coarse: Grid, fine: Grid, paletteLabs: Lab[], deltaE = 10): number {
+  const memo = new Map<number, boolean>()
+  const near = (a: number, b: number) => {
+    if (a === b) return true
+    const key = a < b ? a * 65536 + b : b * 65536 + a
+    let v = memo.get(key)
+    if (v === undefined) {
+      v = deltaE2000(paletteLabs[a], paletteLabs[b]) <= deltaE
+      memo.set(key, v)
+    }
+    return v
+  }
+  // Backdrop: the most common color on the fine grid's edge, if it covers most of the edge.
+  const edge: number[] = []
+  for (let x = 0; x < fine.width; x++) edge.push(fine.cells[x], fine.cells[(fine.height - 1) * fine.width + x])
+  for (let y = 1; y < fine.height - 1; y++) edge.push(fine.cells[y * fine.width], fine.cells[y * fine.width + fine.width - 1])
+  const freq = new Map<number, number>()
+  for (const c of edge) freq.set(c, (freq.get(c) ?? 0) + 1)
+  let bg = -1
+  let best = 0
+  for (const [c, n] of freq) if (n > best) [bg, best] = [c, n]
+  const nearBg = edge.filter((c) => near(c, bg)).length
+  if (nearBg < edge.length * 0.6) bg = -1
+
+  const sx = coarse.width / fine.width
+  const sy = coarse.height / fine.height
+  let lost = 0
+  let subject = 0
+  for (let y = 0; y < fine.height; y++) {
+    const cy = Math.min(coarse.height - 1, Math.floor((y + 0.5) * sy))
+    for (let x = 0; x < fine.width; x++) {
+      const c = fine.cells[y * fine.width + x]
+      if (bg >= 0 && near(c, bg)) continue
+      subject++
+      const cx = Math.min(coarse.width - 1, Math.floor((x + 0.5) * sx))
+      const around: number[] = []
+      for (let dy = -1; dy <= 1; dy++) {
+        const yy = cy + dy
+        if (yy < 0 || yy >= coarse.height) continue
+        for (let dx = -1; dx <= 1; dx++) {
+          const xx = cx + dx
+          if (xx >= 0 && xx < coarse.width) {
+            const k = coarse.cells[yy * coarse.width + xx]
+            if (!around.includes(k)) around.push(k)
+          }
+        }
+      }
+      let kept = around.some((k) => near(k, c))
+      // A blend of two neighbouring colors (anti-aliased edge) is not new detail either.
+      for (let i = 0; i < around.length && !kept; i++)
+        for (let j = i + 1; j < around.length && !kept; j++) kept = segmentDistance(paletteLabs[c], paletteLabs[around[i]], paletteLabs[around[j]]) <= deltaE
+      if (!kept) lost++
+    }
+  }
+  return lost / Math.max(subject, fine.width * fine.height * 0.15)
+}
+
+function segmentDistance(p: Lab, a: Lab, b: Lab): number {
+  const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]]
+  const len2 = ab[0] ** 2 + ab[1] ** 2 + ab[2] ** 2
+  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p[0] - a[0]) * ab[0] + (p[1] - a[1]) * ab[1] + (p[2] - a[2]) * ab[2]) / len2))
+  return Math.hypot(p[0] - a[0] - t * ab[0], p[1] - a[1] - t * ab[1], p[2] - a[2] - t * ab[2])
+}
+
+/** Loss allowed before going from n to n + 1 boards per side (index n − 1). Bigger steps need more evidence. */
+export const BOARD_STEP_LOSS = [0.05, 0.1]
+
+/**
+ * Fewest boards per side, preferring fewer: add boards only while BOTH the picture
+ * (`imageLosses`, from recommendBoards / detailLoss) and the generated patterns (`gridLosses[i]`
+ * = gridLoss of pattern i + 1 against pattern i + 2) say the smaller one loses detail.
+ */
+export function chooseBoards(imageLosses: number[], gridLosses: number[], maxPerSide: number, steps = BOARD_STEP_LOSS): number {
+  let n = 1
+  while (n < maxPerSide) {
+    const limit = steps[Math.min(n - 1, steps.length - 1)]
+    if (!(imageLosses[n - 1] > limit && gridLosses[n - 1] > limit)) break
+    n++
+  }
+  return n
 }
