@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EMPTY, PIXEL_ART, countColors, generatePattern, getPalette, mergeSmallRegions, rgbToLab, type ImageInput } from '../src'
+import { EMPTY, PIXEL_ART, countColors, generatePattern, getPalette, mergeSimilarColors, mergeSmallRegions, rgbToLab, type ImageInput } from '../src'
 
 const palette = getPalette('mard-264')
 const labs = palette.colors.map((c) => rgbToLab(c.rgb))
@@ -19,7 +19,7 @@ const idx = (rgb: [number, number, number]) => {
 }
 
 const RED = idx([200, 30, 40])
-const RED2 = idx([215, 50, 55]) // a slightly different red: a "碎色"
+const RED2 = idx([210, 30, 40]) // a slightly different red: a "碎色"
 const BLACK = idx([20, 20, 20])
 
 function grid(w: number, h: number, fill: number) {
@@ -49,6 +49,25 @@ describe('mergeSmallRegions', () => {
     const out = mergeSmallRegions(cells, 6, 6, labs)
     expect(out[14]).toBe(RED)
     expect(out.filter((c) => c === EMPTY).length).toBe(cells.filter((c) => c === EMPTY).length)
+  })
+})
+
+describe('mergeSimilarColors', () => {
+  it('merges near-duplicate shades but keeps a rare distinct color (sunglasses, teeth)', () => {
+    const WHITE = idx([255, 255, 255])
+    const cells = grid(10, 10, RED)
+    for (let i = 0; i < 30; i++) cells[i] = RED2
+    cells[55] = BLACK
+    cells[56] = WHITE
+    const out = mergeSimilarColors(cells, labs, 3, 6)
+    expect(new Set(out)).toEqual(new Set([RED, BLACK, WHITE]))
+    expect(out[55]).toBe(BLACK)
+    expect(out[56]).toBe(WHITE)
+  })
+
+  it('never goes over maxColors', () => {
+    const cells = Array.from({ length: 400 }, (_, i) => (i * 7) % 120)
+    expect(new Set(mergeSimilarColors(cells, labs, 10, 0)).size).toBeLessThanOrEqual(10)
   })
 })
 

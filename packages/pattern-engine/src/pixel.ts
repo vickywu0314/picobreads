@@ -7,15 +7,48 @@ import { deltaE2000, type Lab } from './color'
  */
 export const PIXEL_ART = {
   /** Upper bound on colors. */
-  maxColors: 12,
-  /** Detail level used for the base pattern (1 = smoothest). */
-  detail: 2,
-  /** Colors used by fewer than this share of cells are merged (stricter than the plain pattern). */
-  minShare: 0.006,
+  maxColors: 16,
+  /** Colors closer than this (CIEDE2000) are always merged into one, even under maxColors. */
+  similarDeltaE: 6,
   /** Regions (4-connected, same color) smaller than this are merged into their surroundings… */
   minRegion: 3,
   /** …but only when the surrounding color is this close (CIEDE2000): high-contrast details stay. */
-  mergeDeltaE: 20,
+  mergeDeltaE: 12,
+}
+
+/**
+ * Reduce colors by merging *similar* ones (never by dropping rare ones): repeatedly merge the
+ * closest pair of used colors (CIEDE2000), the less used into the more used, while there are more
+ * than `maxColors` or the closest pair is within `similarDeltaE`. A small but distinct color —
+ * black sunglasses, white teeth — survives; near-duplicate shades become one flat block.
+ */
+export function mergeSimilarColors(cells: number[], paletteLabs: Lab[], maxColors = PIXEL_ART.maxColors, similarDeltaE = PIXEL_ART.similarDeltaE): number[] {
+  const counts = new Map<number, number>()
+  for (const c of cells) if (c >= 0) counts.set(c, (counts.get(c) ?? 0) + 1)
+  const into = new Map<number, number>()
+  for (;;) {
+    const used = [...counts.keys()]
+    if (used.length <= 1) break
+    let a = -1
+    let b = -1
+    let best = Infinity
+    for (let i = 0; i < used.length; i++)
+      for (let j = i + 1; j < used.length; j++) {
+        const d = deltaE2000(paletteLabs[used[i]], paletteLabs[used[j]])
+        if (d < best) {
+          best = d
+          a = used[i]
+          b = used[j]
+        }
+      }
+    if (used.length <= maxColors && best > similarDeltaE) break
+    const [keep, drop] = counts.get(a)! >= counts.get(b)! ? [a, b] : [b, a]
+    counts.set(keep, counts.get(keep)! + counts.get(drop)!)
+    counts.delete(drop)
+    into.set(drop, keep)
+    for (const [k, v] of into) if (v === drop) into.set(k, keep)
+  }
+  return cells.map((c) => (c >= 0 ? (into.get(c) ?? c) : c))
 }
 
 /**

@@ -1,6 +1,6 @@
 import { deltaE2000, linearRgbToLab, rgbToLab, srgbToLinear, type Lab } from './color'
 import { removeBackdrop } from './background'
-import { PIXEL_ART, mergeSmallRegions } from './pixel'
+import { mergeSimilarColors, mergeSmallRegions } from './pixel'
 import { regularColorIndices } from './palettes'
 import type { Palette } from './types'
 
@@ -35,8 +35,8 @@ export interface GenerateOptions {
   /** Leave the plain backdrop empty (no beads), see removeBackdrop. */
   removeBackground?: boolean
   /**
-   * Pixel-art look: fewer colors, smoother base, small low-contrast fragments merged into
-   * their surroundings (see PIXEL_ART). Dithering is ignored.
+   * Pixel-art look: similar colors merged (at most PIXEL_ART.maxColors), small low-contrast
+   * fragments merged into their surroundings. Distinct small features are kept. No dithering.
    */
   pixelArt?: boolean
 }
@@ -324,11 +324,11 @@ function chooseColors(
 export function generatePattern(img: ImageInput, opts: GenerateOptions): GenerateResult {
   const { palette, width: W, height: H } = opts
   const pixel = !!opts.pixelArt
-  const detail = Math.min(pixel ? PIXEL_ART.detail : 5, Math.max(1, Math.round(opts.detail)))
-  const maxColors = Math.max(1, Math.min(pixel ? PIXEL_ART.maxColors : Infinity, Math.floor(opts.maxColors)))
+  const detail = Math.min(5, Math.max(1, Math.round(opts.detail)))
+  const maxColors = Math.max(1, Math.floor(opts.maxColors))
   const dithering = opts.dithering && !pixel
   // Asking for many colors means "keep subtle shades": relax the rare-color threshold accordingly.
-  const share = opts.minShare ?? (pixel ? PIXEL_ART.minShare : MIN_SHARE[detail - 1] * Math.min(1, 28 / maxColors))
+  const share = opts.minShare ?? MIN_SHARE[detail - 1] * Math.min(1, 28 / maxColors)
   const minCount = Math.max(1, Math.round(W * H * share))
   const style = opts.style && opts.style !== 'auto' ? opts.style : looksLikeIllustration(img) ? 'illustration' : 'photo'
 
@@ -454,7 +454,9 @@ export function generatePattern(img: ImageInput, opts: GenerateOptions): Generat
   }
 
   if (detail <= DESPECKLE_MAX_DETAIL && !dithering) cells = despeckle(cells, W, H)
-  if (pixel) cells = mergeSmallRegions(cells, W, H, paletteLabs)
+  // Pixel art starts from the full-detail pattern, so small distinct features are there to keep;
+  // only similar shades and low-contrast fragments are merged.
+  if (pixel) cells = mergeSmallRegions(mergeSimilarColors(cells, paletteLabs), W, H, paletteLabs)
   if (opts.removeBackground) cells = removeBackdrop(cells, W, H, paletteLabs)
   return { width: W, height: H, paletteId: palette.id, cells }
 }
