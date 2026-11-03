@@ -80,6 +80,7 @@ function LanguageMenu() {
 function UserMenu({ name }: { name: string }) {
   const t = useT()
   const [open, setOpen] = useState(false)
+  const initial = [...name.trim()][0]?.toUpperCase() ?? ''
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!open) return
@@ -94,14 +95,18 @@ function UserMenu({ name }: { name: string }) {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className="btn-secondary btn-sm h-10 max-w-40 rounded-full px-4"
+        aria-label={name}
+        title={name}
+        className="grid h-10 w-10 place-items-center rounded-full border-2 border-[var(--ink)] bg-[var(--sun)] font-display text-lg leading-none text-[var(--ink)] shadow-[2px_2px_0_var(--ink)] transition-transform hover:-translate-y-0.5"
       >
-        <UserRound className="h-4 w-4 shrink-0" aria-hidden />
-        <span className="truncate">{name}</span>
-        <ChevronDown className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        {/* Avatar: first letter of the name (a person icon if there is none). */}
+        {initial ? <span aria-hidden>{initial}</span> : <UserRound className="h-5 w-5" aria-hidden />}
       </button>
       {open && (
-        <ul role="menu" className="absolute right-0 top-12 z-40 w-44 overflow-hidden rounded-2xl border-2 border-[var(--ink)] bg-white py-1 shadow-[4px_4px_0_var(--ink)]">
+        <ul role="menu" className="absolute right-0 top-12 z-40 w-48 overflow-hidden rounded-2xl border-2 border-[var(--ink)] bg-white py-1 shadow-[4px_4px_0_var(--ink)]">
+          <li role="presentation" className="truncate border-b border-[var(--border)] px-4 pb-2 pt-1.5 text-xs text-muted" title={name}>
+            {name}
+          </li>
           <li>
             <Link role="menuitem" href={v11Href('/workbench/')} onClick={() => setOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-[var(--accent-soft)]">
               <LayoutGrid className="h-4 w-4" aria-hidden /> {t.v11.workbench.menu}
