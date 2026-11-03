@@ -32,10 +32,20 @@ export function Ironed({
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       drawWork(ctx, r.width, r.height, pattern, getPalette(pattern.paletteId), view === 'board' ? '1'.repeat(pattern.cells.length) : '', view, iron)
     }
-    paint()
-    const ro = new ResizeObserver(paint)
+    // Paint in the next frame (each canvas in its own task), so a tap — e.g. picking a finish that
+    // repaints several big previews — shows its feedback right away instead of freezing first.
+    let frame = 0
+    const schedule = () => {
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(paint)
+    }
+    schedule()
+    const ro = new ResizeObserver(schedule)
     ro.observe(c)
-    return () => ro.disconnect()
+    return () => {
+      cancelAnimationFrame(frame)
+      ro.disconnect()
+    }
   }, [pattern, view, iron])
   return (
     <canvas
