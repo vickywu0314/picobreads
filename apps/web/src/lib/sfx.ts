@@ -19,20 +19,53 @@ export function setMuted(muted: boolean) {
   } catch {}
 }
 
-function tone(freq: number, endFreq: number, ms: number, gain: number, type: OscillatorType = 'triangle') {
+function audio(): AudioContext | null {
   const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-  if (!AC) return
+  if (!AC) return null
   ctx ??= new AC()
-  if (ctx.state === 'suspended') void ctx.resume()
-  const t = ctx.currentTime
-  const osc = ctx.createOscillator()
-  const g = ctx.createGain()
+  return ctx
+}
+
+/**
+ * Phones (iOS Safari, WeChat, most Android browsers) only let a page start audio inside a tap.
+ * Our first sounds play later (from timers and animations), so the audio stayed locked on phones.
+ * Unlock it on the first touch anywhere: resume the context and play one silent sample.
+ */
+function unlockOnFirstTouch() {
+  const unlock = () => {
+    try {
+      const c = audio()
+      if (!c) return
+      if (c.state === 'suspended') void c.resume()
+      const src = c.createBufferSource()
+      src.buffer = c.createBuffer(1, 1, 22050)
+      src.connect(c.destination)
+      src.start(0)
+      if (c.state === 'running') {
+        window.removeEventListener('pointerdown', unlock, true)
+        window.removeEventListener('touchend', unlock, true)
+      }
+    } catch {}
+  }
+  window.addEventListener('pointerdown', unlock, true)
+  window.addEventListener('touchend', unlock, true)
+}
+
+if (typeof window !== 'undefined') unlockOnFirstTouch()
+
+function tone(freq: number, endFreq: number, ms: number, gain: number, type: OscillatorType = 'triangle') {
+  const c = audio()
+  if (!c) return
+  if (c.state === 'suspended') void c.resume()
+  const t = c.currentTime
+  const osc = c.createOscillator()
+  const g = c.createGain()
   osc.type = type
   osc.frequency.setValueAtTime(freq, t)
   osc.frequency.exponentialRampToValueAtTime(endFreq, t + ms / 1000)
   g.gain.setValueAtTime(gain, t)
   g.gain.exponentialRampToValueAtTime(0.0001, t + ms / 1000)
-  osc.connect(g).connect(ctx.destination)
+  osc.connect(g).connect(c.destination)
   osc.start(t)
   osc.stop(t + ms / 1000 + 0.02)
 }

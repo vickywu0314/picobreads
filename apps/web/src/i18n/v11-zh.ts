@@ -89,7 +89,7 @@ export const v11Zh: typeof v11En = {
     continueBead: '继续拼',
     customize: '重新定制',
   },
-  editor: { section: '分区', nextSection: '下一个分区', sectionDone: '这个分区拼完了' },
+  editor: { more: '更多', section: '分区', nextSection: '下一个分区', sectionDone: '这个分区拼完了' },
   draft: {
     save: '存草稿',
     saved: '已存到草稿，可在「我的工作台」继续',

@@ -88,7 +88,7 @@ export const v11En = {
     continueBead: 'Keep beading',
     customize: 'Customize again',
   },
-  editor: { section: 'Section', nextSection: 'Next section', sectionDone: 'Section done' },
+  editor: { more: 'More', section: 'Section', nextSection: 'Next section', sectionDone: 'Section done' },
   draft: {
     save: 'Save draft',
     saved: 'Saved to drafts — continue any time from My workspace',

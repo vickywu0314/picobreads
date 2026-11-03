@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, CheckCheck, ChevronRight, Cloud, Eye, Lightbulb, Maximize, Minus, Plus, RotateCcw, Save, Undo2, Volume2, VolumeX } from 'lucide-react'
+import { ArrowLeft, CheckCheck, ChevronRight, Cloud, Eye, Lightbulb, Maximize, Minus, Plus, Ellipsis, RotateCcw, Save, Undo2, Volume2, VolumeX } from 'lucide-react'
 import { beadCount, regularColorIndices, sectionCellIndices } from '@picobreads/pattern-engine'
 import { PatternCanvas, type PatternCanvasHandle, type ToolPointerEvent } from '@/components/PatternCanvas'
 import { NoPattern } from '@/components/NoPattern'
@@ -60,6 +60,10 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
   const [finished, setFinished] = useState(false)
   const [muted, setMutedState] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
+  // v1.1 on a phone: big board + compact dock at the bottom (desktop / tablet keep the side panel).
+  const phone = useIsPhone()
+  const compact = v11 && phone
+  const [moreOpen, setMoreOpen] = useState(false)
 
   // Refs mirror state for the pointer handlers (they run many times per frame).
   const loadRef = useRef(load)
@@ -391,7 +395,7 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
                 onClick={saveDraft}
                 className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-sm font-bold"
               >
-                <Save className="h-4 w-4" aria-hidden /> {t.v11.draft.save}
+                <Save className="h-4 w-4" aria-hidden /> <span className={compact ? 'sr-only' : ''}>{t.v11.draft.save}</span>
               </button>
             )}
             <button
@@ -399,7 +403,7 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
               onClick={() => setPreviewOpen(true)}
               className="ml-1 inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-accent px-3 text-sm font-bold text-accent-fg"
             >
-              <Eye className="h-4 w-4" aria-hidden /> {t.editor.preview.open}
+              <Eye className="h-4 w-4" aria-hidden /> <span className={compact ? 'sr-only' : ''}>{t.editor.preview.open}</span>
             </button>
           </div>
           <div className="bead-chrome pointer-events-auto flex items-center gap-0.5 rounded-full bg-surface/90 p-1 shadow backdrop-blur">
@@ -417,13 +421,15 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
             </button>
           </div>
         </div>
-        <MiniPreview
-          pattern={pattern}
-          palette={palette}
-          placed={placed}
-          onOpen={() => setPreviewOpen(true)}
-          className="absolute bottom-2 left-2"
-        />
+        {!compact && (
+          <MiniPreview
+            pattern={pattern}
+            palette={palette}
+            placed={placed}
+            onOpen={() => setPreviewOpen(true)}
+            className="absolute bottom-2 left-2"
+          />
+        )}
         {toolActive && (
           <p className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/40 px-3 py-1 text-[11px] text-white">
             {t.editor.twoFingers}
@@ -436,60 +442,42 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
         )}
       </div>
 
-      {/* Workbench */}
-      <aside className="bead-aside flex max-h-[50%] flex-col gap-3 overflow-y-auto border-t border-border bg-surface p-3 *:shrink-0 md:max-h-none md:w-[26rem] md:border-l md:border-t-0 md:p-4">
-        {/* Tools */}
-        <div role="radiogroup" aria-label={t.editor.toolLabel} className="grid grid-cols-4 gap-1.5">
-          {(['pen', 'tweezers', 'hand', 'fix'] as const).map((id) => (
-            <button
-              key={id}
-              type="button"
-              role="radio"
-              aria-checked={tool === id}
-              onClick={() => {
-                // Switching tools puts whatever was held back into the tray.
+      {compact ? (
+        /* Phone dock: tools + status in one row, a swipeable bead strip, everything else under "More". */
+        <div className="bead-dock shrink-0 border-t-2 border-[var(--ink)] bg-[var(--bg)] px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
+          <div className="flex items-center gap-1.5">
+            <div role="radiogroup" aria-label={t.editor.toolLabel} className="flex gap-1">
+              {(['pen', 'tweezers', 'hand', 'fix'] as const).map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="radio"
+                  aria-checked={tool === id}
+                  aria-label={t.editor.tools[id]}
+                  onClick={() => {
                 setTool(id)
                 setLoad({ color: null, count: 0 })
                 useToolLayer.setState({ visible: false, ring: null })
               }}
-              className={`bead-tool flex h-14 flex-col items-center justify-center gap-0.5 rounded-2xl border text-[11px] font-bold ${
-                tool === id ? 'border-accent bg-accent-soft text-fg' : 'border-border text-muted hover:text-fg'
-              }`}
-            >
-              <ToolIcon tool={id} />
-              {t.editor.tools[id]}
-            </button>
-          ))}
-        </div>
-
-        {/* Status */}
-        <div className="bead-panel rounded-2xl bg-surface-2 p-3">
-          <div className="flex items-start gap-3">
-            {focus && focusColor !== null ? (
-              <Swatch rgb={focus.rgb} number={numbers.get(focusColor)} size={36} done={focusDone === focusTotal && focusTotal > 0} />
-            ) : (
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface text-muted">
-                <ToolIcon tool={tool} className="h-4.5 w-4.5" />
-              </span>
-            )}
-            <div className="min-w-0 flex-1">
-              {toolStatus && <p className="text-sm font-bold">{toolStatus}</p>}
-              {tool === 'pen' && (
-                <div className="mt-1 flex gap-0.5" aria-hidden>
-                  {Array.from({ length: PEN_CAPACITY }, (_, i) => (
-                    <span
-                      key={i}
-                      className="h-2 flex-1 rounded-sm"
-                      style={{ background: i < load.count && load.color !== null ? css(palette.colors[load.color].rgb) : 'var(--border)' }}
-                    />
-                  ))}
-                </div>
-              )}
-              <p className="mt-1 text-xs text-muted">{t.editor.toolHints[tool]}</p>
+                  className="bead-tool grid h-10 w-10 place-items-center rounded-xl border"
+                >
+                  <ToolIcon tool={id} className="h-4.5 w-4.5" />
+                </button>
+              ))}
+            </div>
+            <div className="min-w-0 flex-1 px-1">
+              <p className="truncate text-xs font-bold">
+                {focus && focusColor !== null ? `${focus.code} · ${focusDone}/${focusTotal}` : t.editor.tools[tool]}
+                {toolStatus && tool !== 'hand' && tool !== 'fix' ? ` · ${toolStatus}` : ''}
+              </p>
+              <div className="mt-1 flex items-center gap-1.5">
+                <ProgressBar value={progress.placedAll / progress.all} label={t.editor.total} />
+                <span className="shrink-0 text-[11px] font-semibold tabular-nums text-muted">{Math.round((progress.placedAll / progress.all) * 100)}%</span>
+              </div>
             </div>
             <button
               type="button"
-              className="icon-btn -m-1.5 h-9 w-9"
+              className="icon-btn h-10 w-10"
               onClick={() => {
                 setMuted(!muted)
                 setMutedState(!muted)
@@ -499,71 +487,211 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
             >
               {muted ? <VolumeX className="h-4.5 w-4.5" aria-hidden /> : <Volume2 className="h-4.5 w-4.5" aria-hidden />}
             </button>
+            <button type="button" className="icon-btn h-10 w-10" onClick={() => setMoreOpen(true)} aria-label={t.v11.editor.more}>
+              <Ellipsis className="h-5 w-5" aria-hidden />
+            </button>
           </div>
-          {focus && focusColor !== null && (
-            <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-muted">
-              <span className="w-28 shrink-0 truncate">
-                {focus.name} {focusDone}/{focusTotal}
-              </span>
-              <ProgressBar value={focusTotal ? focusDone / focusTotal : 0} label={focus.name} />
+          {tool === 'pen' && (
+            <div className="mt-1.5 flex gap-0.5 px-0.5" aria-hidden>
+              {Array.from({ length: PEN_CAPACITY }, (_, i) => (
+                <span
+                  key={i}
+                  className="h-1.5 flex-1 rounded-sm"
+                  style={{ background: i < load.count && load.color !== null ? css(palette.colors[load.color].rgb) : 'var(--border)' }}
+                />
+              ))}
             </div>
           )}
-          <div className="mt-1.5 flex items-center gap-2 text-xs font-semibold text-muted">
-            <span className="w-28 shrink-0">{t.editor.total}</span>
-            <ProgressBar value={progress.placedAll / progress.all} label={t.editor.total} />
-            <span className="shrink-0 tabular-nums">{Math.round((progress.placedAll / progress.all) * 100)}%</span>
+          <div className="mt-2">
+            <BeadTray
+              compact
+              wells={wells}
+              palette={palette}
+              active={focusColor}
+              label={t.editor.tray}
+              wellLabel={(w) => t.editor.wellLabel(palette.colors[w.color].name, palette.colors[w.color].code, w.left)}
+              onWellPointer={onWellPointer}
+            />
           </div>
+          <p className="mt-1 truncate text-center text-[11px] text-muted">{t.editor.toolHints[tool]}</p>
         </div>
-
-        {/* Tray */}
-        <BeadTray
-          wells={wells}
-          palette={palette}
-          active={focusColor}
-          label={t.editor.tray}
-          wellLabel={(w) => t.editor.wellLabel(palette.colors[w.color].name, palette.colors[w.color].code, w.left)}
-          onWellPointer={onWellPointer}
-        />
-
-        {/* Boards */}
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="flex flex-1 items-center gap-2">
-            <span className="text-sm font-semibold">{v11 ? t.v11.editor.section : t.editor.section}</span>
-            <select className="input h-10 flex-1" value={activeSection ?? ''} onChange={(e) => setActiveSection(e.target.value || null)}>
-              <option value="">{t.editor.allSections}</option>
-              {sections.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label} ({s.w}×{s.h})
-                </option>
-              ))}
-            </select>
-          </label>
-          {sections.length > 1 && (
-            <button type="button" className="btn-secondary btn-sm" onClick={nextSection}>
-              {v11 ? t.v11.editor.nextSection : t.editor.nextSection} <ChevronRight className="h-4 w-4" aria-hidden />
-            </button>
-          )}
-          {section && (
-            <button type="button" className="btn-secondary btn-sm" onClick={() => setPlaced(sectionCellIndices(section, pattern.width), true)}>
-              <CheckCheck className="h-4 w-4" aria-hidden /> {v11 ? t.v11.editor.sectionDone : t.editor.sectionDone}
-            </button>
-          )}
-        </div>
-
-        <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-xs text-muted">
-          <span className="flex items-center gap-1.5">
-            <Cloud className="h-4 w-4" aria-hidden /> {t.editor.saved}
-          </span>
-          <div className="flex gap-1">
-            <Link href={v11 ? "/v1-1/lightbox/" : "/lightbox/"} className="btn-ghost btn-sm">
-              <Lightbulb className="h-4 w-4" aria-hidden /> {t.pattern.lightbox}
-            </Link>
-            <button type="button" className="btn-ghost btn-sm" onClick={() => confirm(t.editor.resetConfirm) && resetProgress()}>
-              <RotateCcw className="h-4 w-4" aria-hidden /> {t.editor.reset}
-            </button>
+      ) : (
+        /* Workbench (desktop / tablet) */
+        <aside className="bead-aside flex max-h-[50%] flex-col gap-3 overflow-y-auto border-t border-border bg-surface p-3 *:shrink-0 md:max-h-none md:w-[26rem] md:border-l md:border-t-0 md:p-4">
+          {/* Tools */}
+          <div role="radiogroup" aria-label={t.editor.toolLabel} className="grid grid-cols-4 gap-1.5">
+            {(['pen', 'tweezers', 'hand', 'fix'] as const).map((id) => (
+              <button
+                key={id}
+                type="button"
+                role="radio"
+                aria-checked={tool === id}
+                onClick={() => {
+                  // Switching tools puts whatever was held back into the tray.
+                  setTool(id)
+                  setLoad({ color: null, count: 0 })
+                  useToolLayer.setState({ visible: false, ring: null })
+                }}
+                className={`bead-tool flex h-14 flex-col items-center justify-center gap-0.5 rounded-2xl border text-[11px] font-bold ${
+                  tool === id ? 'border-accent bg-accent-soft text-fg' : 'border-border text-muted hover:text-fg'
+                }`}
+              >
+                <ToolIcon tool={id} />
+                {t.editor.tools[id]}
+              </button>
+            ))}
           </div>
-        </div>
-      </aside>
+  
+          {/* Status */}
+          <div className="bead-panel rounded-2xl bg-surface-2 p-3">
+            <div className="flex items-start gap-3">
+              {focus && focusColor !== null ? (
+                <Swatch rgb={focus.rgb} number={numbers.get(focusColor)} size={36} done={focusDone === focusTotal && focusTotal > 0} />
+              ) : (
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface text-muted">
+                  <ToolIcon tool={tool} className="h-4.5 w-4.5" />
+                </span>
+              )}
+              <div className="min-w-0 flex-1">
+                {toolStatus && <p className="text-sm font-bold">{toolStatus}</p>}
+                {tool === 'pen' && (
+                  <div className="mt-1 flex gap-0.5" aria-hidden>
+                    {Array.from({ length: PEN_CAPACITY }, (_, i) => (
+                      <span
+                        key={i}
+                        className="h-2 flex-1 rounded-sm"
+                        style={{ background: i < load.count && load.color !== null ? css(palette.colors[load.color].rgb) : 'var(--border)' }}
+                      />
+                    ))}
+                  </div>
+                )}
+                <p className="mt-1 text-xs text-muted">{t.editor.toolHints[tool]}</p>
+              </div>
+              <button
+                type="button"
+                className="icon-btn -m-1.5 h-9 w-9"
+                onClick={() => {
+                  setMuted(!muted)
+                  setMutedState(!muted)
+                }}
+                aria-label={t.editor.sound}
+                aria-pressed={!muted}
+              >
+                {muted ? <VolumeX className="h-4.5 w-4.5" aria-hidden /> : <Volume2 className="h-4.5 w-4.5" aria-hidden />}
+              </button>
+            </div>
+            {focus && focusColor !== null && (
+              <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-muted">
+                <span className="w-28 shrink-0 truncate">
+                  {focus.name} {focusDone}/{focusTotal}
+                </span>
+                <ProgressBar value={focusTotal ? focusDone / focusTotal : 0} label={focus.name} />
+              </div>
+            )}
+            <div className="mt-1.5 flex items-center gap-2 text-xs font-semibold text-muted">
+              <span className="w-28 shrink-0">{t.editor.total}</span>
+              <ProgressBar value={progress.placedAll / progress.all} label={t.editor.total} />
+              <span className="shrink-0 tabular-nums">{Math.round((progress.placedAll / progress.all) * 100)}%</span>
+            </div>
+          </div>
+  
+          {/* Tray */}
+          <BeadTray
+            wells={wells}
+            palette={palette}
+            active={focusColor}
+            label={t.editor.tray}
+            wellLabel={(w) => t.editor.wellLabel(palette.colors[w.color].name, palette.colors[w.color].code, w.left)}
+            onWellPointer={onWellPointer}
+          />
+  
+          {/* Boards */}
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex flex-1 items-center gap-2">
+              <span className="text-sm font-semibold">{v11 ? t.v11.editor.section : t.editor.section}</span>
+              <select className="input h-10 flex-1" value={activeSection ?? ''} onChange={(e) => setActiveSection(e.target.value || null)}>
+                <option value="">{t.editor.allSections}</option>
+                {sections.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label} ({s.w}×{s.h})
+                  </option>
+                ))}
+              </select>
+            </label>
+            {sections.length > 1 && (
+              <button type="button" className="btn-secondary btn-sm" onClick={nextSection}>
+                {v11 ? t.v11.editor.nextSection : t.editor.nextSection} <ChevronRight className="h-4 w-4" aria-hidden />
+              </button>
+            )}
+            {section && (
+              <button type="button" className="btn-secondary btn-sm" onClick={() => setPlaced(sectionCellIndices(section, pattern.width), true)}>
+                <CheckCheck className="h-4 w-4" aria-hidden /> {v11 ? t.v11.editor.sectionDone : t.editor.sectionDone}
+              </button>
+            )}
+          </div>
+  
+          <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-xs text-muted">
+            <span className="flex items-center gap-1.5">
+              <Cloud className="h-4 w-4" aria-hidden /> {t.editor.saved}
+            </span>
+            <div className="flex gap-1">
+              <Link href={v11 ? "/v1-1/lightbox/" : "/lightbox/"} className="btn-ghost btn-sm">
+                <Lightbulb className="h-4 w-4" aria-hidden /> {t.pattern.lightbox}
+              </Link>
+              <button type="button" className="btn-ghost btn-sm" onClick={() => confirm(t.editor.resetConfirm) && resetProgress()}>
+                <RotateCcw className="h-4 w-4" aria-hidden /> {t.editor.reset}
+              </button>
+            </div>
+          </div>
+        </aside>
+      )}
+
+      {compact && (
+        <Modal open={moreOpen} onClose={() => setMoreOpen(false)} title={t.v11.editor.more}>
+          <div className="flex flex-col gap-3">
+            <label className="flex items-center gap-2">
+              <span className="text-sm font-semibold">{t.v11.editor.section}</span>
+              <select className="input h-10 flex-1" value={activeSection ?? ''} onChange={(e) => setActiveSection(e.target.value || null)}>
+                <option value="">{t.editor.allSections}</option>
+                {sections.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.label} ({s.w}×{s.h})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {sections.length > 1 && (
+                <button type="button" className="btn-secondary btn-sm" onClick={nextSection}>
+                  {t.v11.editor.nextSection} <ChevronRight className="h-4 w-4" aria-hidden />
+                </button>
+              )}
+              {section && (
+                <button type="button" className="btn-secondary btn-sm" onClick={() => setPlaced(sectionCellIndices(section, pattern.width), true)}>
+                  <CheckCheck className="h-4 w-4" aria-hidden /> {t.v11.editor.sectionDone}
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2 border-t border-border pt-3">
+              <button type="button" className="btn-secondary btn-sm" onClick={() => canvas.current?.zoomIn()}>
+                <Plus className="h-4 w-4" aria-hidden /> {t.editor.zoomIn}
+              </button>
+              <button type="button" className="btn-secondary btn-sm" onClick={() => canvas.current?.zoomOut()}>
+                <Minus className="h-4 w-4" aria-hidden /> {t.editor.zoomOut}
+              </button>
+              <Link href="/v1-1/lightbox/" className="btn-secondary btn-sm">
+                <Lightbulb className="h-4 w-4" aria-hidden /> {t.pattern.lightbox}
+              </Link>
+              <button type="button" className="btn-secondary btn-sm" onClick={() => confirm(t.editor.resetConfirm) && resetProgress()}>
+                <RotateCcw className="h-4 w-4" aria-hidden /> {t.editor.reset}
+              </button>
+            </div>
+            <p className="flex items-center gap-1.5 text-xs text-muted">
+              <Cloud className="h-4 w-4" aria-hidden /> {t.editor.saved}
+            </p>
+          </div>
+        </Modal>
+      )}
 
       <ToolLayer
         tool={toolActive ? (tool as 'pen' | 'tweezers') : null}
@@ -626,4 +754,17 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
       </Modal>
     </div>
   )
+}
+
+/** True on phone-width screens (below Tailwind's md breakpoint). */
+function useIsPhone() {
+  const [phone, setPhone] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const update = () => setPhone(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+  return phone
 }
