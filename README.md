@@ -4,7 +4,7 @@
 
 **Versions:** v1.0 at `/` (frozen), v1.1 "Pipixel" redesign at `/v1-1/` (all new work) — see `docs/versions.md`.
 
-See `CLAUDE.md` for the product spec, `docs/sitemap.md` for the site structure and `docs/prototype-notes.md` (中文) for what is real vs. mocked.
+**Current status / handoff: `docs/status.md`.** See `CLAUDE.md` for the product spec, `docs/sitemap.md` for the site structure and `docs/prototype-notes.md` (中文) for what is real vs. mocked.
 
 ## Structure
 
