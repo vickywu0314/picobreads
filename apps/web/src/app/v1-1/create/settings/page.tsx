@@ -42,7 +42,8 @@ export default function SettingsPage() {
   const trim = settings.trim ?? V11_DEFAULTS.trim
   // (look is left out too: the three plain results don't change when the pixel one is picked.)
   const gen = { ...settings, tier: 'small' as const, iron: undefined, look: undefined, removeBg, trim, paletteId: V11_PALETTE_ID, maxColors: V11_DEFAULTS.maxColors, style: 'auto' as const }
-  // Fourth option: pixel style on the same grid as the first (one board), so the two can be compared.
+  // Fourth option: pixel style on the 2 × 2 grid (same size as the second), so small features like teeth survive.
+  const PIXEL_TIER = V11_TIERS[1]
   const pixelGen = { ...gen, look: 'pixel' as const }
   const look = settings.look ?? 'classic'
   const iron: IronStyle = settings.iron ?? 'normal'
@@ -52,7 +53,7 @@ export default function SettingsPage() {
     standard: useGeneratedPattern(photo, gen, aspectId, v11Beads('standard', bead), hydrated),
     large: useGeneratedPattern(photo, gen, aspectId, v11Beads('large', bead), hydrated),
   }
-  const pixelVariant = useGeneratedPattern(photo, pixelGen, aspectId, v11Beads('small', bead), hydrated)
+  const pixelVariant = useGeneratedPattern(photo, pixelGen, aspectId, v11Beads(PIXEL_TIER.id, bead), hydrated)
   const aspect = aspectValue(aspectId)
   const anyBusy = Object.values(variants).some((v) => v.busy) || pixelVariant.busy
   const colorCount = maxColorsFor(V11_PALETTE_ID)
@@ -91,7 +92,7 @@ export default function SettingsPage() {
   const go = async (href: string, which: 'bead' | 'next') => {
     setBusy(which)
     try {
-      const tier = look === 'pixel' ? V11_TIERS[0] : (V11_TIERS.find((x) => x.id === settings.tier) ?? V11_TIERS[0])
+      const tier = look === 'pixel' ? PIXEL_TIER : (V11_TIERS.find((x) => x.id === settings.tier) ?? V11_TIERS[0])
       // The picked look goes with it: online beading and the sheets use exactly this pattern.
       const picked =
         look === 'pixel'
@@ -199,7 +200,7 @@ export default function SettingsPage() {
             })}
             {(() => {
               const v = pixelVariant.pattern
-              const { width, height } = gridSize(v11Beads('small', bead), aspect)
+              const { width, height } = gridSize(v11Beads(PIXEL_TIER.id, bead), aspect)
               const fin = v11Size(width, height, bead)
               const grid = v11BoardGrid(width, height, bead)
               const on = look === 'pixel'
@@ -208,7 +209,7 @@ export default function SettingsPage() {
                   type="button"
                   role="radio"
                   aria-checked={on}
-                  onClick={() => setSettings({ look: 'pixel', tier: 'small' })}
+                  onClick={() => setSettings({ look: 'pixel', tier: PIXEL_TIER.id })}
                   className={`card relative p-3 text-left transition-transform ${on ? '-translate-y-1 !border-[var(--accent)] ring-4 ring-[var(--accent)]/30' : 'hover:-translate-y-0.5'}`}
                 >
                   <span className="font-pixel absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full border-2 border-[var(--ink)] bg-white px-2.5 py-0.5 text-xs font-bold text-[var(--ink)]">

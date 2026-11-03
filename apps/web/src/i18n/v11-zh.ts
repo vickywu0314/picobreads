@@ -45,7 +45,7 @@ export const v11Zh: typeof v11En = {
   sample: '示例',
   settings: {
     pickTitle: '选一个你喜欢的效果',
-    pickHint: '按图片的细节推荐底板数：简单的图一块板就足够清楚，细节多的照片才用多块板拼大。最后一张「像素风」和第一张同样大小，颜色更少、色块更大。点选的那张就是你的最终图纸。',
+    pickHint: '按图片的细节推荐底板数：简单的图一块板就足够清楚，细节多的照片才用多块板拼大。最后一张「像素风」和第二张同样大小，颜色更少、色块更大。点选的那张就是你的最终图纸。',
     selected: '已选',
     boardsTitle: (cols: number, rows: number) => (cols * rows === 1 ? '1 块底板' : `${cols * rows} 块底板（${cols}×${rows}）`),
     recommended: '推荐',
