@@ -53,8 +53,9 @@ export function Ironed({
       role={label ? 'img' : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}
-      className={`block w-full ${className}`}
-      style={{ aspectRatio: `${pattern.width} / ${pattern.height}` }}
+      className={`mx-auto block w-full ${className}`}
+      // Tall patterns: narrower than the box so the whole picture fits a square preview box.
+      style={{ aspectRatio: `${pattern.width} / ${pattern.height}`, maxWidth: pattern.height > pattern.width ? `${(pattern.width / pattern.height) * 100}%` : undefined }}
     />
   )
 }
