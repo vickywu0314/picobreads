@@ -1,5 +1,6 @@
 import { deltaE2000, linearRgbToLab, rgbToLab, srgbToLinear, type Lab } from './color'
 import { removeBackdrop } from './background'
+import { PIXEL_ART, mergeSmallRegions } from './pixel'
 import { regularColorIndices } from './palettes'
 import type { Palette } from './types'
 
@@ -33,6 +34,11 @@ export interface GenerateOptions {
   minShare?: number
   /** Leave the plain backdrop empty (no beads), see removeBackdrop. */
   removeBackground?: boolean
+  /**
+   * Pixel-art look: fewer colors, smoother base, small low-contrast fragments merged into
+   * their surroundings (see PIXEL_ART). Dithering is ignored.
+   */
+  pixelArt?: boolean
 }
 
 export interface GenerateResult {
@@ -317,10 +323,12 @@ function chooseColors(
  */
 export function generatePattern(img: ImageInput, opts: GenerateOptions): GenerateResult {
   const { palette, width: W, height: H } = opts
-  const detail = Math.min(5, Math.max(1, Math.round(opts.detail)))
-  const maxColors = Math.max(1, Math.floor(opts.maxColors))
+  const pixel = !!opts.pixelArt
+  const detail = Math.min(pixel ? PIXEL_ART.detail : 5, Math.max(1, Math.round(opts.detail)))
+  const maxColors = Math.max(1, Math.min(pixel ? PIXEL_ART.maxColors : Infinity, Math.floor(opts.maxColors)))
+  const dithering = opts.dithering && !pixel
   // Asking for many colors means "keep subtle shades": relax the rare-color threshold accordingly.
-  const share = opts.minShare ?? MIN_SHARE[detail - 1] * Math.min(1, 28 / maxColors)
+  const share = opts.minShare ?? (pixel ? PIXEL_ART.minShare : MIN_SHARE[detail - 1] * Math.min(1, 28 / maxColors))
   const minCount = Math.max(1, Math.round(W * H * share))
   const style = opts.style && opts.style !== 'auto' ? opts.style : looksLikeIllustration(img) ? 'illustration' : 'photo'
 
@@ -441,11 +449,12 @@ export function generatePattern(img: ImageInput, opts: GenerateOptions): Generat
       maxColors,
       minCount,
     )
-    if (opts.dithering && chosen.length > 1) cells = ditherLab(labs, W, H, chosen, paletteLabs)
+    if (dithering && chosen.length > 1) cells = ditherLab(labs, W, H, chosen, paletteLabs)
     else cells = labs.map((l) => nearestCached(l, chosen, 'final'))
   }
 
-  if (detail <= DESPECKLE_MAX_DETAIL && !opts.dithering) cells = despeckle(cells, W, H)
+  if (detail <= DESPECKLE_MAX_DETAIL && !dithering) cells = despeckle(cells, W, H)
+  if (pixel) cells = mergeSmallRegions(cells, W, H, paletteLabs)
   if (opts.removeBackground) cells = removeBackdrop(cells, W, H, paletteLabs)
   return { width: W, height: H, paletteId: palette.id, cells }
 }

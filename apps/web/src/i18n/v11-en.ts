@@ -44,12 +44,13 @@ export const v11En = {
   sample: 'Sample',
   settings: {
     pickTitle: 'Pick your favorite',
-    pickHint: 'We suggest as many boards as your picture needs: a simple one is crisp on a single board, a detailed photo gets more boards. The one you pick becomes your pattern.',
+    pickHint: 'We suggest as many boards as your picture needs: a simple one is crisp on a single board, a detailed photo gets more boards. The last one, pixel style, is the same size as the first, with fewer colors and bigger blocks. The one you pick becomes your pattern.',
     selected: 'Selected',
     boardsTitle: (cols: number, rows: number) => (cols * rows === 1 ? '1 pegboard' : `${cols * rows} pegboards (${cols}×${rows})`),
     recommended: 'Recommended',
     bigger: 'Bigger, but no sharper',
     smaller: 'Loses some detail',
+    pixel: { title: 'Pixel style', hint: 'Big color blocks, few stray beads, keeps the key features.' },
     analyzing: 'Checking the detail in your picture…',
     beadSet: (colors: number) => `Full ${colors}-color MARD set`,
     beads: {

@@ -40,7 +40,11 @@ export default function SettingsPage() {
   // (tier / iron are left out so picking a tile or a finish doesn't regenerate all three.)
   const removeBg = settings.removeBg ?? V11_DEFAULTS.removeBg
   const trim = settings.trim ?? V11_DEFAULTS.trim
-  const gen = { ...settings, tier: 'small' as const, iron: undefined, removeBg, trim, paletteId: V11_PALETTE_ID, maxColors: V11_DEFAULTS.maxColors, style: 'auto' as const }
+  // (look is left out too: the three plain results don't change when the pixel one is picked.)
+  const gen = { ...settings, tier: 'small' as const, iron: undefined, look: undefined, removeBg, trim, paletteId: V11_PALETTE_ID, maxColors: V11_DEFAULTS.maxColors, style: 'auto' as const }
+  // Fourth option: pixel style on the same grid as the first (one board), so the two can be compared.
+  const pixelGen = { ...gen, look: 'pixel' as const }
+  const look = settings.look ?? 'classic'
   const iron: IronStyle = settings.iron ?? 'normal'
   const bead = settings.beadSize
   const variants: Record<TierId, ReturnType<typeof useGeneratedPattern>> = {
@@ -48,8 +52,9 @@ export default function SettingsPage() {
     standard: useGeneratedPattern(photo, gen, aspectId, v11Beads('standard', bead), hydrated),
     large: useGeneratedPattern(photo, gen, aspectId, v11Beads('large', bead), hydrated),
   }
+  const pixelVariant = useGeneratedPattern(photo, pixelGen, aspectId, v11Beads('small', bead), hydrated)
   const aspect = aspectValue(aspectId)
-  const anyBusy = Object.values(variants).some((v) => v.busy)
+  const anyBusy = Object.values(variants).some((v) => v.busy) || pixelVariant.busy
   const colorCount = maxColorsFor(V11_PALETTE_ID)
 
   // Fewest boards that keep the picture clear; pre-select it once per picture and bead size.
@@ -73,19 +78,25 @@ export default function SettingsPage() {
   useEffect(() => {
     if (perSide == null || autoPicked.has(adviceKey)) return
     autoPicked.add(adviceKey)
-    setSettings({ tier: v11TierByBoards(perSide).id, paletteId: V11_PALETTE_ID, maxColors: V11_DEFAULTS.maxColors })
+    setSettings({ tier: v11TierByBoards(perSide).id, look: 'classic', paletteId: V11_PALETTE_ID, maxColors: V11_DEFAULTS.maxColors })
   }, [perSide, adviceKey, setSettings])
   // A small subject on a wide plain backdrop wastes beads on the backdrop.
   const loose = !trim && advice != null && advice.subjectShare < 0.45
 
-  const selected = variants[settings.tier]?.pattern ?? null
+  const chosen = look === 'pixel' ? pixelVariant : variants[settings.tier]
+  const selected = chosen?.pattern ?? null
+  const selectedBusy = !!chosen?.busy
 
   // Make the picked result the pattern (generate only if it isn't ready yet), then move on.
   const go = async (href: string, which: 'bead' | 'next') => {
     setBusy(which)
     try {
-      const tier = V11_TIERS.find((x) => x.id === settings.tier) ?? V11_TIERS[0]
-      const picked = variants[tier.id].pattern ?? (await generateFromPhoto(photo, gen, aspectId, v11Beads(tier.id, bead)))
+      const tier = look === 'pixel' ? V11_TIERS[0] : (V11_TIERS.find((x) => x.id === settings.tier) ?? V11_TIERS[0])
+      // The picked look goes with it: online beading and the sheets use exactly this pattern.
+      const picked =
+        look === 'pixel'
+          ? (pixelVariant.pattern ?? (await generateFromPhoto(photo, pixelGen, aspectId, v11Beads(tier.id, bead))))
+          : (variants[tier.id].pattern ?? (await generateFromPhoto(photo, gen, aspectId, v11Beads(tier.id, bead))))
       const current = useStore.getState().pattern
       // Keep beading progress when the pattern didn't change (e.g. back from online beading).
       if (!current || current.cells.length !== picked.cells.length || current.cells.some((c, i) => c !== picked.cells[i])) applyPattern(picked)
@@ -145,12 +156,12 @@ export default function SettingsPage() {
               </Link>
             </p>
           )}
-          <div role="radiogroup" aria-label={t.settings.size} className="mt-4 grid gap-4 sm:grid-cols-3">
+          <div role="radiogroup" aria-label={t.settings.size} className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {V11_TIERS.map((tier) => {
               const v = variants[tier.id].pattern
               const { width, height } = gridSize(v11Beads(tier.id, bead), aspect)
               const fin = v11Size(width, height, bead)
-              const on = settings.tier === tier.id
+              const on = look === 'classic' && settings.tier === tier.id
               const advised = perSide === tier.perSide
               const note = perSide == null || advised ? null : tier.perSide > perSide ? t.v11.settings.bigger : t.v11.settings.smaller
               return (
@@ -159,7 +170,7 @@ export default function SettingsPage() {
                   type="button"
                   role="radio"
                   aria-checked={on}
-                  onClick={() => setSettings({ tier: tier.id })}
+                  onClick={() => setSettings({ tier: tier.id, look: 'classic' })}
                   className={`card relative p-3 text-left transition-transform ${on ? '-translate-y-1 !border-[var(--accent)] ring-4 ring-[var(--accent)]/30' : 'hover:-translate-y-0.5'}`}
                 >
                   {advised && (
@@ -186,6 +197,42 @@ export default function SettingsPage() {
                 </button>
               )
             })}
+            {(() => {
+              const v = pixelVariant.pattern
+              const { width, height } = gridSize(v11Beads('small', bead), aspect)
+              const fin = v11Size(width, height, bead)
+              const grid = v11BoardGrid(width, height, bead)
+              const on = look === 'pixel'
+              return (
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => setSettings({ look: 'pixel', tier: 'small' })}
+                  className={`card relative p-3 text-left transition-transform ${on ? '-translate-y-1 !border-[var(--accent)] ring-4 ring-[var(--accent)]/30' : 'hover:-translate-y-0.5'}`}
+                >
+                  <span className="font-pixel absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full border-2 border-[var(--ink)] bg-white px-2.5 py-0.5 text-xs font-bold text-[var(--ink)]">
+                    <Grid3x3 className="h-3.5 w-3.5" aria-hidden /> {t.v11.settings.pixel.title}
+                  </span>
+                  {on && (
+                    <span className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-0.5 text-xs font-bold text-white">
+                      <Check className="h-3.5 w-3.5" aria-hidden /> {t.v11.settings.selected}
+                    </span>
+                  )}
+                  <div className="grid aspect-square place-items-center rounded-2xl bg-[repeating-conic-gradient(rgba(128,128,128,0.10)_0_25%,transparent_0_50%)] bg-[length:18px_18px] p-2">
+                    {v ? <Ironed pattern={v} iron={iron} className={pixelVariant.busy ? 'opacity-70' : ''} /> : <Loader2 className="h-6 w-6 animate-spin text-muted" aria-hidden />}
+                  </div>
+                  <p className="mt-2 font-bold">
+                    {t.v11.settings.pixel.title} · {t.v11.settings.boardsTitle(grid.cols, grid.rows)}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {width}×{height} · ≈ {fin.cm} cm
+                    {v && ` · ${t.common.colors(legendOf(v).length)}`}
+                  </p>
+                  <p className="mt-1 text-xs font-bold text-muted">{t.v11.settings.pixel.hint}</p>
+                </button>
+              )
+            })()}
           </div>
         </section>
 
@@ -212,7 +259,7 @@ export default function SettingsPage() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={photo ?? SAMPLE_PHOTO_URL} alt={t.flow.yourPhoto} className="max-h-full max-w-full rounded-xl object-contain" />
               ) : selected ? (
-                <Ironed pattern={selected} view={view} iron={iron} className={variants[settings.tier]?.busy ? 'opacity-70' : ''} />
+                <Ironed pattern={selected} view={view} iron={iron} className={selectedBusy ? 'opacity-70' : ''} />
               ) : (
                 <Loader2 className="h-8 w-8 animate-spin text-muted" aria-hidden />
               )}

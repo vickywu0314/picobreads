@@ -20,6 +20,7 @@ export interface GenerateRequest {
     dithering: boolean
     style: 'auto' | 'illustration' | 'photo'
     removeBackground: boolean
+    pixelArt: boolean
   }
 }
 
@@ -135,6 +136,7 @@ export async function generateFromPhoto(
     dithering: settings.dithering,
     style: settings.style ?? 'auto',
     removeBackground: !!settings.removeBg,
+    pixelArt: settings.look === 'pixel',
   }
   const w = getWorker()
   let cells: number[]

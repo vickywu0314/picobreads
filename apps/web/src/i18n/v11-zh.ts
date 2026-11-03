@@ -45,12 +45,13 @@ export const v11Zh: typeof v11En = {
   sample: '示例',
   settings: {
     pickTitle: '选一个你喜欢的效果',
-    pickHint: '按图片的细节推荐底板数：简单的图一块板就足够清楚，细节多的照片才用多块板拼大。点选的那张就是你的最终图纸。',
+    pickHint: '按图片的细节推荐底板数：简单的图一块板就足够清楚，细节多的照片才用多块板拼大。最后一张「像素风」和第一张同样大小，颜色更少、色块更大。点选的那张就是你的最终图纸。',
     selected: '已选',
     boardsTitle: (cols: number, rows: number) => (cols * rows === 1 ? '1 块底板' : `${cols * rows} 块底板（${cols}×${rows}）`),
     recommended: '推荐',
     bigger: '更大，但不会更清楚',
     smaller: '会丢掉一些细节',
+    pixel: { title: '像素风', hint: '大色块、少碎色、保留主体特征。' },
     analyzing: '正在分析图片细节…',
     beadSet: (colors: number) => `MARD ${colors} 色全色`,
     beads: {
@@ -72,7 +73,7 @@ export const v11Zh: typeof v11En = {
   },
   custom: {
     title: '定制',
-    body: '选豆子、选底板、调参数，下面就是拼完熨好的样子。三张效果图里点选的那张就是你的图纸。',
+    body: '选豆子、选底板、调参数，下面就是拼完熨好的样子。四张效果图里点选的那张就是你的图纸。',
     previewTitle: '效果预览',
     beads: (n: number) => `共 ${n.toLocaleString()} 颗`,
     beadOnline: '先在线拼拼看？',

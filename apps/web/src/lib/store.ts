@@ -22,6 +22,8 @@ export interface Settings {
   removeBg?: boolean
   /** v1.1: trim empty margins around the subject before generating. */
   trim?: boolean
+  /** v1.1: which look was picked — the plain pattern (default) or the pixel-art one. */
+  look?: 'classic' | 'pixel'
 }
 
 export interface CartItem {
