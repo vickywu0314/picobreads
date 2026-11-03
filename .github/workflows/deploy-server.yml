@@ -1,0 +1,73 @@
+# Build the site on GitHub and upload it to our own server over SSH, so the server never has to
+# reach GitHub (unreliable from mainland China). Runs on every push to main, or by hand.
+#
+# Repository secrets (Settings → Secrets and variables → Actions):
+#   DEPLOY_HOST     server IP or host name, e.g. 49.233.85.32
+#   DEPLOY_USER     SSH user, e.g. ubuntu
+#   DEPLOY_SSH_KEY  private key of a deploy-only key pair whose public key is in the server's
+#                   ~/.ssh/authorized_keys (see docs/deploy-server.md)
+# Optional variable: DEPLOY_PATH (default /var/www/picobreads; must be writable by DEPLOY_USER).
+name: Deploy to server
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-server
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/var/www/picobreads' }}
+    steps:
+      - name: Check configuration
+        id: cfg
+        run: |
+          if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_USER" ]; then
+            echo "Deploy secrets are not set; skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.cfg.outputs.ready == 'true'
+
+      - uses: pnpm/action-setup@v4
+        if: steps.cfg.outputs.ready == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.cfg.outputs.ready == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Build
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm test
+          pnpm build
+
+      - name: Upload to server
+        if: steps.cfg.outputs.ready == 'true'
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -T 30 -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          SSH="ssh -i ~/.ssh/deploy_key -o ConnectTimeout=30 -o ServerAliveInterval=15"
+          # Upload into a staging folder first, then swap it in with one rsync on the server,
+          # so visitors never see a half-uploaded site.
+          rsync -az --delete --timeout=120 -e "$SSH" apps/web/out/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH.staging/"
+          $SSH "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH' && rsync -a --delete '$DEPLOY_PATH.staging/' '$DEPLOY_PATH/'"
+          echo "Deployed $(git log -1 --format='%h %s') to $DEPLOY_HOST:$DEPLOY_PATH"
