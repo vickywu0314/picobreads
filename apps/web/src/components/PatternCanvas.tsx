@@ -56,34 +56,35 @@ const shade = ([r, g, b]: Rgb, k: number) => {
   return `rgb(${f(r)} ${f(g)} ${f(b)})`
 }
 
-// Pegboard colors (like a real cream pegboard).
-const BOARD_RGB: Rgb = [251, 238, 198]
+// Pegboard colors (like a real pale-yellow pegboard).
+const BOARD_RGB: Rgb = [253, 243, 196]
 const BOARD = `rgb(${BOARD_RGB.join(' ')})`
-const PEG_HI = '#fffaea'
-const PEG_LO = '#ead196'
-const PEG_SHADOW = 'rgba(150, 110, 40, 0.30)'
+const PEG_HI = '#fffbe6'
+const PEG_LO = '#f1dc98'
+const PEG_SHADOW = 'rgba(190, 150, 60, 0.28)'
+/** Bead sprites are drawn bigger than the cell so the tube's side wall and shadow can spill over. */
+const BEAD_PAD = 0.25
 
-function makeCanvas(size: number) {
+function makeCanvas(w: number, h = w) {
   const c = document.createElement('canvas')
-  c.width = c.height = size
+  c.width = w
+  c.height = h
   return c
 }
 
-/** One empty pegboard cell (board + peg), `size` device pixels square. */
+/** One peg (transparent around it), `size` device pixels square. */
 function pegSprite(size: number) {
   const c = makeCanvas(size)
   const g = c.getContext('2d')!
   const s = size
-  g.fillStyle = BOARD
-  g.fillRect(0, 0, s, s)
   const cx = s / 2
   const cy = s / 2
-  const r = s * 0.16
+  const r = s * 0.12
   g.fillStyle = PEG_SHADOW
   g.beginPath()
-  g.arc(cx + s * 0.035, cy + s * 0.06, r, 0, Math.PI * 2)
+  g.arc(cx + s * 0.02, cy + s * 0.045, r, 0, Math.PI * 2)
   g.fill()
-  const grad = g.createRadialGradient(cx - r * 0.4, cy - r * 0.4, r * 0.1, cx, cy, r)
+  const grad = g.createRadialGradient(cx - r * 0.35, cy - r * 0.45, r * 0.1, cx, cy, r)
   grad.addColorStop(0, PEG_HI)
   grad.addColorStop(1, PEG_LO)
   g.fillStyle = grad
@@ -94,69 +95,75 @@ function pegSprite(size: number) {
 }
 
 /**
- * A bead sitting on its peg, seen slightly from above: drop shadow, the tube's darker side,
- * the shaded top face, the dark hole and the peg tip poking through it.
+ * A fuse bead standing on its peg, seen from slightly in front: a short tube whose darker side
+ * wall shows below the top face, a soft shadow on the board, and the board / peg seen through
+ * the hole. Transparent around it; the sprite is (1 + 2·BEAD_PAD) cells square.
  */
 function beadSprite(size: number, rgb: Rgb) {
-  const c = makeCanvas(size)
+  const pad = Math.round(size * BEAD_PAD)
+  const full = size + pad * 2
+  const c = makeCanvas(full)
   const g = c.getContext('2d')!
   const s = size
-  g.fillStyle = BOARD
-  g.fillRect(0, 0, s, s)
-  const cx = s / 2
-  const r = s * 0.45
-  const depth = s * 0.08
-  const cy = s / 2 - depth / 2
-  // Shadow on the board.
+  const cx = pad + s / 2
+  const cy = pad + s / 2 // top face stays centred on the cell (that's where taps land)
+  const r = s * 0.47
+  const depth = s * 0.16
+  // Soft shadow on the board.
   g.save()
-  g.shadowColor = 'rgba(80, 50, 20, 0.35)'
-  g.shadowBlur = s * 0.08
-  g.shadowOffsetX = s * 0.03
-  g.shadowOffsetY = s * 0.05
-  g.fillStyle = shade(rgb, 0.55)
+  g.shadowColor = 'rgba(110, 70, 20, 0.35)'
+  g.shadowBlur = s * 0.1
+  g.shadowOffsetY = s * 0.06
+  g.fillStyle = shade(rgb, 0.5)
   g.beginPath()
-  g.arc(cx, cy + depth, r, 0, Math.PI * 2)
+  g.arc(cx, cy + depth, r * 0.98, 0, Math.PI * 2)
   g.fill()
   g.restore()
-  // Side wall of the tube.
-  g.fillStyle = shade(rgb, 0.62)
+  // Side wall: from the top face down to the bottom rim, darker towards the bottom.
+  const wall = g.createLinearGradient(0, cy, 0, cy + depth + r)
+  wall.addColorStop(0, shade(rgb, 0.78))
+  wall.addColorStop(1, shade(rgb, 0.5))
+  g.fillStyle = wall
   g.beginPath()
-  g.arc(cx, cy + depth, r, 0, Math.PI * 2)
+  g.arc(cx, cy + depth, r, 0, Math.PI)
+  g.lineTo(cx - r, cy)
+  g.arc(cx, cy, r, Math.PI, 0, true)
+  g.closePath()
   g.fill()
-  // Top face.
-  const top = g.createRadialGradient(cx - r * 0.35, cy - r * 0.4, r * 0.1, cx, cy, r)
-  top.addColorStop(0, shade(rgb, 1.22))
-  top.addColorStop(0.55, shade(rgb, 1))
-  top.addColorStop(1, shade(rgb, 0.86))
+  // Top face: nearly flat color, a little lighter at the upper left.
+  const top = g.createRadialGradient(cx - r * 0.4, cy - r * 0.45, r * 0.05, cx, cy, r * 1.05)
+  top.addColorStop(0, shade(rgb, 1.25))
+  top.addColorStop(0.45, shade(rgb, 1.04))
+  top.addColorStop(1, shade(rgb, 0.92))
   g.fillStyle = top
   g.beginPath()
   g.arc(cx, cy, r, 0, Math.PI * 2)
   g.fill()
-  // Glossy highlight.
-  g.strokeStyle = 'rgba(255,255,255,0.55)'
-  g.lineWidth = Math.max(1, s * 0.055)
-  g.lineCap = 'round'
-  g.beginPath()
-  g.arc(cx, cy, r * 0.7, Math.PI * 1.1, Math.PI * 1.45)
-  g.stroke()
-  // Hole: dark inner wall, lit a little at the bottom.
+  // Hole: looking down the tube — dark inner wall at the top, the pale board / peg at the bottom.
   const rh = s * 0.17
-  const hole = g.createLinearGradient(0, cy - rh, 0, cy + rh)
-  hole.addColorStop(0, shade(rgb, 0.25))
-  hole.addColorStop(1, shade(rgb, 0.5))
-  g.fillStyle = hole
+  g.fillStyle = shade(rgb, 0.42)
   g.beginPath()
   g.arc(cx, cy, rh, 0, Math.PI * 2)
   g.fill()
-  // The peg coming up through the hole.
-  const rp = s * 0.105
-  const peg = g.createRadialGradient(cx - rp * 0.4, cy - rp * 0.2, rp * 0.1, cx, cy + rp * 0.2, rp)
-  peg.addColorStop(0, PEG_HI)
-  peg.addColorStop(1, PEG_LO)
-  g.fillStyle = peg
+  g.save()
   g.beginPath()
-  g.arc(cx, cy + rp * 0.25, rp, 0, Math.PI * 2)
+  g.arc(cx, cy, rh, 0, Math.PI * 2)
+  g.clip()
+  const see = g.createRadialGradient(cx, cy + rh * 0.45, rh * 0.1, cx, cy + rh * 0.45, rh * 0.85)
+  see.addColorStop(0, PEG_HI)
+  see.addColorStop(1, PEG_LO)
+  g.fillStyle = see
+  g.beginPath()
+  g.arc(cx, cy + rh * 0.38, rh * 0.82, 0, Math.PI * 2)
   g.fill()
+  g.restore()
+  // Gloss on the rim.
+  g.strokeStyle = 'rgba(255,255,255,0.45)'
+  g.lineWidth = Math.max(1, s * 0.05)
+  g.lineCap = 'round'
+  g.beginPath()
+  g.arc(cx, cy, r * 0.74, Math.PI * 1.12, Math.PI * 1.42)
+  g.stroke()
   return c
 }
 
@@ -237,52 +244,70 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
         ctx.lineJoin = 'round'
       }
 
+      const round = (x: number, y: number, sz: number, r: number) => {
+        ctx.beginPath()
+        ctx.roundRect(x, y, sz, sz, r)
+      }
+      // Pass 1: pegs, and the faint "what goes here" marks on empty spots.
       for (let y = y0; y < y1; y++) {
         for (let x = x0; x < x1; x++) {
           const i = y * W + x
           const c = pattern.cells[i]
           const cx = ox + x * scale
           const cy = oy + y * scale
+          if (c >= 0 && placed[i] === '1') continue
           if (showPegs) ctx.drawImage(sprites.current.peg!, cx, cy, scale, scale)
           if (c < 0) continue // empty cell (removed backdrop): bare board
           const inSection = !section || (x >= section.x && x < section.x + section.w && y >= section.y && y < section.y + section.h)
           const focus = inSection && (selected === null || c === selected)
           const target = focus && selected !== null
-          if (placed[i] === '1') {
-            ctx.globalAlpha = focus ? 1 : 0.4
-            if (showPegs) ctx.drawImage(bead(c), cx, cy, scale, scale)
-            else {
-              ctx.fillStyle = colorStyles[c].solid
-              ctx.fillRect(cx, cy, scale, scale)
-            }
-            ctx.globalAlpha = 1
-            continue
-          }
-          // Not placed yet: only a faint tint of what goes here (stronger for the picked color).
-          ctx.globalAlpha = target ? 0.5 : focus ? 0.24 : 0.07
+          // A soft translucent square, like the highlight on a real pattern app; stronger for the picked color.
+          ctx.globalAlpha = target ? 0.42 : focus ? 0.2 : 0.06
           ctx.fillStyle = colorStyles[c].solid
           if (showPegs) {
-            ctx.beginPath()
-            ctx.arc(cx + scale / 2, cy + scale / 2, scale * 0.44, 0, Math.PI * 2)
+            const m = scale * 0.08
+            round(cx + m, cy + m, scale - m * 2, scale * 0.18)
             ctx.fill()
           } else ctx.fillRect(cx, cy, scale, scale)
           ctx.globalAlpha = 1
           if (target && scale >= 9) {
-            // Target hole: a ring so it never relies on color alone.
-            ctx.strokeStyle = colorStyles[c].ring === '#ffffff' ? colorStyles[c].solid : '#3b2a30'
-            ctx.lineWidth = Math.max(1.5, scale * 0.07)
-            ctx.beginPath()
-            ctx.arc(cx + scale / 2, cy + scale / 2, scale * 0.42, 0, Math.PI * 2)
+            // Thin outline in a deeper shade, so targets never rely on the tint alone.
+            ctx.strokeStyle = shade(palette.colors[c].rgb as Rgb, 0.6)
+            ctx.globalAlpha = 0.7
+            ctx.lineWidth = Math.max(1, scale * 0.04)
+            const m = scale * 0.1
+            round(cx + m, cy + m, scale - m * 2, scale * 0.16)
             ctx.stroke()
+            ctx.globalAlpha = 1
           }
           if (showNumbers && target) {
             const label = String(numbers.get(c) ?? '')
-            ctx.strokeStyle = 'rgba(255,255,255,0.9)'
+            ctx.strokeStyle = 'rgba(255,255,255,0.85)'
             ctx.lineWidth = 3
             ctx.strokeText(label, cx + scale / 2, cy + scale / 2 + 0.5)
-            ctx.fillStyle = '#3b2a30'
+            ctx.fillStyle = '#5a4630'
             ctx.fillText(label, cx + scale / 2, cy + scale / 2 + 0.5)
           }
+        }
+      }
+      // Pass 2: placed beads, top row first so each bead's side wall shows over the row below.
+      const pad = scale * BEAD_PAD
+      for (let y = Math.max(0, y0 - 1); y < y1; y++) {
+        for (let x = x0; x < x1; x++) {
+          const i = y * W + x
+          const c = pattern.cells[i]
+          if (c < 0 || placed[i] !== '1') continue
+          const cx = ox + x * scale
+          const cy = oy + y * scale
+          const inSection = !section || (x >= section.x && x < section.x + section.w && y >= section.y && y < section.y + section.h)
+          const focus = inSection && (selected === null || c === selected)
+          ctx.globalAlpha = focus ? 1 : 0.55
+          if (showPegs) ctx.drawImage(bead(c), cx - pad, cy - pad, scale + pad * 2, scale + pad * 2)
+          else {
+            ctx.fillStyle = colorStyles[c].solid
+            ctx.fillRect(cx, cy, scale, scale)
+          }
+          ctx.globalAlpha = 1
         }
       }
 
