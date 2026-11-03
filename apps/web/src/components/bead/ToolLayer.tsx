@@ -26,7 +26,7 @@ interface ToolLayerState {
 /** High-frequency pointer state lives here so the page doesn't re-render on every move. */
 export const useToolLayer = create<ToolLayerState>()(() => ({ tip: null, visible: false, pressed: false, ring: null, flights: [] }))
 
-function FlyingBead({ f, onLand }: { f: Flight; onLand: (f: Flight) => void }) {
+function FlyingBead({ f, onLand, tube }: { f: Flight; onLand: (f: Flight) => void; tube: boolean }) {
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const el = ref.current
@@ -54,10 +54,18 @@ function FlyingBead({ f, onLand }: { f: Flight; onLand: (f: Flight) => void }) {
     <div
       ref={ref}
       className="pointer-events-none fixed left-0 top-0 z-40 rounded-full"
-      style={{
-        background: `radial-gradient(circle at 50% 50%, rgba(0,0,0,0.35) 0 16%, transparent 17%), radial-gradient(circle at 35% 30%, rgba(255,255,255,0.6), transparent 45%), rgb(${r} ${g} ${b})`,
-        boxShadow: '0 2px 3px rgba(0,0,0,0.3)',
-      }}
+      style={
+        tube
+          ? {
+              // 3D tube like the beads on the v1.1 pegboard: dark hole, glossy top, darker side wall.
+              background: `radial-gradient(circle at 50% 50%, rgb(${r * 0.3} ${g * 0.3} ${b * 0.3}) 0 17%, transparent 18%), radial-gradient(circle at 35% 30%, rgba(255,255,255,0.55), transparent 50%), rgb(${r} ${g} ${b})`,
+              boxShadow: `0 ${Math.max(2, f.to.size * 0.08)}px 0 rgb(${r * 0.62} ${g * 0.62} ${b * 0.62}), 0 6px 8px rgba(0,0,0,0.3)`,
+            }
+          : {
+              background: `radial-gradient(circle at 50% 50%, rgba(0,0,0,0.35) 0 16%, transparent 17%), radial-gradient(circle at 35% 30%, rgba(255,255,255,0.6), transparent 45%), rgb(${r} ${g} ${b})`,
+              boxShadow: '0 2px 3px rgba(0,0,0,0.3)',
+            }
+      }
     />
   )
 }
@@ -68,7 +76,9 @@ export function ToolLayer({
   color,
   count,
   onLand,
+  tube = false,
 }: {
+  tube?: boolean
   tool: 'pen' | 'tweezers' | null
   color: Rgb | null
   count: number
@@ -91,7 +101,7 @@ export function ToolLayer({
         />
       )}
       {flights.map((f) => (
-        <FlyingBead key={f.id} f={f} onLand={onLand} />
+        <FlyingBead key={f.id} f={f} onLand={onLand} tube={tube} />
       ))}
       {tool && tip && visible && <ToolSprite tool={tool} x={tip.x} y={tip.y} color={color} count={count} pressed={pressed} />}
     </>

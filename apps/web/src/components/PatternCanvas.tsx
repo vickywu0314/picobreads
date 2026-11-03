@@ -41,7 +41,123 @@ interface Props {
    */
   toolMode?: boolean
   onTool?: (e: ToolPointerEvent) => void
+  /**
+   * flat (default, v1.0): unplaced cells are flat colored squares.
+   * pegboard (v1.1): a real pegboard — cream board with pegs, beads drawn as 3D tubes sitting on
+   * the pegs (the peg tip shows through the bead hole), unplaced cells only a faint tint.
+   */
+  look?: 'flat' | 'pegboard'
   label: string
+}
+
+type Rgb = [number, number, number]
+const shade = ([r, g, b]: Rgb, k: number) => {
+  const f = (v: number) => Math.round(k >= 1 ? v + (255 - v) * (k - 1) : v * k)
+  return `rgb(${f(r)} ${f(g)} ${f(b)})`
+}
+
+// Pegboard colors (like a real cream pegboard).
+const BOARD_RGB: Rgb = [251, 238, 198]
+const BOARD = `rgb(${BOARD_RGB.join(' ')})`
+const PEG_HI = '#fffaea'
+const PEG_LO = '#ead196'
+const PEG_SHADOW = 'rgba(150, 110, 40, 0.30)'
+
+function makeCanvas(size: number) {
+  const c = document.createElement('canvas')
+  c.width = c.height = size
+  return c
+}
+
+/** One empty pegboard cell (board + peg), `size` device pixels square. */
+function pegSprite(size: number) {
+  const c = makeCanvas(size)
+  const g = c.getContext('2d')!
+  const s = size
+  g.fillStyle = BOARD
+  g.fillRect(0, 0, s, s)
+  const cx = s / 2
+  const cy = s / 2
+  const r = s * 0.16
+  g.fillStyle = PEG_SHADOW
+  g.beginPath()
+  g.arc(cx + s * 0.035, cy + s * 0.06, r, 0, Math.PI * 2)
+  g.fill()
+  const grad = g.createRadialGradient(cx - r * 0.4, cy - r * 0.4, r * 0.1, cx, cy, r)
+  grad.addColorStop(0, PEG_HI)
+  grad.addColorStop(1, PEG_LO)
+  g.fillStyle = grad
+  g.beginPath()
+  g.arc(cx, cy, r, 0, Math.PI * 2)
+  g.fill()
+  return c
+}
+
+/**
+ * A bead sitting on its peg, seen slightly from above: drop shadow, the tube's darker side,
+ * the shaded top face, the dark hole and the peg tip poking through it.
+ */
+function beadSprite(size: number, rgb: Rgb) {
+  const c = makeCanvas(size)
+  const g = c.getContext('2d')!
+  const s = size
+  g.fillStyle = BOARD
+  g.fillRect(0, 0, s, s)
+  const cx = s / 2
+  const r = s * 0.45
+  const depth = s * 0.08
+  const cy = s / 2 - depth / 2
+  // Shadow on the board.
+  g.save()
+  g.shadowColor = 'rgba(80, 50, 20, 0.35)'
+  g.shadowBlur = s * 0.08
+  g.shadowOffsetX = s * 0.03
+  g.shadowOffsetY = s * 0.05
+  g.fillStyle = shade(rgb, 0.55)
+  g.beginPath()
+  g.arc(cx, cy + depth, r, 0, Math.PI * 2)
+  g.fill()
+  g.restore()
+  // Side wall of the tube.
+  g.fillStyle = shade(rgb, 0.62)
+  g.beginPath()
+  g.arc(cx, cy + depth, r, 0, Math.PI * 2)
+  g.fill()
+  // Top face.
+  const top = g.createRadialGradient(cx - r * 0.35, cy - r * 0.4, r * 0.1, cx, cy, r)
+  top.addColorStop(0, shade(rgb, 1.22))
+  top.addColorStop(0.55, shade(rgb, 1))
+  top.addColorStop(1, shade(rgb, 0.86))
+  g.fillStyle = top
+  g.beginPath()
+  g.arc(cx, cy, r, 0, Math.PI * 2)
+  g.fill()
+  // Glossy highlight.
+  g.strokeStyle = 'rgba(255,255,255,0.55)'
+  g.lineWidth = Math.max(1, s * 0.055)
+  g.lineCap = 'round'
+  g.beginPath()
+  g.arc(cx, cy, r * 0.7, Math.PI * 1.1, Math.PI * 1.45)
+  g.stroke()
+  // Hole: dark inner wall, lit a little at the bottom.
+  const rh = s * 0.17
+  const hole = g.createLinearGradient(0, cy - rh, 0, cy + rh)
+  hole.addColorStop(0, shade(rgb, 0.25))
+  hole.addColorStop(1, shade(rgb, 0.5))
+  g.fillStyle = hole
+  g.beginPath()
+  g.arc(cx, cy, rh, 0, Math.PI * 2)
+  g.fill()
+  // The peg coming up through the hole.
+  const rp = s * 0.105
+  const peg = g.createRadialGradient(cx - rp * 0.4, cy - rp * 0.2, rp * 0.1, cx, cy + rp * 0.2, rp)
+  peg.addColorStop(0, PEG_HI)
+  peg.addColorStop(1, PEG_LO)
+  g.fillStyle = peg
+  g.beginPath()
+  g.arc(cx, cy + rp * 0.25, rp, 0, Math.PI * 2)
+  g.fill()
+  return c
 }
 
 const MAX_SCALE = 64
@@ -59,6 +175,12 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
   propsRef.current = props
   const raf = useRef(0)
 
+  // Pegboard sprites, rebuilt when the on-screen cell size changes.
+  const sprites = useRef<{ size: number; peg: HTMLCanvasElement | null; beads: Map<number, HTMLCanvasElement> }>({ size: 0, peg: null, beads: new Map() })
+  useEffect(() => {
+    sprites.current = { size: 0, peg: null, beads: new Map() }
+  }, [props.palette])
+
   const colorStyles = useMemo(() => {
     return props.palette.colors.map((c) => {
       const [r, g, b] = c.rgb
@@ -71,6 +193,123 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
       }
     })
   }, [props.palette])
+
+  /** v1.1 pegboard look (see Props.look). */
+  const drawPegboard = useCallback(
+    (ctx: CanvasRenderingContext2D, bg: string) => {
+      const { pattern, placed, selected, section, numbers, boardCells, palette } = propsRef.current
+      const { w, h, dpr } = size.current
+      const { scale, ox, oy } = view.current
+      const W = pattern.width
+      const H = pattern.height
+      ctx.fillStyle = bg
+      ctx.fillRect(0, 0, w, h)
+      // The board, lifted off the table a little.
+      ctx.save()
+      ctx.shadowColor = 'rgba(90, 60, 30, 0.25)'
+      ctx.shadowBlur = 12
+      ctx.shadowOffsetY = 4
+      ctx.fillStyle = BOARD
+      ctx.fillRect(ox, oy, W * scale, H * scale)
+      ctx.restore()
+
+      const x0 = Math.max(0, Math.floor(-ox / scale))
+      const y0 = Math.max(0, Math.floor(-oy / scale))
+      const x1 = Math.min(W, Math.ceil((w - ox) / scale))
+      const y1 = Math.min(H, Math.ceil((h - oy) / scale))
+      const showPegs = scale >= 7
+      const showNumbers = scale >= 18
+      // Sprites in device pixels for the current zoom.
+      const px = Math.max(1, Math.round(scale * dpr))
+      if (showPegs && sprites.current.size !== px) sprites.current = { size: px, peg: pegSprite(px), beads: new Map() }
+      const bead = (c: number) => {
+        let s = sprites.current.beads.get(c)
+        if (!s) {
+          s = beadSprite(px, palette.colors[c].rgb as Rgb)
+          sprites.current.beads.set(c, s)
+        }
+        return s
+      }
+      if (showNumbers) {
+        ctx.font = `700 ${Math.max(8, Math.floor(scale * 0.4))}px ui-sans-serif, system-ui, sans-serif`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.lineJoin = 'round'
+      }
+
+      for (let y = y0; y < y1; y++) {
+        for (let x = x0; x < x1; x++) {
+          const i = y * W + x
+          const c = pattern.cells[i]
+          const cx = ox + x * scale
+          const cy = oy + y * scale
+          if (showPegs) ctx.drawImage(sprites.current.peg!, cx, cy, scale, scale)
+          if (c < 0) continue // empty cell (removed backdrop): bare board
+          const inSection = !section || (x >= section.x && x < section.x + section.w && y >= section.y && y < section.y + section.h)
+          const focus = inSection && (selected === null || c === selected)
+          const target = focus && selected !== null
+          if (placed[i] === '1') {
+            ctx.globalAlpha = focus ? 1 : 0.4
+            if (showPegs) ctx.drawImage(bead(c), cx, cy, scale, scale)
+            else {
+              ctx.fillStyle = colorStyles[c].solid
+              ctx.fillRect(cx, cy, scale, scale)
+            }
+            ctx.globalAlpha = 1
+            continue
+          }
+          // Not placed yet: only a faint tint of what goes here (stronger for the picked color).
+          ctx.globalAlpha = target ? 0.5 : focus ? 0.24 : 0.07
+          ctx.fillStyle = colorStyles[c].solid
+          if (showPegs) {
+            ctx.beginPath()
+            ctx.arc(cx + scale / 2, cy + scale / 2, scale * 0.44, 0, Math.PI * 2)
+            ctx.fill()
+          } else ctx.fillRect(cx, cy, scale, scale)
+          ctx.globalAlpha = 1
+          if (target && scale >= 9) {
+            // Target hole: a ring so it never relies on color alone.
+            ctx.strokeStyle = colorStyles[c].ring === '#ffffff' ? colorStyles[c].solid : '#3b2a30'
+            ctx.lineWidth = Math.max(1.5, scale * 0.07)
+            ctx.beginPath()
+            ctx.arc(cx + scale / 2, cy + scale / 2, scale * 0.42, 0, Math.PI * 2)
+            ctx.stroke()
+          }
+          if (showNumbers && target) {
+            const label = String(numbers.get(c) ?? '')
+            ctx.strokeStyle = 'rgba(255,255,255,0.9)'
+            ctx.lineWidth = 3
+            ctx.strokeText(label, cx + scale / 2, cy + scale / 2 + 0.5)
+            ctx.fillStyle = '#3b2a30'
+            ctx.fillText(label, cx + scale / 2, cy + scale / 2 + 0.5)
+          }
+        }
+      }
+
+      // Section (board) lines.
+      ctx.strokeStyle = 'rgba(150, 110, 60, 0.55)'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      for (let x = boardCells; x < W; x += boardCells) {
+        ctx.moveTo(ox + x * scale, oy)
+        ctx.lineTo(ox + x * scale, oy + H * scale)
+      }
+      for (let y = boardCells; y < H; y += boardCells) {
+        ctx.moveTo(ox, oy + y * scale)
+        ctx.lineTo(ox + W * scale, oy + y * scale)
+      }
+      ctx.stroke()
+      ctx.strokeStyle = 'rgba(150, 110, 60, 0.7)'
+      ctx.strokeRect(ox, oy, W * scale, H * scale)
+
+      if (section) {
+        ctx.strokeStyle = getComputedStyle(canvasRef.current!).getPropertyValue('--accent').trim() || '#e4572e'
+        ctx.lineWidth = 3
+        ctx.strokeRect(ox + section.x * scale, oy + section.y * scale, section.w * scale, section.h * scale)
+      }
+    },
+    [colorStyles],
+  )
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current
@@ -86,6 +325,10 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
     const board = styles.getPropertyValue('--board').trim() || '#ddd'
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    if (propsRef.current.look === 'pegboard') {
+      drawPegboard(ctx, bg)
+      return
+    }
     ctx.fillStyle = bg
     ctx.fillRect(0, 0, w, h)
     ctx.fillStyle = board
@@ -196,7 +439,7 @@ export const PatternCanvas = forwardRef<PatternCanvasHandle, Props>(function Pat
       ctx.lineWidth = 3
       ctx.strokeRect(ox + section.x * scale, oy + section.y * scale, section.w * scale, section.h * scale)
     }
-  }, [colorStyles])
+  }, [colorStyles, drawPegboard])
 
   const requestDraw = useCallback(() => {
     if (raf.current) return

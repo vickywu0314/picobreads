@@ -380,6 +380,7 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
           editMode={tool === 'fix'}
           toolMode={toolActive}
           onTool={onTool}
+          look={v11 ? 'pegboard' : 'flat'}
           onCellTap={(i) => tool === 'fix' && setFixCell(i)}
           label={t.common.patternAria(pattern.width, pattern.height)}
         />
@@ -694,6 +695,7 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
       )}
 
       <ToolLayer
+        tube={v11}
         tool={toolActive ? (tool as 'pen' | 'tweezers') : null}
         color={load.color !== null ? palette.colors[load.color].rgb : null}
         count={load.count}
