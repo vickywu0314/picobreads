@@ -246,7 +246,7 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
 
   const showTool = (tip: Pt, pressed: boolean) => {
     if (gesture.current.hideTimer) clearTimeout(gesture.current.hideTimer)
-    useToolLayer.setState({ tip, visible: true, pressed })
+    useToolLayer.setState({ tip, visible: true, pressed, cell: canvas.current?.cellRect(0).size ?? 14 })
     updateRing(tip)
   }
 

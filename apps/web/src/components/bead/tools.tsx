@@ -20,6 +20,7 @@ export function ToolSprite({
   color,
   count,
   pressed,
+  cell = 14,
 }: {
   tool: 'pen' | 'tweezers'
   x: number
@@ -27,7 +28,14 @@ export function ToolSprite({
   color: Rgb | null
   count: number
   pressed: boolean
+  /** On-screen size of one board cell (px): the beads on the tool are drawn this big. */
+  cell?: number
 }) {
+  // Beads on the tool match the beads on the board (within limits); the tool grows a little with
+  // them, but not so much that it hides the board.
+  const bead = Math.min(72, Math.max(14, cell * 0.94))
+  const k = Math.min(2, Math.max(1, bead / 14))
+  const w = bead / k
   return (
     <svg
       aria-hidden
@@ -37,29 +45,50 @@ export function ToolSprite({
       className="pointer-events-none fixed left-0 top-0 z-50"
       style={{ transform: `translate(${x}px, ${y}px)`, filter: 'drop-shadow(2px 4px 4px rgba(0,0,0,0.35))' }}
     >
-      <g transform={`rotate(-38) ${pressed ? 'translate(0 2)' : ''}`}>
-        {tool === 'pen' ? <Pen color={color} count={count} /> : <Tweezers color={color} holding={count > 0} />}
+      <g transform={`rotate(-38) scale(${k}) ${pressed ? 'translate(0 2)' : ''}`}>
+        {tool === 'pen' ? <Pen color={color} count={count} w={w} /> : <Tweezers color={color} holding={count > 0} w={w} />}
       </g>
     </svg>
   )
 }
 
-function Pen({ color, count }: { color: Rgb | null; count: number }) {
-  // Local coords: tip at (0,0), shaft runs down +y.
-  const beadH = 7
-  const shaftLen = 26 + PEN_CAPACITY * beadH
+function Pen({ color, count, w }: { color: Rgb | null; count: number; w: number }) {
+  // Local coords: tip at (0,0), shaft runs down +y. Beads are strung on the shaft (seen from the
+  // side: as wide as a bead, about half as tall); only as many as fit are drawn, plus a count.
+  const beadH = w * 0.55
+  const room = 150
+  const shown = Math.min(count, Math.max(1, Math.floor(room / beadH)))
+  const shaftLen = 26 + room
+  const half = w / 2
   return (
     <g>
+      <defs>
+        <linearGradient id="pb-pen-bead" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stopColor="rgba(0,0,0,0.35)" />
+          <stop offset="0.3" stopColor="rgba(255,255,255,0.3)" />
+          <stop offset="0.6" stopColor="rgba(0,0,0,0)" />
+          <stop offset="1" stopColor="rgba(0,0,0,0.4)" />
+        </linearGradient>
+      </defs>
       {/* thin metal tip */}
       <rect x={-1.6} y={-2} width={3.2} height={shaftLen} rx={1.6} fill="#c9ced6" />
       {/* beads strung on the shaft, nearest the tip first */}
       {color &&
-        Array.from({ length: count }, (_, i) => (
+        count > 0 &&
+        Array.from({ length: shown }, (_, i) => (
           <g key={i} transform={`translate(0 ${6 + i * beadH})`}>
-            <rect x={-7} y={0} width={14} height={beadH - 0.8} rx={2.6} fill={rgb(color)} stroke={rgb(color, 0.72)} strokeWidth={0.8} />
-            <rect x={-5} y={1} width={4} height={beadH - 3} rx={1.5} fill="rgba(255,255,255,0.35)" />
+            <rect x={-half} y={0} width={w} height={beadH - 0.8} rx={Math.min(beadH, w) * 0.3} fill={rgb(color)} stroke={rgb(color, 0.6)} strokeWidth={0.8} />
+            <rect x={-half} y={0} width={w} height={beadH - 0.8} rx={Math.min(beadH, w) * 0.3} fill="url(#pb-pen-bead)" />
           </g>
         ))}
+      {color && count > shown && (
+        <g transform={`translate(${half + 9} ${6 + shown * beadH * 0.5}) rotate(38)`}>
+          <rect x={-12} y={-8} width={24} height={16} rx={8} fill="#3b2a30" />
+          <text x={0} y={4} textAnchor="middle" fontSize={11} fontWeight={700} fill="#fff">
+            ×{count}
+          </text>
+        </g>
+      )}
       {/* handle */}
       <rect x={-8} y={shaftLen - 6} width={16} height={74} rx={8} fill="#ff8a5c" />
       <rect x={-8} y={shaftLen + 40} width={16} height={6} fill="#e4572e" />
@@ -68,23 +97,65 @@ function Pen({ color, count }: { color: Rgb | null; count: number }) {
   )
 }
 
-function Tweezers({ color, holding }: { color: Rgb | null; holding: boolean }) {
-  // Two arms meeting at the tip; open a little when empty.
-  const spread = holding ? 3.5 : 9
-  const arm = (side: 1 | -1) =>
-    `M ${side * 1.2} 0 L ${side * (spread + 1.5)} 34 L ${side * 9} 150 L ${side * 4} 150 L ${side * (spread - 1.5)} 34 Z`
+/** A bead seen from the side, standing up: a short cylinder (local coords, centred on 0,0). */
+function UprightBead({ color, w = 13, h = 10 }: { color: Rgb; w?: number; h?: number }) {
+  const rx = w / 2
+  const ry = w * 0.22
+  const top = -h / 2
   return (
     <g>
-      <path d={arm(-1)} fill="#b8c0cc" stroke="#7d8794" strokeWidth={0.8} />
-      <path d={arm(1)} fill="#d3d9e1" stroke="#7d8794" strokeWidth={0.8} />
-      <rect x={-9} y={140} width={18} height={14} rx={4} fill="#7d8794" />
+      <defs>
+        <linearGradient id="pb-bead-side" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stopColor={rgb(color, 0.5)} />
+          <stop offset="0.3" stopColor={rgb(color, 1)} />
+          <stop offset="0.6" stopColor={rgb(color, 0.85)} />
+          <stop offset="1" stopColor={rgb(color, 0.45)} />
+        </linearGradient>
+      </defs>
+      <path d={`M ${-rx} ${top} L ${-rx} ${-top} A ${rx} ${ry} 0 0 0 ${rx} ${-top} L ${rx} ${top} Z`} fill="url(#pb-bead-side)" />
+      <ellipse cx={0} cy={top} rx={rx} ry={ry} fill={rgb(color, 1.0)} stroke={rgb(color, 0.75)} strokeWidth={0.5} />
+      <ellipse cx={0} cy={top} rx={rx * 0.36} ry={ry * 0.36} fill={rgb(color, 0.3)} />
+      <rect x={-rx * 0.55} y={top + 1.5} width={2.2} height={h - 3} rx={1.1} fill="rgba(255,255,255,0.45)" />
+    </g>
+  )
+}
+
+/**
+ * Steel tweezers: two long slender arms joined at the far end, tips pinching the bead.
+ * The held bead stands upright on screen (it is counter-rotated against the tool's lean).
+ */
+function Tweezers({ color, holding, w }: { color: Rgb | null; holding: boolean; w: number }) {
+  // Half the gap between the tips: wraps the bead when holding, a little open when empty.
+  const gap = holding ? w / 2 + 0.3 : Math.max(8, w / 2 + 2)
+  const len = 175
+  const arm = (side: 1 | -1) => {
+    const tip = side * gap
+    return `M ${tip} 0 L ${tip + side * 2.2} 1 L ${side * (gap * 0.75 + 6)} 70 L ${side * 6.5} ${len} L ${side * 2} ${len} L ${side * (gap * 0.75 + 1.5)} 70 Z`
+  }
+  return (
+    <g>
+      <defs>
+        <linearGradient id="pb-steel" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stopColor="#8e99a8" />
+          <stop offset="0.45" stopColor="#f4f7fa" />
+          <stop offset="1" stopColor="#a7b1be" />
+        </linearGradient>
+      </defs>
       {holding && color && (
-        <g>
-          <circle cx={0} cy={0} r={6.5} fill={rgb(color)} stroke={rgb(color, 0.7)} strokeWidth={1} />
-          <circle cx={0} cy={0} r={2} fill="rgba(0,0,0,0.35)" />
-          <circle cx={-2.2} cy={-2.2} r={1.6} fill="rgba(255,255,255,0.5)" />
+        <g transform={`translate(0 ${-w * 0.1}) rotate(38)`}>
+          <UprightBead color={color} w={w} h={w * 0.75} />
         </g>
       )}
+      <path d={arm(-1)} fill="url(#pb-steel)" stroke="#7b8594" strokeWidth={0.7} strokeLinejoin="round" />
+      <path d={arm(1)} fill="url(#pb-steel)" stroke="#7b8594" strokeWidth={0.7} strokeLinejoin="round" />
+      {/* grip ridges and the joined end */}
+      {[96, 104, 112].map((y) => (
+        <g key={y}>
+          <line x1={-(gap * 0.75 + 5.2) + (y - 70) * 0.012} y1={y} x2={-(gap * 0.75 + 2.5)} y2={y} stroke="#8e99a8" strokeWidth={0.8} />
+          <line x1={gap * 0.75 + 2.5} y1={y} x2={gap * 0.75 + 5.2 - (y - 70) * 0.012} y2={y} stroke="#8e99a8" strokeWidth={0.8} />
+        </g>
+      ))}
+      <rect x={-7.5} y={len - 4} width={15} height={12} rx={5} fill="url(#pb-steel)" stroke="#7b8594" strokeWidth={0.7} />
     </g>
   )
 }
