@@ -22,8 +22,12 @@ import { buzz, isMuted, setMuted, sfx } from '@/lib/sfx'
 type Pt = { x: number; y: number }
 
 const TOOL_KEY = 'pb-tool'
-// With a finger the tool tip sits up-left of the touch point, so the hand never hides the target.
-const TOUCH_TIP_OFFSET = { x: -34, y: -52 }
+// With a finger the tool tip sits just above the touch point, so the fingertip doesn't hide the
+// target but the bead still lands right where the finger points (a bigger offset felt "off").
+const TOUCH_TIP_OFFSET = { x: -10, y: -30 }
+// The pen only drops into a cell when its tip is this close to the cell centre (share of the cell
+// edge), so a stroke running along the line between two rows doesn't zig-zag into the other row.
+const PEN_HIT_RADIUS = 0.45
 const STRING_INTERVAL_MS = 80
 
 /**
@@ -216,6 +220,8 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
   const penAt = (tip: Pt) => {
     const i = canvas.current?.cellAt(tip.x, tip.y) ?? -1
     if (i < 0 || i === gesture.current.lastCell) return
+    const r = canvas.current!.cellRect(i)
+    if (Math.hypot(tip.x - r.x, tip.y - r.y) > r.size * PEN_HIT_RADIUS) return
     gesture.current.lastCell = i
     if (loadRef.current.count <= 0) return
     if (canPlace(i)) launch(i, tip)
