@@ -20,11 +20,13 @@ interface ToolLayerState {
   pressed: boolean
   /** Ring around the cell under the tip: ok = a bead can go here. */
   ring: { x: number; y: number; size: number; ok: boolean } | null
+  /** On-screen cell size (px), so the beads on the tool match the board. */
+  cell: number
   flights: Flight[]
 }
 
 /** High-frequency pointer state lives here so the page doesn't re-render on every move. */
-export const useToolLayer = create<ToolLayerState>()(() => ({ tip: null, visible: false, pressed: false, ring: null, flights: [] }))
+export const useToolLayer = create<ToolLayerState>()(() => ({ tip: null, visible: false, pressed: false, ring: null, cell: 14, flights: [] }))
 
 function FlyingBead({ f, onLand, tube }: { f: Flight; onLand: (f: Flight) => void; tube: boolean }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -44,7 +46,8 @@ function FlyingBead({ f, onLand, tube }: { f: Flight; onLand: (f: Flight) => voi
       ],
       { duration: 170, easing: 'cubic-bezier(.35,.6,.4,1)', fill: 'forwards' },
     )
-    el.style.width = el.style.height = `${size}px`
+    el.style.width = `${size}px`
+    el.style.height = `${tube ? size * 0.8 : size}px` // tube: top face seen at an angle
     anim.onfinish = () => onLand(f)
     return () => anim.cancel()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -59,7 +62,7 @@ function FlyingBead({ f, onLand, tube }: { f: Flight; onLand: (f: Flight) => voi
           ? {
               // 3D tube like the beads on the v1.1 pegboard: dark hole, glossy top, darker side wall.
               background: `radial-gradient(circle at 50% 50%, rgb(${r * 0.3} ${g * 0.3} ${b * 0.3}) 0 17%, transparent 18%), radial-gradient(circle at 35% 30%, rgba(255,255,255,0.55), transparent 50%), rgb(${r} ${g} ${b})`,
-              boxShadow: `0 ${Math.max(2, f.to.size * 0.08)}px 0 rgb(${r * 0.62} ${g * 0.62} ${b * 0.62}), 0 6px 8px rgba(0,0,0,0.3)`,
+              boxShadow: `0 ${Math.max(3, f.to.size * 0.3)}px 0 rgb(${r * 0.6} ${g * 0.6} ${b * 0.6}), 0 ${Math.max(5, f.to.size * 0.4)}px 8px rgba(0,0,0,0.3)`,
             }
           : {
               background: `radial-gradient(circle at 50% 50%, rgba(0,0,0,0.35) 0 16%, transparent 17%), radial-gradient(circle at 35% 30%, rgba(255,255,255,0.6), transparent 45%), rgb(${r} ${g} ${b})`,
@@ -84,7 +87,7 @@ export function ToolLayer({
   count: number
   onLand: (f: Flight) => void
 }) {
-  const { tip, visible, pressed, ring, flights } = useToolLayer()
+  const { tip, visible, pressed, ring, cell, flights } = useToolLayer()
   return (
     <>
       {ring && visible && tool && (
@@ -103,7 +106,7 @@ export function ToolLayer({
       {flights.map((f) => (
         <FlyingBead key={f.id} f={f} onLand={onLand} tube={tube} />
       ))}
-      {tool && tip && visible && <ToolSprite tool={tool} x={tip.x} y={tip.y} color={color} count={count} pressed={pressed} />}
+      {tool && tip && visible && <ToolSprite tool={tool} x={tip.x} y={tip.y} color={color} count={count} pressed={pressed} cell={cell} />}
     </>
   )
 }

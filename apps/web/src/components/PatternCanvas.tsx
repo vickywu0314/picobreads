@@ -63,7 +63,7 @@ const PEG_HI = '#fffbe6'
 const PEG_LO = '#f1dc98'
 const PEG_SHADOW = 'rgba(190, 150, 60, 0.28)'
 /** Bead sprites are drawn bigger than the cell so the tube's side wall and shadow can spill over. */
-const BEAD_PAD = 0.25
+const BEAD_PAD = 0.35
 
 function makeCanvas(w: number, h = w) {
   const c = document.createElement('canvas')
@@ -95,9 +95,10 @@ function pegSprite(size: number) {
 }
 
 /**
- * A fuse bead standing on its peg, seen from slightly in front: a short tube whose darker side
- * wall shows below the top face, a soft shadow on the board, and the board / peg seen through
- * the hole. Transparent around it; the sprite is (1 + 2·BEAD_PAD) cells square.
+ * A fuse bead standing on its peg, seen from in front and above like a real board on a table:
+ * a short cylinder (about a third as tall as it is wide). The top face is a slightly flattened
+ * ellipse, the side wall shows below it and spills onto the row below, the hole shows the pale
+ * board at the bottom of the tube. Transparent around it; the sprite is (1 + 2·BEAD_PAD) cells.
  */
 function beadSprite(size: number, rgb: Rgb) {
   const pad = Math.round(size * BEAD_PAD)
@@ -105,65 +106,69 @@ function beadSprite(size: number, rgb: Rgb) {
   const c = makeCanvas(full)
   const g = c.getContext('2d')!
   const s = size
+  const rx = s * 0.47 // radius across
+  const ry = rx * 0.8 // top face seen at an angle
+  const height = s * 0.3 // tube height on screen
   const cx = pad + s / 2
-  const cy = pad + s / 2 // top face stays centred on the cell (that's where taps land)
-  const r = s * 0.47
-  const depth = s * 0.16
-  // Soft shadow on the board.
+  const cy = pad + s / 2 - height * 0.45 // top face; the whole bead stays centred on its cell
+  const bottom = cy + height
+  // Shadow on the board, below and a little to the right.
   g.save()
-  g.shadowColor = 'rgba(110, 70, 20, 0.35)'
-  g.shadowBlur = s * 0.1
+  g.shadowColor = 'rgba(110, 70, 20, 0.4)'
+  g.shadowBlur = s * 0.12
+  g.shadowOffsetX = s * 0.03
   g.shadowOffsetY = s * 0.06
-  g.fillStyle = shade(rgb, 0.5)
+  g.fillStyle = shade(rgb, 0.45)
   g.beginPath()
-  g.arc(cx, cy + depth, r * 0.98, 0, Math.PI * 2)
+  g.ellipse(cx, bottom, rx, ry, 0, 0, Math.PI * 2)
   g.fill()
   g.restore()
-  // Side wall: from the top face down to the bottom rim, darker towards the bottom.
-  const wall = g.createLinearGradient(0, cy, 0, cy + depth + r)
-  wall.addColorStop(0, shade(rgb, 0.78))
-  wall.addColorStop(1, shade(rgb, 0.5))
+  // Side wall: lit from the upper left, so lighter left of centre, dark at the edges.
+  const wall = g.createLinearGradient(cx - rx, 0, cx + rx, 0)
+  wall.addColorStop(0, shade(rgb, 0.5))
+  wall.addColorStop(0.3, shade(rgb, 0.82))
+  wall.addColorStop(0.55, shade(rgb, 0.72))
+  wall.addColorStop(1, shade(rgb, 0.42))
   g.fillStyle = wall
   g.beginPath()
-  g.arc(cx, cy + depth, r, 0, Math.PI)
-  g.lineTo(cx - r, cy)
-  g.arc(cx, cy, r, Math.PI, 0, true)
+  g.moveTo(cx - rx, cy)
+  g.lineTo(cx - rx, bottom)
+  g.ellipse(cx, bottom, rx, ry, 0, Math.PI, 0, true)
+  g.lineTo(cx + rx, cy)
   g.closePath()
   g.fill()
-  // Top face: nearly flat color, a little lighter at the upper left.
-  const top = g.createRadialGradient(cx - r * 0.4, cy - r * 0.45, r * 0.05, cx, cy, r * 1.05)
-  top.addColorStop(0, shade(rgb, 1.25))
-  top.addColorStop(0.45, shade(rgb, 1.04))
-  top.addColorStop(1, shade(rgb, 0.92))
+  // Top face.
+  const top = g.createRadialGradient(cx - rx * 0.35, cy - ry * 0.45, rx * 0.05, cx, cy, rx * 1.05)
+  top.addColorStop(0, shade(rgb, 1.3))
+  top.addColorStop(0.4, shade(rgb, 1.06))
+  top.addColorStop(1, shade(rgb, 0.94))
   g.fillStyle = top
   g.beginPath()
-  g.arc(cx, cy, r, 0, Math.PI * 2)
+  g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
   g.fill()
-  // Hole: looking down the tube — dark inner wall at the top, the pale board / peg at the bottom.
-  const rh = s * 0.17
-  g.fillStyle = shade(rgb, 0.42)
+  // Rim catches the light.
+  g.strokeStyle = 'rgba(255,255,255,0.35)'
+  g.lineWidth = Math.max(1, s * 0.03)
   g.beginPath()
-  g.arc(cx, cy, rh, 0, Math.PI * 2)
-  g.fill()
+  g.ellipse(cx, cy, rx * 0.97, ry * 0.97, 0, Math.PI * 1.05, Math.PI * 1.7)
+  g.stroke()
+  // Hole: the inner wall (dark at the far side) and the pale board at the bottom of the tube.
+  const hx = s * 0.17
+  const hy = hx * 0.8
   g.save()
   g.beginPath()
-  g.arc(cx, cy, rh, 0, Math.PI * 2)
+  g.ellipse(cx, cy, hx, hy, 0, 0, Math.PI * 2)
   g.clip()
-  const see = g.createRadialGradient(cx, cy + rh * 0.45, rh * 0.1, cx, cy + rh * 0.45, rh * 0.85)
-  see.addColorStop(0, PEG_HI)
-  see.addColorStop(1, PEG_LO)
-  g.fillStyle = see
+  g.fillStyle = shade(rgb, 0.35)
+  g.fillRect(cx - hx, cy - hy, hx * 2, hy * 2)
+  const floor = g.createRadialGradient(cx, cy + hy * 0.7, hx * 0.1, cx, cy + hy * 0.7, hx)
+  floor.addColorStop(0, PEG_HI)
+  floor.addColorStop(1, PEG_LO)
+  g.fillStyle = floor
   g.beginPath()
-  g.arc(cx, cy + rh * 0.38, rh * 0.82, 0, Math.PI * 2)
+  g.ellipse(cx, cy + hy * 0.55, hx * 0.95, hy * 0.85, 0, 0, Math.PI * 2)
   g.fill()
   g.restore()
-  // Gloss on the rim.
-  g.strokeStyle = 'rgba(255,255,255,0.45)'
-  g.lineWidth = Math.max(1, s * 0.05)
-  g.lineCap = 'round'
-  g.beginPath()
-  g.arc(cx, cy, r * 0.74, Math.PI * 1.12, Math.PI * 1.42)
-  g.stroke()
   return c
 }
 
