@@ -92,17 +92,26 @@ export const V11_PICKS: (LibraryPattern & { stats: { w: number; h: number; color
   { id: 'coffee', image: asset('/v11/pick-coffee.png'), themes: ['friends'], tier: 'standard', difficulty: 'easy', maxColors: 25, stats: { w: 48, h: 48, colors: 25, beads: 1140 }, tint: '#e7f2e9' },
 ]
 
-/** Hero "your photo → your pattern", exactly as designed (static images + bead list). */
+/** Hero "your photo → your pattern" and its bead list, as in the v1.1 home design (images cropped from it). */
 export const V11_HERO = {
-  photo: asset('/v11/hero-photo.png'),
-  pattern: asset('/v11/hero-pattern.png'),
-  size: '44×44',
-  colors: 34,
-  beads: 1936,
+  photo: asset('/v11/home-photo.jpg'),
+  pattern: asset('/v11/home-pattern.jpg'),
   list: [
-    { code: 'C30', color: '#82ceff', count: 788 },
-    { code: 'A21', color: '#4c2c15', count: 111 },
-    { code: 'G1', color: '#f5e5d7', count: 97 },
-    { code: 'A17', color: '#e49151', count: 84 },
+    { color: '#6b3a26', count: 310 },
+    { color: '#f0963c', count: 492 },
+    { color: '#e9bf8f', count: 268 },
+    { color: '#ffffff', count: 324 },
+    { color: '#f4a7b9', count: 86 },
+    { color: '#3a3a3e', count: 54 },
   ],
 }
+
+/** "Try a sample": the hero photo goes through the real flow. */
+export const V11_SAMPLE: LibraryPattern = { id: 'corgi', image: V11_HERO.photo, themes: ['pets'], tier: 'standard', difficulty: 'medium', maxColors: 24 }
+
+/** "A little inspiration" — finished bead crafts (photos cropped from the home design). */
+export const V11_INSPO = [
+  { id: 'coffee', image: asset('/v11/inspo-coffee.jpg') },
+  { id: 'flower', image: asset('/v11/inspo-flower.jpg') },
+  { id: 'cat', image: asset('/v11/inspo-cat.jpg') },
+] as const

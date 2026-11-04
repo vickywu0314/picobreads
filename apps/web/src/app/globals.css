@@ -107,71 +107,86 @@ html[data-locale-pending] body {
 
 /* ---------------------------------------------------------------------------
  * v1.1 (Pipixel) theme — scoped to `.v11`, so v1.0 pages are unaffected.
- * Pink dotted paper, chunky ink borders with offset shadows, rounded display font.
- * Light only for now.
+ * Warm off-white paper, soft pink panels, thin cocoa-brown outlines, rounded bold type,
+ * little pixel clusters as decoration. Light only for now.
  * ------------------------------------------------------------------------- */
 .v11 {
-  --bg: #fff1f5;
-  --surface: #ffffff;
-  --surface-2: #fde6ee;
-  --fg: #3b2a30;
-  --muted: #86707a;
-  --border: #f0cfdb;
-  --accent: #d9467a;
-  --accent-hover: #c43769;
+  --bg: #fdf7f4;
+  --surface: #fffbf9;
+  --surface-2: #fbe9ec;
+  --fg: #4a2620;
+  --muted: #7d5f58;
+  --border: #eedad5;
+  --accent: #d93d72;
+  --accent-hover: #c22f62;
   --accent-fg: #ffffff;
-  --accent-soft: #fde0ea;
+  --accent-soft: #fbe1e8;
   --ok: #2f8a57;
   --warn: #b26a00;
-  --ink: #3b2a30;
-  --sun: #ffd84d;
-  --canvas-bg: #fbe9ef;
-  --board: #f6dfe7;
-  /* Latin glyphs from Baloo 2, Chinese falls through to ZCOOL KuaiLe. */
-  --font-display: 'Baloo 2', 'ZCOOL KuaiLe', ui-rounded, 'PingFang SC', system-ui, sans-serif;
+  /* Outline color for cards and buttons (thin, cocoa brown). */
+  --ink: #6b3f37;
+  --sun: #ffd76e;
+  /* Pink hero / feature panels. */
+  --blush: #f9dfe4;
+  --canvas-bg: #fbeee9;
+  --board: #f6e3e0;
+  --soft-shadow: 0 10px 28px -18px rgba(74, 38, 32, 0.35);
+  /* Latin glyphs from Nunito (rounded), Chinese from the system's bold sans. */
+  --font-display: 'Nunito', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', ui-rounded, system-ui, sans-serif;
   color-scheme: light;
   color: var(--fg);
   background-color: var(--bg);
-  background-image: radial-gradient(circle, #f6c5d5 1.6px, transparent 1.8px);
-  background-size: 26px 26px;
-  font-family: 'Noto Sans SC', ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif;
+  font-family: 'Nunito', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-weight: 500;
 }
 body:has(.v11) {
-  background: #fff1f5;
+  background: #fdf7f4;
 }
 .v11 .font-display,
 .v11 .font-serif {
   font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: 0.01em;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 .v11 .font-pixel {
-  font-family: 'Pixelify Sans', 'Baloo 2', ui-rounded, system-ui, sans-serif;
+  font-family: 'Pixelify Sans', 'Nunito', ui-rounded, system-ui, sans-serif;
 }
-/* Chunky "sticker" look for cards and buttons. */
+/* Thin outlines everywhere in v1.1, and soft shadows instead of the old offset "sticker" shadows. */
+.v11 .border-2 {
+  border-width: 1.5px;
+}
+.v11 [class*='0_var(--ink)'] {
+  box-shadow: var(--soft-shadow) !important;
+}
 .v11 .card,
 .v11 .ink-card {
-  border: 2px solid var(--ink);
-  border-radius: 22px;
+  border: 1.5px solid var(--ink);
+  border-radius: 20px;
   background: var(--surface);
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: var(--soft-shadow);
 }
 .v11 .btn-primary,
 .v11 .btn-secondary {
-  border: 2px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
-  transition: transform 0.08s, box-shadow 0.08s;
+  border: 1.5px solid var(--ink);
+  font-weight: 700;
+  transition: transform 0.08s, background-color 0.15s;
+}
+.v11 .btn-primary {
+  border-color: var(--accent-hover);
+  box-shadow: 0 6px 16px -8px rgba(217, 61, 114, 0.6);
 }
 .v11 .btn-primary:active,
 .v11 .btn-secondary:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--ink);
+  transform: translateY(1px);
 }
 .v11 .btn-secondary {
   background: var(--surface);
 }
+.v11 .btn-secondary:hover {
+  background: #fff;
+}
 .v11 .input {
-  border: 2px solid var(--ink);
+  border: 1.5px solid var(--ink);
   border-radius: 14px;
 }
 
@@ -191,37 +206,35 @@ body:has(.v11) {
   background-image: none;
 }
 .v11 .bead-chrome {
-  border: 2px solid var(--ink);
-  background: #fff;
-  box-shadow: 3px 3px 0 var(--ink);
+  border: 1.5px solid var(--ink);
+  background: var(--surface);
+  box-shadow: var(--soft-shadow);
 }
 .v11 .bead-aside {
   border-color: var(--ink);
-  border-width: 2px 0 0 0;
+  border-width: 1.5px 0 0 0;
   background-color: var(--bg);
-  background-image: radial-gradient(circle, #f6c5d5 1.4px, transparent 1.6px);
-  background-size: 22px 22px;
 }
 @media (min-width: 768px) {
   .v11 .bead-aside {
-    border-width: 0 0 0 2px;
+    border-width: 0 0 0 1.5px;
   }
 }
 .v11 .bead-panel {
-  border: 2px solid var(--ink);
-  background: #fff;
+  border: 1.5px solid var(--ink);
+  background: var(--surface);
   border-radius: 18px;
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: var(--soft-shadow);
 }
 .v11 .bead-tool {
-  border: 2px solid var(--ink);
-  background: #fff;
+  border: 1.5px solid var(--ink);
+  background: var(--surface);
   color: var(--fg);
 }
 .v11 .bead-tool[aria-checked='true'] {
   background: var(--accent-soft);
-  box-shadow: 2px 2px 0 var(--ink);
-  transform: translate(-1px, -1px);
+  border-color: var(--accent);
+  color: var(--accent-hover);
 }
 
 /* v1.1 light box: stays dark (it shines through the pegboard), with v1.1 type and sticker buttons. */
@@ -229,8 +242,8 @@ body:has(.v11) {
   font-family: 'Noto Sans SC', ui-sans-serif, system-ui, -apple-system, 'PingFang SC', sans-serif;
 }
 .v11-lightbox .font-display {
-  font-family: 'Baloo 2', 'ZCOOL KuaiLe', ui-rounded, 'PingFang SC', system-ui, sans-serif;
-  font-weight: 400;
+  font-family: 'Nunito', 'PingFang SC', 'Noto Sans SC', ui-rounded, system-ui, sans-serif;
+  font-weight: 800;
 }
 .v11-lightbox .lb-btn {
   border: 2px solid rgba(255, 255, 255, 0.85);
