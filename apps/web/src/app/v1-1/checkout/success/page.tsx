@@ -1,12 +1,9 @@
-'use client'
+import type { Metadata } from 'next'
+import { LegacyRedirect } from '@/components/LegacyRedirect'
 
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
-import { V11Page } from '@/v11/Chrome'
+export const metadata: Metadata = { robots: { index: false, follow: true } }
 
-/** Ordering isn't open yet. */
-export default function Moved() {
-  const router = useRouter()
-  useEffect(() => router.replace('/v1-1/'), [router])
-  return <V11Page footer={false}>{null}</V11Page>
+/** Old /v1-1/ address: redirects to the same page at the site root. */
+export default function Page() {
+  return <LegacyRedirect />
 }

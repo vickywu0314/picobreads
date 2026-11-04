@@ -1,10 +1,9 @@
-'use client'
+import type { Metadata } from 'next'
+import { LegacyRedirect } from '@/components/LegacyRedirect'
 
-import { useEffect } from 'react'
-import { LabView } from '@/components/LabView'
-import { markV11Flow } from '@/lib/flow'
+export const metadata: Metadata = { robots: { index: false, follow: true } }
 
+/** Old /v1-1/ address: redirects to the same page at the site root. */
 export default function Page() {
-  useEffect(() => markV11Flow(), [])
-  return <LabView v11 />
+  return <LegacyRedirect />
 }

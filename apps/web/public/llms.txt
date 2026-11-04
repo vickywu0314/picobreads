@@ -1,0 +1,27 @@
+# Pipixel 拼豆图纸生成器 (Pipixel bead pattern maker)
+
+> 免费在线拼豆图纸生成器：上传一张照片，在浏览器里一键生成带 MARD 色号的拼豆图纸和用豆清单，可以在线拼，也可以下载图纸自己拼。照片只在你的设备上处理，不会上传。
+> Free online fuse bead pattern maker: upload a photo and get a bead pattern with MARD color codes and a bead list, right in the browser. Bead it online or download the sheets. Photos are processed on your device and never uploaded.
+
+## 能做什么 / What it does
+
+- 照片 → 拼豆图纸：自动去掉纯色背景、裁掉空白边，按图片细节推荐底板数（1 块 / 4 块 / 9 块），能 1 块做清楚就不多用板。
+- 豆子：MARD 264 色全色（含特殊系列），迷你豆 2.6 mm（52×52 钉底板）或标准豆 5 mm（29×29 钉底板）。
+- 四种效果对比：三种尺寸 + 一张「像素风」（颜色更少、色块更大、保留眼睛牙齿等主体特征）。
+- 熨烫效果预览：普通烫、毛巾烫、澡巾烫、闪片烫。
+- 在线拼：拼豆笔 / 镊子在立体钉板上一颗颗放豆，按颜色高亮、撤销、分区、进度自动保存。
+- 免费下载图纸：总览、材料清单、每个分区一张（每格印色号）。
+- 灯箱模式：把平板放在透明底板下面，按颜色点亮孔位，照着实物拼。
+- Photo to pattern, auto background removal and trimming, board-count recommendation, MARD 264 colors, mini (2.6 mm) and standard (5 mm) beads, a pixel-art option, ironing previews, online beading with a pen / tweezers on a 3D pegboard, free printable sheets, and a light-box guide mode.
+
+## 页面 / Pages
+
+- [首页 / Home](/): 介绍与入口 / overview and start.
+- [开始制作 / Create](/create/): 上传照片、裁剪、定制尺寸和效果、选择购买形式 / upload, crop, customize, choose a form.
+- [熨烫实验室 / Ironing lab](/lab/): 对比不同熨烫效果 / compare ironing finishes.
+
+## 说明 / Notes
+
+- 免费使用，无需下载安装 / Free to use, nothing to install.
+- 材料包和成品代拼即将开放 / Bead kits and finished pieces are coming soon.
+- 色号颜色为社区实测近似值，不是厂商官方色值 / Bead colors are community-measured approximations, not official manufacturer values.

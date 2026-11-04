@@ -3,5 +3,5 @@
 import { LightboxView } from '@/components/LightboxView'
 
 export default function Page() {
-  return <LightboxView />
+  return <LightboxView v11 />
 }

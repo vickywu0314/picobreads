@@ -185,6 +185,32 @@ body:has(.v11) {
 .v11 .btn-secondary:hover {
   background: #fff;
 }
+/* Buttons with a little motion: lift on hover, press down on tap, the arrow nudges forward. */
+.v11 .btn-motion {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.v11 .btn-motion:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 22px -12px rgba(74, 38, 32, 0.45);
+}
+.v11 .btn-primary.btn-motion:not(:disabled):hover {
+  box-shadow: 0 14px 24px -10px rgba(217, 61, 114, 0.65);
+}
+.v11 .btn-motion:not(:disabled):active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 4px 10px -8px rgba(74, 38, 32, 0.5);
+  transition-duration: 0.05s;
+}
+.v11 .btn-motion-arrow,
+.v11 .btn-motion-icon {
+  transition: transform 0.2s ease;
+}
+.v11 .btn-motion:not(:disabled):hover .btn-motion-arrow {
+  transform: translateX(4px);
+}
+.v11 .btn-motion:not(:disabled):hover .btn-motion-icon {
+  transform: rotate(-8deg) scale(1.12);
+}
 .v11 .input {
   border: 1.5px solid var(--ink);
   border-radius: 14px;

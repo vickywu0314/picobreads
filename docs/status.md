@@ -1,9 +1,11 @@
 # 当前进度（交接用）
 
 > 新开会话时：先读根目录 `CLAUDE.md`（产品说明），再读本文件和 `docs/versions.md`（v1.1 的页面与规则），就能接着做。
-> 更新于 2026-11-03。
+> 更新于 2026-11-04。
 
 ## 版本
+
+- **2026-11-04 起只保留 v1.1，放在网站根路径**；v1.0 代码归档到 `archive/v1.0/`；旧地址 `/v1-1/...` 自动跳转。下面的 v1.0 / v1.1 说明是历史记录。
 
 - **v1.0**（`/`）：Cordelia Morrow 网站结构，冻结不动。
 - **v1.1 Pipixel**（`/v1-1/`）：所有新开发都在这里。页面清单、图纸规则见 `docs/versions.md`。
@@ -32,12 +34,14 @@
 | 位置 | 地址 | 说明 |
 |---|---|---|
 | Vercel | 项目根目录 `apps/web` | 推送 main 自动部署（Vercel 自己的 GitHub 集成） |
-| 北京腾讯云轻量服务器 | `http://49.233.85.32/v1-1/` | Ubuntu 26.04，Nginx 站点 `/etc/nginx/sites-available/picobreads`（默认站点，`server_name _`），网站目录 `/var/www/picobreads`。推送 main 由 GitHub Actions（`.github/workflows/deploy-server.yml`）在 GitHub 上构建后 SSH 上传；仓库 Secrets：`DEPLOY_HOST` `DEPLOY_USER` `DEPLOY_SSH_KEY`。服务器连 GitHub 不稳定，不要依赖服务器上 `git pull` |
+| 北京腾讯云轻量服务器 | `http://49.233.85.32/`（旧地址 `/v1-1/` 自动跳转） | Ubuntu 26.04，Nginx 站点 `/etc/nginx/sites-available/picobreads`（默认站点，`server_name _`），网站目录 `/var/www/picobreads`。推送 main 由 GitHub Actions（`.github/workflows/deploy-server.yml`）在 GitHub 上构建后 SSH 上传；仓库 Secrets：`DEPLOY_HOST` `DEPLOY_USER` `DEPLOY_SSH_KEY`。服务器连 GitHub 不稳定，不要依赖服务器上 `git pull` |
 | 新加坡服务器 | — | 上面有 tuoyuan.ai 等其他网站。pd.scentby.cn 站点已停用（配置还在 sites-available），不要动其他站点 |
 
 部署细节、Nginx 配置、手动部署脚本：`docs/deploy-server.md`、`scripts/deploy.sh`。
 
 ## 进行中 / 待用户提供
+
+0. **SEO 上线**：域名启用后，确认 `NEXT_PUBLIC_SITE_URL`（默认 `https://pd.scentby.cn`）；到百度搜索资源平台、Google Search Console、Bing 提交 `sitemap.xml`。
 
 1. **腾讯云接入备案**：域名 `scentby.cn`（阿里云已备案），正在腾讯云办接入备案。通过后：`pd.scentby.cn` 的 A 记录指向 `49.233.85.32`，Nginx 的 `server_name` 改成域名，`certbot --nginx -d pd.scentby.cn` 配 HTTPS。
 2. **国内版 / 国外版**：用户准备分两个版本上。建议先做国内版（待用户确认），顺序：H5 网站上线 → 手机号 + 短信验证码登录 + 轻量后端（用户、草稿）→ 微信小程序（复用图纸引擎）→ 小程序内下单 + 微信支付（需企业或个体户主体、商户号、订单发货信息上传）。国外版之后做：北美站 + Shopify 登录 / 结账（Shopify 在国内不稳定，只用于国外版）。

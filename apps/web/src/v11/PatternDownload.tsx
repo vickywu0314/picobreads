@@ -76,7 +76,7 @@ export function PatternDownload({ pattern, beadSize, next, className = '' }: { p
       {!user ? (
         <>
           <p className="mt-4 rounded-xl bg-accent-soft p-3 text-sm">{d.signInFirst}</p>
-          <Link href={`/v1-1/login/?next=${encodeURIComponent(next)}`} className="btn-primary mt-3 w-full">
+          <Link href={`/login/?next=${encodeURIComponent(next)}`} className="btn-primary mt-3 w-full">
             <LogIn className="h-5 w-5" aria-hidden /> {d.signIn}
           </Link>
         </>

@@ -31,7 +31,7 @@ const PEN_HIT_RADIUS = 0.45
 const STRING_INTERVAL_MS = 80
 
 /**
- * Online beading. Shared by v1.0 (/bead) and v1.1 (/v1-1/bead, `v11`: v1.1 look, links back into
+ * Online beading. Shared by v1.0 (/bead) and v1.1 (/bead, `v11`: v1.1 look, links back into
  * the v1.1 flow, "Save draft").
  */
 export function BeadEditor({ v11 = false }: { v11?: boolean }) {
@@ -53,7 +53,7 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
   const saveDraft = () => {
     const s = useStore.getState()
     if (!s.user) {
-      router.push(`/v1-1/login/?next=${encodeURIComponent('/v1-1/bead/')}`)
+      router.push(`/login/?next=${encodeURIComponent('/bead/')}`)
       return
     }
     const mine = s.designs.filter((d) => !d.owner || d.owner === s.user!.email)
@@ -342,7 +342,7 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
   useEffect(() => () => stopStringing(), [])
 
   if (!hydrated) return null
-  if (!data || !progress) return <NoPattern href={v11 ? '/v1-1/create/' : undefined} />
+  if (!data || !progress) return <NoPattern href={v11 ? '/create/' : undefined} />
 
   const { pattern, palette, legend, numbers, sections } = data
   const wells = legend
@@ -371,7 +371,7 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
         : null
 
   return (
-    <div className="flex h-[calc(100dvh-1.75rem)] flex-col md:flex-row">
+    <div className="flex h-dvh flex-col md:flex-row">
       {/* Board */}
       <div className="relative min-h-0 flex-1">
         <PatternCanvas
@@ -392,7 +392,7 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
         />
         <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between gap-2 p-2">
           <div className="bead-chrome pointer-events-auto flex min-w-0 items-center gap-1 whitespace-nowrap rounded-full bg-surface/90 p-1 shadow backdrop-blur">
-            <Link href={v11 ? '/v1-1/create/settings/' : '/pattern/'} className="icon-btn" aria-label={t.common.back}>
+            <Link href={v11 ? '/create/settings/' : '/pattern/'} className="icon-btn" aria-label={t.common.back}>
               <ArrowLeft className="h-5 w-5" aria-hidden />
             </Link>
             <span className={`pr-1 font-bold ${v11 ? 'font-display hidden text-base lg:inline' : 'text-sm'}`}>{t.editor.title}</span>
@@ -642,7 +642,7 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
               <Cloud className="h-4 w-4" aria-hidden /> {t.editor.saved}
             </span>
             <div className="flex gap-1">
-              <Link href={v11 ? "/v1-1/lightbox/" : "/lightbox/"} className="btn-ghost btn-sm">
+              <Link href={v11 ? "/lightbox/" : "/lightbox/"} className="btn-ghost btn-sm">
                 <Lightbulb className="h-4 w-4" aria-hidden /> {t.pattern.lightbox}
               </Link>
               <button type="button" className="btn-ghost btn-sm" onClick={() => confirm(t.editor.resetConfirm) && resetProgress()}>
@@ -686,7 +686,7 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
               <button type="button" className="btn-secondary btn-sm" onClick={() => canvas.current?.zoomOut()}>
                 <Minus className="h-4 w-4" aria-hidden /> {t.editor.zoomOut}
               </button>
-              <Link href="/v1-1/lightbox/" className="btn-secondary btn-sm">
+              <Link href="/lightbox/" className="btn-secondary btn-sm">
                 <Lightbulb className="h-4 w-4" aria-hidden /> {t.pattern.lightbox}
               </Link>
               <button type="button" className="btn-secondary btn-sm" onClick={() => confirm(t.editor.resetConfirm) && resetProgress()}>
@@ -756,7 +756,7 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
 
       <Modal open={finished} onClose={() => setFinished(false)} title={t.editor.finishedTitle}>
         <p className="text-muted">{t.editor.finishedBody}</p>
-        <Link href={v11 ? '/v1-1/create/product/' : '/create/product/'} className="btn-primary mt-6 w-full">
+        <Link href={v11 ? '/create/product/' : '/create/product/'} className="btn-primary mt-6 w-full">
           {t.pattern.buyKit}
         </Link>
       </Modal>

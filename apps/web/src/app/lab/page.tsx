@@ -3,5 +3,5 @@
 import { LabView } from '@/components/LabView'
 
 export default function Page() {
-  return <LabView />
+  return <LabView v11 />
 }

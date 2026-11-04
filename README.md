@@ -2,7 +2,7 @@
 
 *Your moments, made personal.* Personalized gifts — custom fuse bead art first, storybooks coming soon. Milestone 0: clickable prototype — fully static, no backend. Commerce will run on Shopify.
 
-**Versions:** v1.0 at `/` (frozen), v1.1 "Pipixel" redesign at `/v1-1/` (all new work) — see `docs/versions.md`.
+**Versions:** the site is v1.1 "Pipixel", served at the root `/`. v1.0 (Cordelia Morrow) is archived in `archive/v1.0/` (not built); old `/v1-1/…` links redirect. See `docs/versions.md`.
 
 **Current status / handoff: `docs/status.md`.** See `CLAUDE.md` for the product spec, `docs/sitemap.md` for the site structure and `docs/prototype-notes.md` (中文) for what is real vs. mocked.
 
@@ -10,16 +10,17 @@
 
 ```
 apps/web/                  Next.js 15 (App Router, static export), Tailwind CSS 4, zustand
-  src/app/                 pages: home, beads (hub, patterns, community), create (6 steps), storybooks, account, cart, footer pages, bead / lightbox tools, lab, admin
-  src/components/          PatternCanvas (pan/zoom editor), PatternThumb, UI bits
-  src/config/site.ts       business knobs: size tiers, prices (placeholder), allowance, bag sizes, limits
-  src/i18n/                UI copy: en-US.ts + zh-CN.ts; locale follows the browser, switchable in the header
-  src/config/catalog.ts    PROTOTYPE content: pattern library, community posts, purchase forms
-  src/app/v1-1/            v1.1 pages (home + 6-step flow, bag, login); src/v11/ = v1.1 header/footer/toast/config
-  src/mock/                PROTOTYPE ONLY: sample pattern generator, fake admin orders
-  public/patterns/         sample illustrations used by the library / community
-packages/pattern-engine/   pure TypeScript, no UI deps: types, palettes, sections, stats, bag picking
-  palettes/                bead color charts (Perler / Artkal S / Hama / MARD 221) — see palettes/README.md
+  src/app/                 pages at the root: home, create (upload / crop / customize / product), bead, lightbox, lab,
+                           login, workbench; robots.ts, sitemap.ts; v1-1/ = redirects from the old /v1-1/ addresses
+  src/components/          PatternCanvas (pan/zoom pegboard), bead editor, light box, ironing lab, UI bits
+  src/v11/                 Pipixel header / footer / toast / config, pixel decorations
+  src/config/site.ts       business knobs: boards, bead sizes, limits
+  src/config/seo.ts        site URL, SEO keywords, crawler allow-list
+  src/i18n/                UI copy (zh-CN / en-US); locale follows the browser, switchable in the header
+  public/                  images (v11/), llms.txt and ai.txt for AI crawlers
+packages/pattern-engine/   pure TypeScript, no UI deps: generation, pixel style, palettes, sections, stats, bag picking
+  palettes/                bead color charts (MARD 264 and others) — see palettes/README.md
+archive/v1.0/              v1.0 (Cordelia Morrow) pages and v1.0-only code — kept for reference, not built
 ```
 
 ## Local development
@@ -41,6 +42,7 @@ Milestone 0 needs none. See `.env.example`.
 | Name | Purpose |
 |---|---|
 | `NEXT_PUBLIC_BASE_PATH` | Optional sub-path when hosting under a folder (e.g. GitHub Pages). Leave empty on Vercel. |
+| `NEXT_PUBLIC_SITE_URL` | Public address of the site for sitemap.xml / robots.txt / Open Graph. Defaults to `https://pd.scentby.cn`. |
 
 ## Deploy (Vercel, free)
 

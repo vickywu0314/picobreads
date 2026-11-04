@@ -4,8 +4,8 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useRef, useState } from 'react'
 import Cropper, { type Area } from 'react-easy-crop'
 import { ImagePlus, Lock, Sparkles } from 'lucide-react'
-import { SiteHeader } from '@/components/SiteHeader'
-import { ProtoTag } from '@/components/PrototypeBanner'
+import { V11Page } from '@/v11/Chrome'
+import { V11_DEFAULTS } from '@/v11/config'
 import { Stepper, Toggle } from '@/components/ui'
 import { ASPECTS, FREE_PREVIEWS_PER_DAY, type AspectId } from '@/config/site'
 import { useT } from '@/i18n'
@@ -24,7 +24,10 @@ async function cropToDataUrl(src: string, area: Area, maxSide = 900): Promise<st
   canvas.width = Math.round(area.width * k)
   canvas.height = Math.round(area.height * k)
   canvas.getContext('2d')!.drawImage(img, area.x, area.y, area.width, area.height, 0, 0, canvas.width, canvas.height)
-  return canvas.toDataURL('image/jpeg', 0.85)
+  // Lossless PNG keeps flat cartoons crisp (JPEG noise reads as fake detail); photos fall back to JPEG
+  // so the saved draft stays small.
+  const png = canvas.toDataURL('image/png')
+  return png.length <= 700_000 ? png : canvas.toDataURL('image/jpeg', 0.92)
 }
 
 export default function CreatePage() {
@@ -59,10 +62,9 @@ export default function CreatePage() {
   const aspect = ASPECTS.find((a) => a.id === aspectId)!.value
 
   return (
-    <>
-      <SiteHeader />
+    <V11Page>
       <main className="container-page py-6">
-        <Stepper step={src ? 1 : 0} />
+        <Stepper step={src ? 1 : 0} steps={t.v11.flowSteps} />
         {!src ? (
           <section className="mt-6">
             <h1 className="font-serif text-4xl">{t.create.uploadTitle}</h1>
@@ -104,7 +106,7 @@ export default function CreatePage() {
               </button>
               {hydrated && (
                 <span className="flex items-center gap-2 text-sm text-muted">
-                  {t.create.quota(previewsLeft(previews, FREE_PREVIEWS_PER_DAY), FREE_PREVIEWS_PER_DAY)} <ProtoTag />
+                  {t.create.quota(previewsLeft(previews, FREE_PREVIEWS_PER_DAY), FREE_PREVIEWS_PER_DAY)}
                 </span>
               )}
             </div>
@@ -199,6 +201,7 @@ export default function CreatePage() {
                   if (!area.current) return
                   setPhoto(await cropToDataUrl(src, area.current), aspectId)
                   useStore.getState().setSource({ kind: 'upload' })
+                  useStore.getState().setSettings(V11_DEFAULTS)
                   router.push('/create/settings/')
                 }}
               >
@@ -208,6 +211,6 @@ export default function CreatePage() {
           </section>
         )}
       </main>
-    </>
+    </V11Page>
   )
 }

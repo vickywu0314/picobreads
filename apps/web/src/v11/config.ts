@@ -7,7 +7,7 @@ import type { LibraryPattern } from '@/config/catalog'
 export const V11 = {
   name: 'Pipixel',
   /** Route prefix of the v1.1 site. */
-  base: '/v1-1',
+  base: '',
 }
 
 /** Builds a v1.1 URL (keeps the static-export trailing slash). */
@@ -105,9 +105,6 @@ export const V11_HERO = {
     { color: '#3a3a3e', count: 54 },
   ],
 }
-
-/** "Try a sample": the hero photo goes through the real flow. */
-export const V11_SAMPLE: LibraryPattern = { id: 'corgi', image: V11_HERO.photo, themes: ['pets'], tier: 'standard', difficulty: 'medium', maxColors: 24 }
 
 /** "A little inspiration" — finished bead crafts (photos cropped from the home design). */
 export const V11_INSPO = [

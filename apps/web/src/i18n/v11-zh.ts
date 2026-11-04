@@ -9,7 +9,6 @@ export const v11Zh: typeof v11En = {
     title2: '拼成一颗颗豆。',
     body: '把喜欢的照片变成拼豆图纸，带色号，还有一份拿来就能用的用豆清单。',
     cta: '上传照片',
-    sample: '先试试示例',
     points: ['先看效果', '尺寸自己选', '每种颜色都算好'],
     photo: '你的照片',
     pattern: '你的图纸',
@@ -67,7 +66,7 @@ export const v11Zh: typeof v11En = {
     previewTitle: '效果预览',
     beads: (n: number) => `共 ${n.toLocaleString()} 颗`,
     beadOnline: '先在线拼拼看？',
-    next: '下载图纸',
+    next: '下一步',
   },
   workbench: {
     title: '我的工作台',

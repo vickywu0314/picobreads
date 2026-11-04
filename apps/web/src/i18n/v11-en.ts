@@ -8,7 +8,6 @@ export const v11En = {
     title2: 'Made for beads.',
     body: 'Turn a favorite photo into a fuse bead pattern, with color codes and a ready-to-use bead list.',
     cta: 'Upload a photo',
-    sample: 'Try a sample',
     points: ['Preview first', 'Choose your size', 'Count every color'],
     photo: 'Your photo',
     pattern: 'Your pattern',
@@ -66,7 +65,7 @@ export const v11En = {
     previewTitle: 'Preview',
     beads: (n: number) => `${n.toLocaleString()} beads`,
     beadOnline: 'Try beading online?',
-    next: 'Download pattern',
+    next: 'Next',
   },
   workbench: {
     title: 'My workspace',

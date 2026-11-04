@@ -44,7 +44,7 @@ function Ironed({ pattern, className = '' }: { pattern: Pattern; className?: str
   return <canvas ref={ref} aria-hidden className={`block w-full ${className}`} style={{ aspectRatio: `${pattern.width} / ${pattern.height}` }} />
 }
 
-/** Temporary ironing lab. Shared by v1.0 (/lab) and v1.1 (/v1-1/lab, `v11`: v1.1 look, no prototype tag). */
+/** Temporary ironing lab. Shared by v1.0 (/lab) and v1.1 (/lab, `v11`: v1.1 look, no prototype tag). */
 export function LabView({ v11 = false }: { v11?: boolean }) {
   const t = useT()
   const router = useRouter()
@@ -221,7 +221,7 @@ export function LabView({ v11 = false }: { v11?: boolean }) {
                 setPhoto(photo)
                 setSettingsStore({ ...opts })
                 applyPattern(zoom)
-                router.push(v11 ? '/v1-1/bead/' : '/bead/')
+                router.push(v11 ? '/bead/' : '/bead/')
               }}
             >
               {t.lab.useThis}

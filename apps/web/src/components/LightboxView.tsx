@@ -178,7 +178,7 @@ function LightCanvas({
   return <canvas ref={ref} className="absolute inset-0 h-full w-full touch-none" aria-label={t.lightbox.boardAria} />
 }
 
-/** Light box guide. Shared by v1.0 (/lightbox) and v1.1 (/v1-1/lightbox, `v11`: v1.1 look). */
+/** Light box guide. Shared by v1.0 (/lightbox) and v1.1 (/lightbox, `v11`: v1.1 look). */
 export function LightboxView({ v11 = false }: { v11?: boolean }) {
   const t = useT()
   const router = useRouter()
@@ -223,7 +223,7 @@ export function LightboxView({ v11 = false }: { v11?: boolean }) {
   }, [data, section, placed])
 
   if (!hydrated) return null
-  if (!data || !section) return <NoPattern href={v11 ? '/v1-1/create/' : undefined} />
+  if (!data || !section) return <NoPattern href={v11 ? '/create/' : undefined} />
 
   const needsCalibration = calibrating || pxPerMm === null
   const current = sectionColors.find((c) => c.color === activeColor) ?? sectionColors[0]

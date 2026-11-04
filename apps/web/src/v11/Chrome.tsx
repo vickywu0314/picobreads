@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from 'react'
 import { ChevronDown, Globe, LayoutGrid, LogOut, Menu, UserRound, X } from 'lucide-react'
 import { LOCALES, useLocaleStore, useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
-import { markV11Flow } from '@/lib/flow'
 import { V11, v11Href } from './config'
 import { Toast, useToast } from './Toast'
 
@@ -227,9 +226,8 @@ export function V11Footer() {
 
 /** Page shell for every v1.1 page: theme scope, header, footer, toast. */
 export function V11Page({ children, footer = true }: { children: React.ReactNode; footer?: boolean }) {
-  useEffect(() => markV11Flow(), [])
   return (
-    <div className="v11 min-h-[calc(100dvh-1.75rem)]">
+    <div className="v11 min-h-dvh">
       <V11Header />
       {children}
       {footer && <V11Footer />}

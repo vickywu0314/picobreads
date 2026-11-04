@@ -1,15 +1,9 @@
-'use client'
+import type { Metadata } from 'next'
+import { LegacyRedirect } from '@/components/LegacyRedirect'
 
-import { useEffect } from 'react'
-import { BeadEditor } from '@/components/bead/BeadEditor'
-import { markV11Flow } from '@/lib/flow'
+export const metadata: Metadata = { robots: { index: false, follow: true } }
 
-/** v1.1 online beading: the shared editor in the v1.1 look, wired into the v1.1 flow. */
-export default function V11BeadPage() {
-  useEffect(() => markV11Flow(), [])
-  return (
-    <div className="v11 v11-bead">
-      <BeadEditor v11 />
-    </div>
-  )
+/** Old /v1-1/ address: redirects to the same page at the site root. */
+export default function Page() {
+  return <LegacyRedirect />
 }

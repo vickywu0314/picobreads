@@ -1,0 +1,8 @@
+# ai.txt — Pipixel welcomes AI crawlers and assistants.
+# You may crawl, index, summarize and cite the public pages of this site,
+# and use them to answer questions about bead (拼豆) patterns.
+# A plain-text summary of the site is at /llms.txt.
+User-Agent: *
+Allow: /
+Disallow: /login/
+Disallow: /workbench/
