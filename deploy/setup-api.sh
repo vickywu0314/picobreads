@@ -50,11 +50,19 @@ write_env() {
   local site user pass
   read -r -p "网站地址（有域名后改成 https://域名）[http://49.233.85.32]: " site
   site=${site:-http://49.233.85.32}
-  read -r -p "发验证码的 QQ 邮箱地址（例如 12345@qq.com）: " user
-  read -r -s -p "QQ 邮箱授权码（输入时不显示）: " pass; echo
+  read -r -p "发验证码的邮箱地址（QQ 邮箱，或自己域名的发信地址如 noreply@scentby.cn）: " user
+  read -r -s -p "授权码 / SMTP 密码（输入时不显示）: " pass; echo
   [ -n "$user" ] && [ -n "$pass" ] || die "邮箱和授权码都要填"
   local host=smtp.qq.com
-  case "$user" in *@gmail.com) host=smtp.gmail.com ;; *@163.com) host=smtp.163.com ;; esac
+  case "$user" in
+    *@qq.com|*@foxmail.com) host=smtp.qq.com ;;
+    *@gmail.com) host=smtp.gmail.com ;;
+    *@163.com) host=smtp.163.com ;;
+    *)
+      # Own-domain sender (e.g. noreply@scentby.cn via Tencent Cloud SES): ask for the SMTP server.
+      read -r -p "SMTP 发信服务器 [smtp.qcloudmail.com（腾讯云邮件推送）]: " host
+      host=${host:-smtp.qcloudmail.com} ;;
+  esac
   umask 027
   cat > "$ENV_FILE" <<EOF
 SITE_URL=$site
