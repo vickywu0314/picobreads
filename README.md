@@ -18,6 +18,7 @@ apps/web/                  Next.js 15 (App Router, static export), Tailwind CSS 
   src/config/seo.ts        site URL, SEO keywords, crawler allow-list
   src/i18n/                UI copy (zh-CN / en-US); locale follows the browser, switchable in the header
   public/                  images (v11/), llms.txt and ai.txt for AI crawlers
+apps/api/                  Node API (Hono + SQLite): email / Google / WeChat / Apple / Facebook sign-in, drafts, share links
 packages/pattern-engine/   pure TypeScript, no UI deps: generation, pixel style, palettes, sections, stats, bag picking
   palettes/                bead color charts (MARD 264 and others) — see palettes/README.md
 archive/v1.0/              v1.0 (Cordelia Morrow) pages and v1.0-only code — kept for reference, not built
@@ -30,7 +31,8 @@ Requires Node 22 and pnpm 10 (`corepack enable`).
 ```bash
 pnpm install
 pnpm dev          # http://localhost:3000
-pnpm test         # engine unit tests (vitest)
+pnpm test         # engine + API tests (vitest)
+pnpm dev:api      # API on http://127.0.0.1:8787 (copy apps/api/.env.example to apps/api/.env first)
 pnpm typecheck
 pnpm build        # static site in apps/web/out
 ```

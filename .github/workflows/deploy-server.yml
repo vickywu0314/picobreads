@@ -6,7 +6,8 @@
 #   DEPLOY_USER     SSH user, e.g. ubuntu
 #   DEPLOY_SSH_KEY  private key of a deploy-only key pair whose public key is in the server's
 #                   ~/.ssh/authorized_keys (see docs/deploy-server.md)
-# Optional variable: DEPLOY_PATH (default /var/www/picobreads; must be writable by DEPLOY_USER).
+# Optional variables: DEPLOY_PATH (default /var/www/picobreads) and API_PATH (default /opt/beadspark-api),
+# both writable by DEPLOY_USER.
 name: Deploy to server
 
 on:
@@ -26,6 +27,7 @@ jobs:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
       DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/var/www/picobreads' }}
+      API_PATH: ${{ vars.API_PATH || '/opt/beadspark-api' }}
     steps:
       - name: Check configuration
         id: cfg
@@ -71,3 +73,12 @@ jobs:
           rsync -az --delete --timeout=120 -e "$SSH" apps/web/out/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH.staging/"
           $SSH "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH' && rsync -a --delete '$DEPLOY_PATH.staging/' '$DEPLOY_PATH/'"
           echo "Deployed $(git log -1 --format='%h %s') to $DEPLOY_HOST:$DEPLOY_PATH"
+
+          # API (accounts, drafts, share links): one bundled file. Restarted only if the
+          # one-time setup in docs/deploy-server.md («后端 API») has been done on the server.
+          if $SSH "$DEPLOY_USER@$DEPLOY_HOST" "test -d '$API_PATH'"; then
+            rsync -az --timeout=120 -e "$SSH" apps/api/dist/server.js "$DEPLOY_USER@$DEPLOY_HOST:$API_PATH/server.js.new"
+            $SSH "$DEPLOY_USER@$DEPLOY_HOST" "mv '$API_PATH/server.js.new' '$API_PATH/server.js' && sudo -n systemctl restart beadspark-api && echo 'API updated and restarted'"
+          else
+            echo "API folder $API_PATH not set up on the server yet (see docs/deploy-server.md, 后端 API); skipped."
+          fi

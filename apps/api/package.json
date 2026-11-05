@@ -1,0 +1,25 @@
+{
+  "name": "api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env --watch dist/server.js",
+    "build": "esbuild src/server.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/server.js --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\"",
+    "start": "node dist/server.js",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.18",
+    "hono": "^4.13.16",
+    "nodemailer": "^6.10.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.6",
+    "@types/nodemailer": "^8.0.2",
+    "esbuild": "^0.28.2",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
+  }
+}

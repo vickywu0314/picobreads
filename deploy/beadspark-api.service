@@ -1,0 +1,24 @@
+# systemd unit for the BeadSpark API.  Install once on the server:
+#   sudo cp deploy/beadspark-api.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now beadspark-api
+[Unit]
+Description=BeadSpark API (accounts, drafts, share links)
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/beadspark-api
+# Secrets (SMTP authorization code, OAuth keys) live only in this file on the server (chmod 600).
+EnvironmentFile=/etc/beadspark/api.env
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning /opt/beadspark-api/server.js
+Restart=always
+RestartSec=3
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/beadspark /opt/beadspark-api
+
+[Install]
+WantedBy=multi-user.target

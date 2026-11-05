@@ -1,7 +1,7 @@
 # 当前进度（交接用）
 
 > 新开会话时：先读根目录 `CLAUDE.md`（产品说明），再读本文件和 `docs/versions.md`（v1.1 的页面与规则），就能接着做。
-> 更新于 2026-11-05。网站名 **BeadSpark**（原 Pipixel）。
+> 更新于 2026-11-05（加了后端：登录注册、草稿同步、分享）。网站名 **BeadSpark**（原 Pipixel）。
 
 ## 版本
 
@@ -23,7 +23,11 @@
 - 「我的工作台」：草稿列表；右上角用户菜单（我的工作台 / 退出）。
 - v1.1 不出现「原型」字样。
 
-## 登录与数据（重要：都还是假的）
+## 登录与数据（2026-11-05 起有真实后端）
+
+- **后端** `apps/api`（Node + Hono + SQLite，跑在北京腾讯云服务器上，Nginx 转发 `/api/`）：邮箱 + 密码注册登录（QQ 邮箱发 6 位验证码）、忘记密码、谷歌 / 微信 / Apple / Facebook 登录（填好各平台密钥才开放）、草稿存到账号（换设备也能找回）、分享链接（`/s/?id=…`，任何人可看）。
+- 分享：链接 + 二维码（微信好友扫码）+ 分享图（1080×1350，带二维码，发朋友圈 / Instagram）+ 手机系统分享菜单。网页没法直接发朋友圈和 Instagram，这是平台限制。
+- 以下是 2026-11-04 之前的旧说明（假登录），已被替换：
 
 - 登录是测试版：任意邮箱 + 任意 6 位数字。登录状态、草稿都只存在浏览器本地（zustand persist，key `picobreads-v1`），不跨设备。
 - 「登录后才能下载」只是界面拦截，没有服务端校验。
@@ -38,6 +42,14 @@
 | 新加坡服务器 | — | 上面有 tuoyuan.ai 等其他网站。pd.scentby.cn 站点已停用（配置还在 sites-available），不要动其他站点 |
 
 部署细节、Nginx 配置、手动部署脚本：`docs/deploy-server.md`、`scripts/deploy.sh`。
+
+## 上线前（后端 API）
+
+1. 服务器一次性配置：装 Node 22.13+、建目录、写 `/etc/beadspark/api.env`（密钥只放这里）、装 systemd 服务、Nginx 加 `/api/`、允许部署用户重启服务。步骤见 `docs/deploy-server.md`「后端 API」。
+2. `api.env` 里要填：`SITE_URL`、发件 QQ 邮箱地址 `SMTP_USER`、QQ 邮箱授权码 `SMTP_PASS`。**授权码曾在聊天里出现过，上线前在 QQ 邮箱里重新生成一个再填**。
+3. 第三方登录：在 Google / 微信开放平台 / Apple / Facebook 后台创建应用、填回调地址（表在 `docs/deploy-server.md`），把 ID 和密钥填进 `api.env`。都需要 https 正式域名（等 `pd.scentby.cn` 接入备案 + HTTPS）。微信网站应用需要企业认证。
+4. 数据库文件 `/var/lib/beadspark/beadspark.db` 开定时备份（磁盘快照即可）。
+5. 只有北京服务器上的网站能登录；Vercel 上那份没有后端，登录 / 分享不可用。
 
 ## 进行中 / 待用户提供
 

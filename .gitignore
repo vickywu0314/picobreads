@@ -8,3 +8,8 @@ coverage/
 !.env.example
 .DS_Store
 .vercel
+apps/api/dist/
+*.db
+*.db-wal
+*.db-shm
+apps/api/.env
