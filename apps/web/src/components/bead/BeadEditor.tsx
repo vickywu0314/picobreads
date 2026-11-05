@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, CheckCheck, ChevronRight, Cloud, Eye, Lightbulb, Maximize, Minus, Plus, Ellipsis, RotateCcw, Save, Undo2, Volume2, VolumeX } from 'lucide-react'
+import { Share2, ArrowLeft, CheckCheck, ChevronRight, Cloud, Eye, Lightbulb, Maximize, Minus, Plus, Ellipsis, RotateCcw, Save, Undo2, Volume2, VolumeX } from 'lucide-react'
 import { beadCount, regularColorIndices, sectionCellIndices } from '@picobreads/pattern-engine'
 import { PatternCanvas, type PatternCanvasHandle, type ToolPointerEvent } from '@/components/PatternCanvas'
 import { NoPattern } from '@/components/NoPattern'
@@ -18,6 +18,8 @@ import { useHydrated, useStore } from '@/lib/store'
 import { usePatternData } from '@/lib/usePattern'
 import { css } from '@/lib/pattern'
 import { buzz, isMuted, setMuted, sfx } from '@/lib/sfx'
+import { saveDraft as saveDraftToAccount } from '@/lib/account'
+import { ShareDialog } from '@/v11/ShareDialog'
 
 type Pt = { x: number; y: number }
 
@@ -40,6 +42,12 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
   const data = usePatternData()
   const placed = useStore((s) => s.placed)
   const beadSize = useStore((s) => s.settings.beadSize)
+  const iron = useStore((s) => s.settings.iron)
+  /** Name for sharing: the draft's name if this is a saved draft. */
+  const currentName = () => {
+    const s = useStore.getState()
+    return s.designs.find((d) => d.id === s.currentDesignId)?.name ?? t.v11.share.defaultName
+  }
   const activeColor = useStore((s) => s.activeColor)
   const activeSection = useStore((s) => s.activeSection)
   const canUndo = useStore((s) => s.undoStack.length > 0)
@@ -56,12 +64,15 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
       router.push(`/login/?next=${encodeURIComponent('/bead/')}`)
       return
     }
-    const mine = s.designs.filter((d) => !d.owner || d.owner === s.user!.email)
-    s.saveDesign(t.v11.draft.name(mine.length + 1))
-    setToast(t.v11.draft.saved)
+    const mine = s.designs.filter((d) => !d.owner || d.owner === s.user!.id)
+    saveDraftToAccount(t.v11.draft.name(mine.length + 1)).then(
+      () => setToast(t.v11.draft.saved),
+      () => setToast(t.v11.draft.savedLocal),
+    )
   }
   const [fixCell, setFixCell] = useState<number | null>(null)
   const [finished, setFinished] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
   const [muted, setMutedState] = useState(false)
   const [previewOpen, setPreviewOpen] = useState(false)
   // v1.1 on a phone: big board + compact dock at the bottom (desktop / tablet keep the side panel).
@@ -403,6 +414,15 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
                 className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-sm font-bold"
               >
                 <Save className="h-4 w-4" aria-hidden /> <span className={compact ? 'sr-only' : ''}>{t.v11.draft.save}</span>
+              </button>
+            )}
+            {v11 && (
+              <button
+                type="button"
+                onClick={() => setShareOpen(true)}
+                className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface px-3 text-sm font-bold"
+              >
+                <Share2 className="h-4 w-4" aria-hidden /> <span className={compact ? 'sr-only' : ''}>{t.v11.share.button}</span>
               </button>
             )}
             <button
@@ -756,10 +776,29 @@ export function BeadEditor({ v11 = false }: { v11?: boolean }) {
 
       <Modal open={finished} onClose={() => setFinished(false)} title={t.editor.finishedTitle}>
         <p className="text-muted">{t.editor.finishedBody}</p>
-        <Link href={v11 ? '/create/product/' : '/create/product/'} className="btn-primary mt-6 w-full">
+        {v11 && (
+          <button
+            type="button"
+            className="btn-primary btn-motion mt-6 w-full"
+            onClick={() => {
+              setFinished(false)
+              setShareOpen(true)
+            }}
+          >
+            <Share2 className="h-5 w-5" aria-hidden /> {t.v11.share.button}
+          </button>
+        )}
+        <Link href="/create/product/" className={`${v11 ? 'btn-secondary mt-3' : 'btn-primary mt-6'} w-full`}>
           {t.pattern.buyKit}
         </Link>
       </Modal>
+      {v11 && (
+        <ShareDialog
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          input={shareOpen ? { name: currentName(), pattern, placed, beadSize, iron } : null}
+        />
+      )}
     </div>
   )
 }

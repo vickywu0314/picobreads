@@ -9,6 +9,7 @@ import '@fontsource/pixelify-sans/500.css'
 import '@fontsource/pixelify-sans/600.css'
 import './globals.css'
 import { LocaleSync } from '@/components/LocaleSync'
+import { AuthSync } from '@/lib/account'
 import { SEO, SITE_URL } from '@/config/seo'
 
 export const metadata: Metadata = {
@@ -69,6 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-dvh font-sans antialiased">
         <LocaleSync />
+        <AuthSync />
         {children}
       </body>
     </html>

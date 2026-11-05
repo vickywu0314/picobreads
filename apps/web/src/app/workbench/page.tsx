@@ -2,11 +2,13 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
-import { Grid3x3, Plus, Trash2, Wand2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Grid3x3, Plus, Share2, Trash2, Wand2 } from 'lucide-react'
+import { ShareDialog, type ShareInput } from '@/v11/ShareDialog'
 import { beadCount } from '@picobreads/pattern-engine'
 import { PatternThumb } from '@/components/PatternThumb'
 import { useT } from '@/i18n'
+import { deleteDraft } from '@/lib/account'
 import { useHydrated, useStore } from '@/lib/store'
 import { V11Page } from '@/v11/Chrome'
 import { v11Size } from '@/v11/config'
@@ -19,6 +21,7 @@ export default function WorkbenchPage() {
   const hydrated = useHydrated()
   const user = useStore((s) => s.user)
   const designs = useStore((s) => s.designs)
+  const [shareId, setShareId] = useState<string | null>(null)
 
   useEffect(() => {
     if (hydrated && !user) router.replace(`/login/?next=${encodeURIComponent('/workbench/')}`)
@@ -26,7 +29,9 @@ export default function WorkbenchPage() {
 
   if (!hydrated || !user) return <V11Page footer={false}>{null}</V11Page>
 
-  const mine = designs.filter((d) => !d.owner || d.owner === user.email)
+  const mine = designs.filter((d) => !d.owner || d.owner === user.id)
+  const sharing = shareId ? mine.find((d) => d.id === shareId) : undefined
+  const shareInput: ShareInput | null = sharing ? { name: sharing.name, pattern: sharing.pattern, placed: sharing.placed, beadSize: sharing.settings.beadSize, iron: sharing.settings.iron } : null
   const open = (id: string, href: string) => {
     useStore.getState().openDesign(id)
     router.push(href)
@@ -76,11 +81,14 @@ export default function WorkbenchPage() {
                       <button type="button" className="btn-secondary btn-sm" onClick={() => open(d.id, '/create/settings/')}>
                         <Wand2 className="h-4 w-4" aria-hidden /> {w.customize}
                       </button>
+                      <button type="button" className="btn-secondary btn-sm" onClick={() => setShareId(d.id)}>
+                        <Share2 className="h-4 w-4" aria-hidden /> {t.v11.share.button}
+                      </button>
                       <button
                         type="button"
                         className="icon-btn ml-auto h-9 w-9"
                         aria-label={t.account.remove}
-                        onClick={() => window.confirm(t.account.removeConfirm) && useStore.getState().deleteDesign(d.id)}
+                        onClick={() => window.confirm(t.account.removeConfirm) && void deleteDraft(d.id)}
                       >
                         <Trash2 className="h-4 w-4" aria-hidden />
                       </button>
@@ -91,7 +99,7 @@ export default function WorkbenchPage() {
             </ul>
           )}
         </section>
-
+        <ShareDialog open={!!sharing} onClose={() => setShareId(null)} input={shareInput} />
       </main>
     </V11Page>
   )

@@ -26,6 +26,15 @@ export interface Settings {
   look?: 'classic' | 'pixel'
 }
 
+export interface AccountUser {
+  id: string
+  email: string | null
+  name: string
+  avatarUrl?: string | null
+  hasPassword?: boolean
+  providers?: string[]
+}
+
 export interface CartItem {
   id: string
   /** Older carts (before purchase forms existed) are kits. */
@@ -94,7 +103,8 @@ interface State {
   /** Step 5 choice, carried to step 6. */
   draft: { form: ProductForm; tier: TierId; beadSize: BeadSize; priceUsd: number; pattern: Pattern } | null
   /** PROTOTYPE: fake signed-in customer (Shopify customer accounts later). */
-  user: { email: string; name: string } | null
+  /** Signed-in account (from the BeadSpark API; email may be null for WeChat / Apple-private sign-ins). */
+  user: AccountUser | null
   designs: SavedDesign[]
   /** Saved design the current work belongs to, if any. */
   currentDesignId: string | null
@@ -118,8 +128,7 @@ interface State {
   clearCart: () => void
   setSource: (s: DesignSource) => void
   setDraft: (d: State['draft']) => void
-  signIn: (email: string, name?: string) => void
-  signOut: () => void
+  setUser: (user: AccountUser | null) => void
   /** Save (or update) the current work in "My designs". Returns the design id. */
   saveDesign: (name: string) => string | null
   openDesign: (id: string) => void
@@ -253,14 +262,13 @@ export const useStore = create<State>()(
       clearCart: () => set({ cart: [] }),
       setSource: (source) => set({ source }),
       setDraft: (draft) => set({ draft }),
-      signIn: (email, name) => set({ user: { email, name: name || email.split('@')[0] } }),
-      signOut: () => set({ user: null }),
+      setUser: (user) => set({ user }),
       saveDesign: (name) => {
         const { pattern, photo, aspectId, settings, placed, designs, currentDesignId, user } = get()
         if (!pattern) return null
         const id = currentDesignId ?? `d_${Math.random().toString(36).slice(2, 9)}`
         const prev = designs.find((d) => d.id === id)
-        const design: SavedDesign = { id, name: prev?.name ?? name, updatedAt: new Date().toISOString(), photo, aspectId, settings, pattern, placed, owner: user?.email ?? prev?.owner }
+        const design: SavedDesign = { id, name: prev?.name ?? name, updatedAt: new Date().toISOString(), photo, aspectId, settings, pattern, placed, owner: user?.id ?? prev?.owner }
         set({ designs: [design, ...designs.filter((d) => d.id !== id)], currentDesignId: id })
         return id
       },

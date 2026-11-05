@@ -9,6 +9,7 @@ import { useHydrated, useStore } from '@/lib/store'
 import { V11, v11Href } from './config'
 import { Toast, useToast } from './Toast'
 import { BeadSparkMark, BeadSparkWord } from './Logo'
+import { signOut } from '@/lib/account'
 
 /** BeadSpark logo: bead-and-sparkle mark + wordmark. */
 export function V11Logo({ small = false }: { small?: boolean }) {
@@ -113,7 +114,7 @@ function UserMenu({ name }: { name: string }) {
               role="menuitem"
               onClick={() => {
                 setOpen(false)
-                useStore.getState().signOut()
+                void signOut()
               }}
               className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm hover:bg-[var(--accent-soft)]"
             >
