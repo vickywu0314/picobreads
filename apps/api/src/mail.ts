@@ -18,7 +18,9 @@ export function smtpMailer(cfg: Config): Mailer {
   const transport = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } })
   return {
     async send(to, subject, text, html) {
-      await transport.sendMail({ from: { name: fromName, address: user }, to, subject, text, html })
+      const info = await transport.sendMail({ from: { name: fromName, address: user }, to, subject, text, html })
+      // What the SMTP server said, e.g. "250 OK: queued as …" — for tracing mail that never arrives.
+      console.log(`[mail] to ${to}: accepted=${info.accepted.length} rejected=${info.rejected.length} id=${info.messageId} response=${info.response}`)
     },
   }
 }
