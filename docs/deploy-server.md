@@ -79,6 +79,10 @@ HTTPS：`certbot --nginx -d 你的域名`（Let's Encrypt，免费，自动续�
 
 ## 后端 API（账号、草稿、分享链接）—— 一次性配置
 
+> **最省事的做法：一键脚本。** 每次部署 GitHub 都会把 `deploy/` 和打包好的 `server.js` 传到服务器的 `~/beadspark-deploy/`。登录服务器后运行
+> `sudo bash ~/beadspark-deploy/setup-api.sh`，按提示填网站地址、QQ 邮箱、授权码即可，下面 1～7 步脚本都会做（可以重复运行）。
+> 下面是手动做法，脚本出问题时对照用。
+
 网站页面仍是静态文件；登录注册、草稿同步、分享链接由一个小的 Node 服务提供（`apps/api`，数据存在 SQLite 文件里），
 Nginx 把 `/api/` 转给它。GitHub Actions 每次部署会把打包好的 `server.js` 传到 `/opt/beadspark-api/` 并重启服务；
 下面这些只需要在服务器上做一次。

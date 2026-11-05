@@ -76,9 +76,11 @@ jobs:
 
           # API (accounts, drafts, share links): one bundled file. Restarted only if the
           # one-time setup in docs/deploy-server.md («后端 API») has been done on the server.
+          # Setup kit for the one-time server setup: sudo bash ~/beadspark-deploy/setup-api.sh
+          rsync -az --timeout=120 -e "$SSH" deploy/ apps/api/dist/server.js "$DEPLOY_USER@$DEPLOY_HOST:beadspark-deploy/"
           if $SSH "$DEPLOY_USER@$DEPLOY_HOST" "test -d '$API_PATH'"; then
             rsync -az --timeout=120 -e "$SSH" apps/api/dist/server.js "$DEPLOY_USER@$DEPLOY_HOST:$API_PATH/server.js.new"
             $SSH "$DEPLOY_USER@$DEPLOY_HOST" "mv '$API_PATH/server.js.new' '$API_PATH/server.js' && sudo -n systemctl restart beadspark-api && echo 'API updated and restarted'"
           else
-            echo "API folder $API_PATH not set up on the server yet (see docs/deploy-server.md, 后端 API); skipped."
+            echo "API not set up on the server yet: run  sudo bash ~/beadspark-deploy/setup-api.sh  there once."
           fi

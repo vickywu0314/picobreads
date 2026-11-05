@@ -45,8 +45,8 @@
 
 ## 上线前（后端 API）
 
-1. 服务器一次性配置：装 Node 22.13+、建目录、写 `/etc/beadspark/api.env`（密钥只放这里）、装 systemd 服务、Nginx 加 `/api/`、允许部署用户重启服务。步骤见 `docs/deploy-server.md`「后端 API」。
-2. `api.env` 里要填：`SITE_URL`、发件 QQ 邮箱地址 `SMTP_USER`、QQ 邮箱授权码 `SMTP_PASS`。**授权码曾在聊天里出现过，上线前在 QQ 邮箱里重新生成一个再填**。
+1. 服务器一次性配置：登录服务器运行 `sudo bash ~/beadspark-deploy/setup-api.sh`（自动装 Node、写配置、装服务、改 Nginx、发测试邮件）。手动步骤见 `docs/deploy-server.md`「后端 API」。
+2. `api.env` 里要填：`SITE_URL`、发件 QQ 邮箱地址 `SMTP_USER`、QQ 邮箱授权码 `SMTP_PASS`。
 3. 第三方登录：在 Google / 微信开放平台 / Apple / Facebook 后台创建应用、填回调地址（表在 `docs/deploy-server.md`），把 ID 和密钥填进 `api.env`。都需要 https 正式域名（等 `pd.scentby.cn` 接入备案 + HTTPS）。微信网站应用需要企业认证。
 4. 数据库文件 `/var/lib/beadspark/beadspark.db` 开定时备份（磁盘快照即可）。
 5. 只有北京服务器上的网站能登录；Vercel 上那份没有后端，登录 / 分享不可用。
