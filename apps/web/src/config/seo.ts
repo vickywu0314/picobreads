@@ -4,8 +4,8 @@
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://pd.scentby.cn').replace(/\/+$/, '')
 
 export const SEO = {
-  name: 'Pipixel',
-  title: 'Pipixel 拼豆图纸生成器 · 照片一键变拼豆图纸 | Photo to Bead Pattern Maker',
+  name: 'BeadSpark',
+  title: 'BeadSpark 拼豆图纸生成器 · 照片一键变拼豆图纸 | Photo to Bead Pattern Maker',
   description:
     '免费在线拼豆图纸生成器：上传照片，一键生成带 MARD 色号的拼豆图纸和用豆清单，迷你豆 / 标准豆、多种尺寸可选，还能在线拼。Free online fuse bead (Perler / Hama / Artkal) pattern maker: turn a photo into a bead pattern with color codes and a bead list.',
   keywords: [

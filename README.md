@@ -2,7 +2,7 @@
 
 *Your moments, made personal.* Personalized gifts — custom fuse bead art first, storybooks coming soon. Milestone 0: clickable prototype — fully static, no backend. Commerce will run on Shopify.
 
-**Versions:** the site is v1.1 "Pipixel", served at the root `/`. v1.0 (Cordelia Morrow) is archived in `archive/v1.0/` (not built); old `/v1-1/…` links redirect. See `docs/versions.md`.
+**Versions:** the site is BeadSpark (v1.1, formerly "Pipixel"), served at the root `/`. v1.0 (Cordelia Morrow) is archived in `archive/v1.0/` (not built); old `/v1-1/…` links redirect. See `docs/versions.md`.
 
 **Current status / handoff: `docs/status.md`.** See `CLAUDE.md` for the product spec, `docs/sitemap.md` for the site structure and `docs/prototype-notes.md` (中文) for what is real vs. mocked.
 
@@ -13,7 +13,7 @@ apps/web/                  Next.js 15 (App Router, static export), Tailwind CSS 
   src/app/                 pages at the root: home, create (upload / crop / customize / product), bead, lightbox, lab,
                            login, workbench; robots.ts, sitemap.ts; v1-1/ = redirects from the old /v1-1/ addresses
   src/components/          PatternCanvas (pan/zoom pegboard), bead editor, light box, ironing lab, UI bits
-  src/v11/                 Pipixel header / footer / toast / config, pixel decorations
+  src/v11/                 BeadSpark header / footer / toast / config, pixel decorations
   src/config/site.ts       business knobs: boards, bead sizes, limits
   src/config/seo.ts        site URL, SEO keywords, crawler allow-list
   src/i18n/                UI copy (zh-CN / en-US); locale follows the browser, switchable in the header

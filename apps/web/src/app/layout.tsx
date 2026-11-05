@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 // Fonts bundled with the site (not Google Fonts, so they load in mainland China too):
-// Nunito for Latin text and headings, Pixelify Sans for the logo; Chinese uses the system bold sans.
+// Nunito for Latin text, headings and the BeadSpark wordmark, Pixelify Sans for pixel-style labels;
+// Chinese uses the system bold sans.
 import '@fontsource/nunito/500.css'
 import '@fontsource/nunito/700.css'
 import '@fontsource/nunito/800.css'
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
     description: SEO.description,
     locale: 'zh_CN',
     alternateLocale: ['en_US'],
-    images: [{ url: '/v11/home-pattern.jpg', alt: 'Pipixel bead pattern' }],
+    images: [{ url: '/v11/home-pattern.jpg', alt: 'BeadSpark bead pattern' }],
   },
   twitter: { card: 'summary_large_image', title: SEO.title, description: SEO.description, images: ['/v11/home-pattern.jpg'] },
   other: { 'llms-txt': `${SITE_URL}/llms.txt` },
@@ -47,7 +48,7 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
   name: SEO.name,
-  alternateName: ['Pipixel 拼豆图纸生成器', 'Pipixel bead pattern maker'],
+  alternateName: ['BeadSpark 拼豆图纸生成器', 'BeadSpark bead pattern maker', '拼豆火花'],
   url: SITE_URL,
   description: SEO.description,
   applicationCategory: 'DesignApplication',

@@ -2,10 +2,10 @@ import type { BeadSize } from '@picobreads/pattern-engine'
 import { BEAD_PITCH_MM, BOARD_PEGS, V11_PALETTE_ID, type TierId } from '@/config/site'
 import type { LibraryPattern } from '@/config/catalog'
 
-// v1.1 ("Pipixel" redesign). Everything new goes into v1.1; v1.0 stays as it was.
+// BeadSpark site (formerly the v1.1 "Pipixel" redesign). Everything new goes into v1.1; v1.0 stays as it was.
 
 export const V11 = {
-  name: 'Pipixel',
+  name: 'BeadSpark',
   /** Route prefix of the v1.1 site. */
   base: '',
 }

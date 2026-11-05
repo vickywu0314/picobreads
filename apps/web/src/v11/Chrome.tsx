@@ -8,18 +8,14 @@ import { LOCALES, useLocaleStore, useT } from '@/i18n'
 import { useHydrated, useStore } from '@/lib/store'
 import { V11, v11Href } from './config'
 import { Toast, useToast } from './Toast'
+import { BeadSparkMark, BeadSparkWord } from './Logo'
 
-/** Logo mark: a rounded square with a 3 × 3 grid of colored beads. */
+/** BeadSpark logo: bead-and-sparkle mark + wordmark. */
 export function V11Logo({ small = false }: { small?: boolean }) {
-  const colors = ['#d9467a', '#ffd84d', '#d9467a', '#7cc4f2', '#d9467a', '#ffd84d', '#d9467a', '#7cc4f2', '#d9467a']
   return (
-    <Link href={v11Href('/')} className="flex items-center gap-2.5" aria-label={V11.name}>
-      <span className={`grid shrink-0 grid-cols-3 gap-[2px] rounded-[10px] border-2 border-[var(--ink)] bg-white p-[5px] ${small ? 'h-7 w-7' : 'h-8 w-8 sm:h-10 sm:w-10'}`} aria-hidden>
-        {colors.map((c, i) => (
-          <span key={i} className="rounded-full" style={{ background: c }} />
-        ))}
-      </span>
-      <span className={`font-pixel whitespace-nowrap font-semibold tracking-wide ${small ? 'text-lg' : 'text-xl sm:text-3xl'}`}>{V11.name}</span>
+    <Link href={v11Href('/')} className="flex items-center gap-2" aria-label={V11.name}>
+      <BeadSparkMark className={`shrink-0 ${small ? 'h-7 w-7' : 'h-9 w-9 sm:h-11 sm:w-11'}`} />
+      <BeadSparkWord className={small ? 'text-lg' : 'text-xl sm:text-[1.75rem]'} />
     </Link>
   )
 }

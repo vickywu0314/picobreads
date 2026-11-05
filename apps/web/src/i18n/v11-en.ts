@@ -1,4 +1,4 @@
-// Copy for the v1.1 (Pipixel) site. Merged into en-US.ts as `v11`.
+// Copy for the BeadSpark (v1.1) site. Merged into en-US.ts as `v11`.
 export const v11En = {
   nav: { home: 'Home', plaza: 'Bead Plaza', community: 'Community', signIn: 'Sign in', signOut: 'Sign out', language: 'Language', bag: 'Bag', menu: 'Menu' },
   comingSoon: 'Coming soon',
