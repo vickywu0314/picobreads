@@ -33,8 +33,8 @@ page {
 .row { display: flex; align-items: center; }
 .between { justify-content: space-between; }
 .gap { gap: 16rpx; }
-.mt { margin-top: 24rpx; }
-.mt-lg { margin-top: 40rpx; }
+.mt, button.btn.mt { margin-top: 24rpx; }
+.mt-lg, button.btn.mt-lg { margin-top: 40rpx; }
 
 /* Buttons (reset the native button look first). */
 button.btn, .btn {

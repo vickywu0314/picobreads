@@ -228,8 +228,10 @@ export function drawBoard(ctx: Ctx, w: number, h: number, v: BoardView, s: Board
   }
 
   // Section lines and outline.
-  ctx.strokeStyle = 'rgba(150,110,60,0.55)'
-  ctx.lineWidth = 2
+  // Section lines (one small board each): light and dashed, so they don't read as part of the picture.
+  ctx.strokeStyle = 'rgba(150,110,60,0.38)'
+  ctx.lineWidth = 1
+  ctx.setLineDash([6, 5])
   ctx.beginPath()
   for (let x = sectionPegs; x < p.width; x += sectionPegs) {
     ctx.moveTo(ox + x * scale, oy)
@@ -240,6 +242,8 @@ export function drawBoard(ctx: Ctx, w: number, h: number, v: BoardView, s: Board
     ctx.lineTo(ox + p.width * scale, oy + y * scale)
   }
   ctx.stroke()
+  ctx.setLineDash([])
+  ctx.lineWidth = 2
   ctx.strokeStyle = 'rgba(150,110,60,0.7)'
   ctx.strokeRect(ox, oy, p.width * scale, p.height * scale)
 }

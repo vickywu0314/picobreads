@@ -45,7 +45,7 @@ Page({
   totals: null as unknown as Map<number, number>,
   undoStack: [] as number[][],
   batch: [] as number[],
-  touch: null as null | { last: Pt; pinch?: { dist: number; mid: Pt } },
+  touch: null as null | { last: Pt; start: Pt; moved: boolean; pinch?: { dist: number; mid: Pt } },
   frame: 0,
   saveTimer: 0 as number,
   lastBuzz: 0,
@@ -195,6 +195,11 @@ Page({
     this.zoomAt(this.handle!.width / 2, this.handle!.height / 2, 1 / 1.6)
   },
 
+  /** One finger places beads only in "place" mode with a color picked; otherwise it moves the board. */
+  placing() {
+    return this.data.mode === 'place' && this.data.selected !== null
+  },
+
   setMode(e: WechatMiniprogram.TouchEvent) {
     this.setData({ mode: e.currentTarget.dataset.m })
   },
@@ -219,10 +224,7 @@ Page({
     const i = cellAt(this.bv, p, pt.x, pt.y)
     if (i < 0 || this.placed[i] === '1' || p.cells[i] < 0) return
     const sel = this.data.selected
-    if (sel === null) {
-      this.showHint('先在下面选一个颜色')
-      return
-    }
+    if (sel === null) return
     if (p.cells[i] !== sel) return
     const c = cellCenter(this.bv, p, i)
     if (Math.hypot(pt.x - c.x, pt.y - c.y) > this.bv.scale * HIT_RADIUS) return
@@ -242,12 +244,12 @@ Page({
       this.commitBatch()
       const a = { x: t[0].x, y: t[0].y }
       const b = { x: t[1].x, y: t[1].y }
-      this.touch = { last: a, pinch: { dist: Math.hypot(a.x - b.x, a.y - b.y), mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } } }
+      this.touch = { last: a, start: a, moved: true, pinch: { dist: Math.hypot(a.x - b.x, a.y - b.y), mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } } }
       return
     }
     const pt = { x: t[0].x, y: t[0].y }
-    this.touch = { last: pt }
-    if (this.data.mode === 'place') this.placeAt(pt)
+    this.touch = { last: pt, start: pt, moved: false }
+    if (this.placing()) this.placeAt(pt)
   },
 
   onTouchMove(e: WechatMiniprogram.TouchCanvas) {
@@ -267,7 +269,8 @@ Page({
     if (this.touch.pinch) return // lifted one finger of a pinch: wait for the other
     const pt = { x: t[0].x, y: t[0].y }
     const last = this.touch.last
-    if (this.data.mode === 'move') {
+    if (Math.hypot(pt.x - this.touch.start.x, pt.y - this.touch.start.y) > 6) this.touch.moved = true
+    if (!this.placing()) {
       this.bv.ox += pt.x - last.x
       this.bv.oy += pt.y - last.y
       this.draw()
@@ -282,6 +285,8 @@ Page({
 
   onTouchEnd(e: WechatMiniprogram.TouchCanvas) {
     if (e.touches.length === 0) {
+      // A tap on the board with no color picked: say what to do.
+      if (this.touch && !this.touch.moved && this.data.mode === 'place' && this.data.selected === null) this.showHint('先在下面选一个颜色')
       this.touch = null
       this.commitBatch()
     }

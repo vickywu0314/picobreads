@@ -6,7 +6,7 @@
 
   <view class="panel mt">
     <text class="pill soft">免费拼豆图纸生成器</text>
-    <view class="title mt">你的照片，\n拼成一颗颗豆。</view>
+    <view class="title mt"><view>你的照片，</view><view>拼成一颗颗豆。</view></view>
     <view class="muted mt">把喜欢的照片变成拼豆图纸，带色号，还有一份拿来就能用的用豆清单。</view>
     <view class="pair mt-lg">
       <view class="pair-card card"><image src="/images/hero-photo.jpg" mode="aspectFill" class="pair-img" /><text class="bold small">你的照片</text></view>

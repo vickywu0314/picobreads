@@ -195,8 +195,9 @@ function drawBoard(ctx, w, h, v, s, pal, sectionPegs) {
       ctx.globalAlpha = 1;
     }
   }
-  ctx.strokeStyle = "rgba(150,110,60,0.55)";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(150,110,60,0.38)";
+  ctx.lineWidth = 1;
+  ctx.setLineDash([6, 5]);
   ctx.beginPath();
   for (let x = sectionPegs; x < p.width; x += sectionPegs) {
     ctx.moveTo(ox + x * scale, oy);
@@ -207,6 +208,8 @@ function drawBoard(ctx, w, h, v, s, pal, sectionPegs) {
     ctx.lineTo(ox + p.width * scale, oy + y * scale);
   }
   ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.lineWidth = 2;
   ctx.strokeStyle = "rgba(150,110,60,0.7)";
   ctx.strokeRect(ox, oy, p.width * scale, p.height * scale);
 }

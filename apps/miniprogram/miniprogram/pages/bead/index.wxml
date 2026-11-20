@@ -27,7 +27,7 @@
   </view>
 
   <view class="tray">
-    <view class="tray-head small"><text class="bold">{{selectedLabel}}</text><text class="muted">双指缩放 · 点颜色再在板上划</text></view>
+    <view class="tray-head small"><text class="bold">{{selectedLabel}}</text><text class="muted">选颜色后点或划放豆 · 没选时拖动移画布</text></view>
     <scroll-view scroll-x="true" enhanced="true" show-scrollbar="{{false}}" class="tray-scroll">
       <view class="wells">
         <view wx:for="{{wells}}" wx:key="color" class="well {{item.color === selected ? 'on' : ''}} {{item.left === 0 ? 'done' : ''}}" data-color="{{item.color}}" bindtap="selectColor">
