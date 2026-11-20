@@ -52,18 +52,30 @@ Page({
   },
 
   crop(src: string, scale: '1:1' | '3:4' | '4:3') {
-    const go = async (path: string) => {
+    const [a, b] = scale.split(':').map(Number)
+    /** `centerCrop`: the crop screen wasn't available, so cut the chosen shape from the middle instead. */
+    const go = async (path: string, centerCrop: boolean) => {
       wx.getImageInfo({
         src: path,
         success: async (info) => {
-          startWork(await savePhoto(path), info.width / info.height)
+          startWork(await savePhoto(path), centerCrop ? a / b : info.width / info.height, centerCrop ? a / b : null)
           wx.navigateTo({ url: '/pages/create/index' })
         },
         fail: () => wx.showToast({ title: '读不出这张照片', icon: 'none' }),
       })
     }
-    if (!wx.cropImage) return go(src) // very old WeChat: use the photo as is
-    wx.cropImage({ src, cropScale: scale, success: (r) => go(r.tempFilePath), fail: () => {} })
+    if (!wx.cropImage) return go(src, true)
+    wx.cropImage({
+      src,
+      cropScale: scale,
+      success: (r) => go(r.tempFilePath, false),
+      fail: (err) => {
+        // Cancelled by the user: stay. Not supported (dev tools simulator, old WeChat): center crop.
+        if (/cancel/i.test(err?.errMsg ?? '')) return
+        console.warn('cropImage unavailable, using a center crop:', err?.errMsg)
+        void go(src, true)
+      },
+    })
   },
 
   resume() {

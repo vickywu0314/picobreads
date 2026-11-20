@@ -47,24 +47,29 @@ const offscreen = () => {
 };
 const imageCache = /* @__PURE__ */ new Map();
 const pixelCache = /* @__PURE__ */ new Map();
-function loadPhoto(src, trim) {
-  const key = `${src}|${trim}`;
+function loadPhoto(src, trim, crop) {
+  const key = `${src}|${trim}|${crop}`;
   let p = imageCache.get(key);
   if (!p) {
     p = new Promise((resolve, reject) => {
       const c = offscreen();
       const img = c.createImage();
       img.onload = () => {
-        const full = { x: 0, y: 0, w: img.width, h: img.height };
+        let full = { x: 0, y: 0, w: img.width, h: img.height };
+        if (crop) {
+          const w = Math.min(img.width, img.height * crop);
+          const h = w / crop;
+          full = { x: (img.width - w) / 2, y: (img.height - h) / 2, w, h };
+        }
         if (!trim) return resolve({ img, box: full });
-        const s = Math.min(1, 256 / Math.max(img.width, img.height));
-        c.width = Math.max(1, Math.round(img.width * s));
-        c.height = Math.max(1, Math.round(img.height * s));
+        const s = Math.min(1, 256 / Math.max(full.w, full.h));
+        c.width = Math.max(1, Math.round(full.w * s));
+        c.height = Math.max(1, Math.round(full.h * s));
         const ctx = c.getContext("2d");
         ctx.clearRect(0, 0, c.width, c.height);
-        ctx.drawImage(img, 0, 0, c.width, c.height);
+        ctx.drawImage(img, full.x, full.y, full.w, full.h, 0, 0, c.width, c.height);
         const b = E.subjectBox(ctx.getImageData(0, 0, c.width, c.height));
-        resolve({ img, box: b ? { x: b.x / s, y: b.y / s, w: b.w / s, h: b.h / s } : full });
+        resolve({ img, box: b ? { x: full.x + b.x / s, y: full.y + b.y / s, w: b.w / s, h: b.h / s } : full });
       };
       img.onerror = () => reject(new Error("image load failed"));
       img.src = src;
@@ -74,11 +79,11 @@ function loadPhoto(src, trim) {
   }
   return p;
 }
-async function pixels(src, long, trim) {
-  const key = `${src}|${long}|${trim}`;
+async function pixels(src, long, trim, crop) {
+  const key = `${src}|${long}|${trim}|${crop}`;
   const hit = pixelCache.get(key);
   if (hit) return hit;
-  const { img, box } = await loadPhoto(src, trim);
+  const { img, box } = await loadPhoto(src, trim, crop);
   const s = Math.min(1, long / Math.max(box.w, box.h));
   const c = offscreen();
   c.width = Math.max(1, Math.round(box.w * s));
@@ -94,10 +99,11 @@ async function pixels(src, long, trim) {
 }
 const samplesPerBead = (long) => long <= 60 ? 6 : long <= 120 ? 4 : 3;
 async function generate(w, tier, look) {
+  var _a;
   if (!w.photo) throw new Error("no photo");
   const { width, height } = (0, import_config.gridSize)((0, import_config.perSideOf)(tier), w.beadSize, w.aspect);
   const long = Math.max(width, height);
-  const img = await pixels(w.photo, long * samplesPerBead(long), w.trim);
+  const img = await pixels(w.photo, long * samplesPerBead(long), w.trim, (_a = w.crop) != null ? _a : null);
   const r = E.generatePattern(img, {
     palette: E.getPalette(import_config.PALETTE_ID),
     width,
@@ -115,9 +121,10 @@ const optionKeys = () => [
   { key: "pixel", tier: import_config.PIXEL_TIER, look: "pixel" }
 ];
 async function recommend(w, plain) {
+  var _a;
   if (!w.photo) return { perSide: 1, subjectShare: 1 };
   const pegs = import_config.BOARD_PEGS[w.beadSize];
-  const img = await pixels(w.photo, pegs * import_config.TIERS.length * 2, w.trim);
+  const img = await pixels(w.photo, pegs * import_config.TIERS.length * 2, w.trim, (_a = w.crop) != null ? _a : null);
   const { losses, subjectShare } = E.recommendBoards(img, pegs, w.aspect, import_config.TIERS.length, 0);
   const labs = E.getPalette(import_config.PALETTE_ID).colors.map((c) => E.rgbToLab(c.rgb));
   const gridLosses = plain.slice(1).map((fine, i) => E.gridLoss(plain[i], fine, labs));

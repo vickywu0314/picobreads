@@ -47,19 +47,29 @@ Page({
     });
   },
   crop(src, scale) {
-    const go = async (path) => {
+    const [a, b] = scale.split(":").map(Number);
+    const go = async (path, centerCrop) => {
       wx.getImageInfo({
         src: path,
         success: async (info) => {
-          (0, import_store.startWork)(await savePhoto(path), info.width / info.height);
+          (0, import_store.startWork)(await savePhoto(path), centerCrop ? a / b : info.width / info.height, centerCrop ? a / b : null);
           wx.navigateTo({ url: "/pages/create/index" });
         },
         fail: () => wx.showToast({ title: "\u8BFB\u4E0D\u51FA\u8FD9\u5F20\u7167\u7247", icon: "none" })
       });
     };
-    if (!wx.cropImage) return go(src);
-    wx.cropImage({ src, cropScale: scale, success: (r) => go(r.tempFilePath), fail: () => {
-    } });
+    if (!wx.cropImage) return go(src, true);
+    wx.cropImage({
+      src,
+      cropScale: scale,
+      success: (r) => go(r.tempFilePath, false),
+      fail: (err) => {
+        var _a;
+        if (/cancel/i.test((_a = err == null ? void 0 : err.errMsg) != null ? _a : "")) return;
+        console.warn("cropImage unavailable, using a center crop:", err == null ? void 0 : err.errMsg);
+        void go(src, true);
+      }
+    });
   },
   resume() {
     wx.navigateTo({ url: "/pages/bead/index" });

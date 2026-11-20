@@ -5,8 +5,13 @@ import { PALETTE_ID, type BeadSize, type Look, type TierId } from './config'
 export interface Work {
   /** Cropped photo, saved in the mini program's user folder. */
   photo: string | null
-  /** Photo width / height. */
+  /** Photo width / height (after cropping). */
   aspect: number
+  /**
+   * When the crop screen wasn't available (dev tools simulator, old WeChat): the width / height to
+   * cut from the middle of the photo while generating. null = the photo is already cropped.
+   */
+  crop: number | null
   beadSize: BeadSize
   removeBg: boolean
   trim: boolean
@@ -25,6 +30,7 @@ const KEY = 'bs-work'
 const blank = (): Work => ({
   photo: null,
   aspect: 1,
+  crop: null,
   beadSize: '2.6mm',
   removeBg: true,
   trim: true,
@@ -54,9 +60,9 @@ export function setWork(patch: Partial<Work>) {
 }
 
 /** Start over with a new photo. */
-export function startWork(photo: string, aspect: number) {
+export function startWork(photo: string, aspect: number, crop: number | null = null) {
   const prev = getWork()
-  return setWork({ ...blank(), beadSize: prev.beadSize, removeBg: prev.removeBg, trim: prev.trim, photo, aspect })
+  return setWork({ ...blank(), beadSize: prev.beadSize, removeBg: prev.removeBg, trim: prev.trim, photo, aspect, crop })
 }
 
 /** Make `pattern` the one to bead (resets progress unless it's the same pattern). */

@@ -21,25 +21,34 @@ const offscreen = () => {
 const imageCache = new Map<string, Promise<{ img: any; box: { x: number; y: number; w: number; h: number } }>>() // eslint-disable-line @typescript-eslint/no-explicit-any
 const pixelCache = new Map<string, Pixels>()
 
-/** Decode the photo once; with `trim`, find where the subject is (empty plain margins cut, same aspect). */
-function loadPhoto(src: string, trim: boolean) {
-  const key = `${src}|${trim}`
+/**
+ * Decode the photo once. `crop` (width / height): cut that shape from the middle first. With `trim`,
+ * find where the subject is inside it (empty plain margins cut, same aspect).
+ */
+function loadPhoto(src: string, trim: boolean, crop: number | null) {
+  const key = `${src}|${trim}|${crop}`
   let p = imageCache.get(key)
   if (!p) {
     p = new Promise((resolve, reject) => {
       const c = offscreen()
       const img = c.createImage()
       img.onload = () => {
-        const full = { x: 0, y: 0, w: img.width, h: img.height }
+        let full = { x: 0, y: 0, w: img.width, h: img.height }
+        if (crop) {
+          // Largest centered rectangle of the chosen shape.
+          const w = Math.min(img.width, img.height * crop)
+          const h = w / crop
+          full = { x: (img.width - w) / 2, y: (img.height - h) / 2, w, h }
+        }
         if (!trim) return resolve({ img, box: full })
-        const s = Math.min(1, 256 / Math.max(img.width, img.height))
-        c.width = Math.max(1, Math.round(img.width * s))
-        c.height = Math.max(1, Math.round(img.height * s))
+        const s = Math.min(1, 256 / Math.max(full.w, full.h))
+        c.width = Math.max(1, Math.round(full.w * s))
+        c.height = Math.max(1, Math.round(full.h * s))
         const ctx = c.getContext('2d') as any // eslint-disable-line @typescript-eslint/no-explicit-any
         ctx.clearRect(0, 0, c.width, c.height)
-        ctx.drawImage(img, 0, 0, c.width, c.height)
+        ctx.drawImage(img, full.x, full.y, full.w, full.h, 0, 0, c.width, c.height)
         const b = E.subjectBox(ctx.getImageData(0, 0, c.width, c.height))
-        resolve({ img, box: b ? { x: b.x / s, y: b.y / s, w: b.w / s, h: b.h / s } : full })
+        resolve({ img, box: b ? { x: full.x + b.x / s, y: full.y + b.y / s, w: b.w / s, h: b.h / s } : full })
       }
       img.onerror = () => reject(new Error('image load failed'))
       img.src = src
@@ -51,11 +60,11 @@ function loadPhoto(src: string, trim: boolean) {
 }
 
 /** The photo scaled so its long side is about `long` pixels (never upscaled). */
-async function pixels(src: string, long: number, trim: boolean): Promise<Pixels> {
-  const key = `${src}|${long}|${trim}`
+async function pixels(src: string, long: number, trim: boolean, crop: number | null): Promise<Pixels> {
+  const key = `${src}|${long}|${trim}|${crop}`
   const hit = pixelCache.get(key)
   if (hit) return hit
-  const { img, box } = await loadPhoto(src, trim)
+  const { img, box } = await loadPhoto(src, trim, crop)
   const s = Math.min(1, long / Math.max(box.w, box.h))
   const c = offscreen()
   c.width = Math.max(1, Math.round(box.w * s))
@@ -78,7 +87,7 @@ export async function generate(w: Work, tier: TierId, look: Look): Promise<Patte
   if (!w.photo) throw new Error('no photo')
   const { width, height } = gridSize(perSideOf(tier), w.beadSize, w.aspect)
   const long = Math.max(width, height)
-  const img = await pixels(w.photo, long * samplesPerBead(long), w.trim)
+  const img = await pixels(w.photo, long * samplesPerBead(long), w.trim, w.crop ?? null)
   const r = E.generatePattern(img, {
     palette: E.getPalette(PALETTE_ID),
     width,
@@ -109,7 +118,7 @@ export const optionKeys = (): { key: string; tier: TierId; look: Look }[] => [
 export async function recommend(w: Work, plain: Pattern[]): Promise<{ perSide: number; subjectShare: number }> {
   if (!w.photo) return { perSide: 1, subjectShare: 1 }
   const pegs = BOARD_PEGS[w.beadSize]
-  const img = await pixels(w.photo, pegs * TIERS.length * 2, w.trim)
+  const img = await pixels(w.photo, pegs * TIERS.length * 2, w.trim, w.crop ?? null)
   const { losses, subjectShare } = E.recommendBoards(img, pegs, w.aspect, TIERS.length, 0)
   const labs = E.getPalette(PALETTE_ID).colors.map((c) => E.rgbToLab(c.rgb))
   const gridLosses = plain.slice(1).map((fine, i) => E.gridLoss(plain[i], fine, labs))

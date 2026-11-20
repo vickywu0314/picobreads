@@ -31,6 +31,7 @@ const KEY = "bs-work";
 const blank = () => ({
   photo: null,
   aspect: 1,
+  crop: null,
   beadSize: "2.6mm",
   removeBg: true,
   trim: true,
@@ -54,9 +55,9 @@ function setWork(patch) {
   }
   return work;
 }
-function startWork(photo, aspect) {
+function startWork(photo, aspect, crop = null) {
   const prev = getWork();
-  return setWork({ ...blank(), beadSize: prev.beadSize, removeBg: prev.removeBg, trim: prev.trim, photo, aspect });
+  return setWork({ ...blank(), beadSize: prev.beadSize, removeBg: prev.removeBg, trim: prev.trim, photo, aspect, crop });
 }
 function applyPattern(pattern) {
   const w = getWork();
