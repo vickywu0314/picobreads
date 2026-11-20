@@ -1,11 +1,12 @@
 page { height: 100%; }
 .page { height: 100vh; display: flex; flex-direction: column; background: #fbeee9; }
-.topbar { display: flex; align-items: center; gap: 20rpx; padding: 16rpx 24rpx; background: var(--surface); border-bottom: 2rpx solid var(--border); }
-.progress { flex: 1; }
+.topbar { padding: 16rpx 24rpx; background: var(--surface); border-bottom: 2rpx solid var(--border); }
+.actions { display: flex; gap: 16rpx; margin-top: 16rpx; }
+.actions .btn { flex: 1; }
 .bar { height: 12rpx; border-radius: 12rpx; background: var(--accent-soft); margin-top: 8rpx; overflow: hidden; }
 .bar-fill { height: 100%; background: var(--accent); border-radius: 12rpx; }
-.board { flex: 1; position: relative; min-height: 0; }
-.board-canvas { width: 100%; height: 100%; }
+.board { flex: 1; position: relative; min-height: 0; overflow: hidden; }
+.board-canvas { position: absolute; left: 0; top: 0; }
 .modes { position: absolute; left: 20rpx; top: 20rpx; display: flex; background: var(--surface); border: 2rpx solid var(--ink); border-radius: 999rpx; padding: 4rpx; }
 .mode { padding: 10rpx 24rpx; border-radius: 999rpx; font-size: 24rpx; font-weight: 700; color: var(--muted); }
 .mode.on { background: var(--accent); color: #fff; }

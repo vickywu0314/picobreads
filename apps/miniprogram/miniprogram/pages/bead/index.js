@@ -16,12 +16,14 @@ Page({
     selectedLabel: "\u5148\u5728\u4E0B\u9762\u9009\u4E00\u4E2A\u989C\u8272",
     mode: "place",
     canUndo: false,
-    hint: ""
+    hint: "",
+    boardW: 300,
+    boardH: 300
   },
   // Working state (not rendered by the template).
   pattern: null,
   placed: [],
-  view: { scale: 8, ox: 0, oy: 0 },
+  bv: { scale: 8, ox: 0, oy: 0 },
   fitScale: 8,
   handle: null,
   numbers: /* @__PURE__ */ new Map(),
@@ -33,6 +35,7 @@ Page({
   saveTimer: 0,
   lastBuzz: 0,
   finishedShown: false,
+  failed: false,
   async onLoad() {
     const w = (0, import_store.getWork)();
     if (!w.pattern) {
@@ -46,9 +49,37 @@ Page({
     this.numbers = new Map(legend.map((l) => [l.color, l.number]));
     this.totals = new Map(legend.map((l) => [l.color, l.count]));
     this.finishedShown = this.countDone() === this.countTotal();
-    this.handle = await (0, import_draw.getCanvas)(this, "#board");
-    this.fit();
     this.refreshPanel();
+  },
+  onReady() {
+    void this.initCanvas(0);
+  },
+  /** Size the canvas to its box once the layout is known (retries while the box has no size yet). */
+  async initCanvas(attempt) {
+    var _a;
+    if (!this.pattern) return;
+    const box = await new Promise(
+      (resolve) => wx.createSelectorQuery().in(this).select("#board-box").boundingClientRect((r) => resolve(r ? { width: r.width, height: r.height } : null)).exec()
+    );
+    if (!box || box.width < 10 || box.height < 10) {
+      if (attempt < 20) setTimeout(() => void this.initCanvas(attempt + 1), 100);
+      else this.fail("\u91CF\u4E0D\u5230\u753B\u5E03\u5927\u5C0F");
+      return;
+    }
+    await new Promise((resolve) => this.setData({ boardW: Math.floor(box.width), boardH: Math.floor(box.height) }, resolve));
+    try {
+      this.handle = await (0, import_draw.getCanvas)(this, "#board");
+      this.fit();
+    } catch (e) {
+      this.fail(String((_a = e == null ? void 0 : e.message) != null ? _a : e));
+    }
+  },
+  /** Show what went wrong (once), so it can be reported. */
+  fail(msg) {
+    console.error("[bead]", msg);
+    if (this.failed) return;
+    this.failed = true;
+    wx.showModal({ title: "\u9489\u677F\u6CA1\u753B\u51FA\u6765", content: msg.slice(0, 200), showCancel: false });
   },
   onUnload() {
     this.persist();
@@ -105,19 +136,27 @@ Page({
   draw() {
     if (this.frame || !this.handle) return;
     const c = this.handle;
-    this.frame = c.canvas.requestAnimationFrame(() => {
+    const paint = () => {
+      var _a;
       this.frame = 0;
-      (0, import_draw.drawBoard)(c.ctx, c.width, c.height, this.view, { pattern: this.pattern, placed: this.placed.join(""), selected: this.data.selected, numbers: this.numbers }, (0, import_generate.palette)(), import_config.BOARD_PEGS[(0, import_store.getWork)().beadSize]);
-    });
+      try {
+        (0, import_draw.drawBoard)(c.ctx, c.width, c.height, this.bv, { pattern: this.pattern, placed: this.placed.join(""), selected: this.data.selected, numbers: this.numbers }, (0, import_generate.palette)(), import_config.BOARD_PEGS[(0, import_store.getWork)().beadSize]);
+      } catch (e) {
+        this.fail(String((_a = e == null ? void 0 : e.stack) != null ? _a : e));
+      }
+    };
+    this.frame = 1;
+    if (typeof c.canvas.requestAnimationFrame === "function") c.canvas.requestAnimationFrame(paint);
+    else setTimeout(paint, 16);
   },
   fit() {
     if (!this.handle || !this.pattern) return;
-    this.view = (0, import_draw.fitView)(this.pattern, this.handle.width, this.handle.height);
-    this.fitScale = this.view.scale;
+    this.bv = (0, import_draw.fitView)(this.pattern, this.handle.width, this.handle.height);
+    this.fitScale = this.bv.scale;
     this.draw();
   },
   zoomAt(cx, cy, k) {
-    const v = this.view;
+    const v = this.bv;
     const next = Math.min(MAX_SCALE, Math.max(this.fitScale * 0.6, v.scale * k));
     const f = next / v.scale;
     v.ox = cx - (cx - v.ox) * f;
@@ -139,7 +178,7 @@ Page({
     this.setData({ selected: this.data.selected === color ? null : color });
     this.refreshPanel();
     this.draw();
-    if (this.view.scale < 14 && this.handle) this.zoomAt(this.handle.width / 2, this.handle.height / 2, 14 / this.view.scale);
+    if (this.bv.scale < 14 && this.handle) this.zoomAt(this.handle.width / 2, this.handle.height / 2, 14 / this.bv.scale);
   },
   showHint(text) {
     this.setData({ hint: text });
@@ -149,7 +188,7 @@ Page({
   placeAt(pt) {
     var _a;
     const p = this.pattern;
-    const i = (0, import_draw.cellAt)(this.view, p, pt.x, pt.y);
+    const i = (0, import_draw.cellAt)(this.bv, p, pt.x, pt.y);
     if (i < 0 || this.placed[i] === "1" || p.cells[i] < 0) return;
     const sel = this.data.selected;
     if (sel === null) {
@@ -157,8 +196,8 @@ Page({
       return;
     }
     if (p.cells[i] !== sel) return;
-    const c = (0, import_draw.cellCenter)(this.view, p, i);
-    if (Math.hypot(pt.x - c.x, pt.y - c.y) > this.view.scale * HIT_RADIUS) return;
+    const c = (0, import_draw.cellCenter)(this.bv, p, i);
+    if (Math.hypot(pt.x - c.x, pt.y - c.y) > this.bv.scale * HIT_RADIUS) return;
     this.placed[i] = "1";
     this.batch.push(i);
     const now = Date.now();
@@ -189,8 +228,8 @@ Page({
       const b = { x: t[1].x, y: t[1].y };
       const dist = Math.hypot(a.x - b.x, a.y - b.y);
       const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-      this.view.ox += mid.x - this.touch.pinch.mid.x;
-      this.view.oy += mid.y - this.touch.pinch.mid.y;
+      this.bv.ox += mid.x - this.touch.pinch.mid.x;
+      this.bv.oy += mid.y - this.touch.pinch.mid.y;
       this.zoomAt(mid.x, mid.y, dist / Math.max(1, this.touch.pinch.dist));
       this.touch.pinch = { dist, mid };
       return;
@@ -199,11 +238,11 @@ Page({
     const pt = { x: t[0].x, y: t[0].y };
     const last = this.touch.last;
     if (this.data.mode === "move") {
-      this.view.ox += pt.x - last.x;
-      this.view.oy += pt.y - last.y;
+      this.bv.ox += pt.x - last.x;
+      this.bv.oy += pt.y - last.y;
       this.draw();
     } else {
-      const step = Math.max(2, this.view.scale * 0.35);
+      const step = Math.max(2, this.bv.scale * 0.35);
       const n = Math.max(1, Math.ceil(Math.hypot(pt.x - last.x, pt.y - last.y) / step));
       for (let k = 1; k <= n; k++) this.placeAt({ x: last.x + (pt.x - last.x) * k / n, y: last.y + (pt.y - last.y) * k / n });
     }

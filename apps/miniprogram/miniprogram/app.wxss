@@ -40,13 +40,14 @@ page {
 button.btn, .btn {
   display: flex; align-items: center; justify-content: center; gap: 12rpx;
   height: 92rpx; padding: 0 40rpx; margin: 0;
+  width: auto; min-width: 0; min-height: 0; box-sizing: border-box; white-space: nowrap;
   border-radius: 28rpx; font-size: 30rpx; font-weight: 700; line-height: 1;
   border: 3rpx solid var(--ink); background: var(--surface); color: var(--fg);
 }
 button.btn::after { border: none; }
 .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent-dark); box-shadow: 0 12rpx 28rpx -14rpx rgba(217, 61, 114, 0.7); }
 .btn.small { height: 64rpx; padding: 0 24rpx; font-size: 26rpx; border-radius: 20rpx; }
-.btn.block { width: 100%; }
+button.btn.block, .btn.block { width: 100%; }
 .btn[disabled] { opacity: 0.5; }
 .btn-hover { transform: translateY(2rpx); opacity: 0.9; }
 

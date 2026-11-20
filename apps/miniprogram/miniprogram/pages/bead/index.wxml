@@ -4,15 +4,15 @@
       <view class="row between small"><text class="bold">总进度 {{pct}}%</text><text class="muted">{{done}} / {{total}} 颗</text></view>
       <view class="bar"><view class="bar-fill" style="width: {{pct}}%"></view></view>
     </view>
-    <view class="row gap">
+    <view class="actions">
       <button class="btn small" hover-class="btn-hover" disabled="{{!canUndo}}" bindtap="undo">撤销</button>
       <button class="btn small" hover-class="btn-hover" bindtap="saveDraft">存草稿</button>
       <button class="btn small primary" hover-class="btn-hover" bindtap="share">分享</button>
     </view>
   </view>
 
-  <view class="board">
-    <canvas type="2d" id="board" class="board-canvas" disable-scroll="true"
+  <view class="board" id="board-box">
+    <canvas type="2d" id="board" class="board-canvas" style="width: {{boardW}}px; height: {{boardH}}px" disable-scroll="true"
       bindtouchstart="onTouchStart" bindtouchmove="onTouchMove" bindtouchend="onTouchEnd" bindtouchcancel="onTouchEnd"></canvas>
     <view class="modes">
       <view class="mode {{mode === 'place' ? 'on' : ''}}" data-m="place" bindtap="setMode">放豆</view>
