@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "esbuild build/engine.ts --bundle --platform=neutral --format=cjs --target=es2017 --main-fields=module,main --outfile=miniprogram/lib/engine.js --legal-comments=none",
+    "build": "node build/build.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

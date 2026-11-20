@@ -2,11 +2,10 @@
   "description": "BeadSpark 拼豆小程序",
   "miniprogramRoot": "miniprogram/",
   "compileType": "miniprogram",
-  "appid": "touristappid",
+  "appid": "wxad095cfa10de6ecd",
   "projectname": "beadspark",
   "libVersion": "3.6.0",
   "setting": {
-    "useCompilerPlugins": ["typescript"],
     "es6": true,
     "enhance": true,
     "postcss": true,
@@ -15,9 +14,17 @@
     "ignoreUploadUnusedFiles": true
   },
   "packOptions": {
-    "ignore": [{ "type": "suffix", "value": ".d.ts" }],
+    "ignore": [
+      {
+        "type": "suffix",
+        "value": ".ts"
+      }
+    ],
     "include": []
   },
   "condition": {},
-  "editorSetting": { "tabIndent": "insertSpaces", "tabSize": 2 }
+  "editorSetting": {
+    "tabIndent": "insertSpaces",
+    "tabSize": 2
+  }
 }

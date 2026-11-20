@@ -16,19 +16,22 @@
 ## 在开发者工具里打开
 
 1. 微信开发者工具 → 导入项目 → 目录选仓库里的 **`apps/miniprogram`**（不是 `miniprogram` 子目录）。
-2. AppID 填你的小程序 AppID（`project.config.json` 里现在是 `touristappid` 占位，导入时改掉即可，或者直接改文件）。
+2. AppID 已经写在 `project.config.json` 里（`wxad095cfa10de6ecd`）。
 3. 本机测试连后端：
    - `miniprogram/utils/config.ts` 里 `API_BASE` 现在是 `http://49.233.85.32`（域名还没好）。**上传体验版 / 正式版前改成 `https://pd.scentby.cn`**。
    - `project.private.config.json` 已经设了「不校验合法域名」，开发者工具和真机预览（打开调试）里可以连 http 的 IP。**正式上传 / 体验版必须用 https 域名**。
 4. 服务器上要填小程序的 AppID 和 AppSecret（见下面「服务器」），否则「微信登录」会提示「服务器还没配置小程序登录」。
 
-## 改了图纸引擎之后
+## 改了代码之后：重新编译
 
-`miniprogram/lib/engine.js` 是从 `packages/pattern-engine` 打包出来的（已提交，开发者工具直接能用）。改了引擎后重新打包：
+小程序直接运行的是 `.js`。源码是旁边的 `.ts`，`.js` 由编译脚本生成并一起提交（这样开发者工具打开就能用，不依赖它的 TypeScript 编译设置）。
+改了 `miniprogram/` 里的 `.ts`，或者改了图纸引擎（`packages/pattern-engine`）之后，运行：
 
 ```bash
 pnpm --filter miniprogram build
 ```
+
+它会重新生成 `miniprogram/lib/engine.js` 和每个 `.ts` 对应的 `.js`。上传时 `.ts` 文件会被忽略。
 
 ## 上线前要在小程序后台配置
 
