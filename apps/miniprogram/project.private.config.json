@@ -1,0 +1,5 @@
+{
+  "description": "本机开发设置（不影响上传）：开发时不校验合法域名，方便连 http://49.233.85.32 测试。",
+  "setting": { "urlCheck": false },
+  "projectname": "beadspark"
+}

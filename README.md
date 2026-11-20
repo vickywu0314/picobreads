@@ -18,6 +18,7 @@ apps/web/                  Next.js 15 (App Router, static export), Tailwind CSS 
   src/config/seo.ts        site URL, SEO keywords, crawler allow-list
   src/i18n/                UI copy (zh-CN / en-US); locale follows the browser, switchable in the header
   public/                  images (v11/), llms.txt and ai.txt for AI crawlers
+apps/miniprogram/          WeChat mini program (native + TypeScript) — open this folder in WeChat DevTools, see its README
 apps/api/                  Node API (Hono + SQLite): email / Google / WeChat / Apple / Facebook sign-in, drafts, share links
 packages/pattern-engine/   pure TypeScript, no UI deps: generation, pixel style, palettes, sections, stats, bag picking
   palettes/                bead color charts (MARD 264 and others) — see palettes/README.md

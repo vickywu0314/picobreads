@@ -1,0 +1,16 @@
+{
+  "name": "miniprogram",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "esbuild build/engine.ts --bundle --platform=neutral --format=cjs --target=es2017 --main-fields=module,main --outfile=miniprogram/lib/engine.js --legal-comments=none",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "miniprogram-api-typings": "^5.3.1",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
+  }
+}

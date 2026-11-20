@@ -1,0 +1,60 @@
+/* BeadSpark look (same as the website): warm off-white, pink panels, thin cocoa outlines. */
+page {
+  --bg: #fdf7f4;
+  --surface: #fffbf9;
+  --fg: #4a2620;
+  --muted: #7d5f58;
+  --border: #eedad5;
+  --accent: #d93d72;
+  --accent-dark: #c22f62;
+  --accent-soft: #fbe1e8;
+  --blush: #f9dfe4;
+  --ink: #6b3f37;
+  --sun: #ffd76e;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+  font-size: 28rpx;
+  line-height: 1.5;
+}
+.wrap { padding: 24rpx 32rpx 48rpx; }
+.card {
+  background: var(--surface);
+  border: 3rpx solid var(--ink);
+  border-radius: 32rpx;
+  box-shadow: 0 16rpx 40rpx -28rpx rgba(74, 38, 32, 0.45);
+}
+.panel { background: var(--blush); border-radius: 44rpx; padding: 40rpx 36rpx; }
+.title { font-size: 52rpx; font-weight: 800; line-height: 1.15; }
+.h2 { font-size: 36rpx; font-weight: 800; }
+.muted { color: var(--muted); }
+.small { font-size: 24rpx; }
+.bold { font-weight: 700; }
+.row { display: flex; align-items: center; }
+.between { justify-content: space-between; }
+.gap { gap: 16rpx; }
+.mt { margin-top: 24rpx; }
+.mt-lg { margin-top: 40rpx; }
+
+/* Buttons (reset the native button look first). */
+button.btn, .btn {
+  display: flex; align-items: center; justify-content: center; gap: 12rpx;
+  height: 92rpx; padding: 0 40rpx; margin: 0;
+  border-radius: 28rpx; font-size: 30rpx; font-weight: 700; line-height: 1;
+  border: 3rpx solid var(--ink); background: var(--surface); color: var(--fg);
+}
+button.btn::after { border: none; }
+.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent-dark); box-shadow: 0 12rpx 28rpx -14rpx rgba(217, 61, 114, 0.7); }
+.btn.small { height: 64rpx; padding: 0 24rpx; font-size: 26rpx; border-radius: 20rpx; }
+.btn.block { width: 100%; }
+.btn[disabled] { opacity: 0.5; }
+.btn-hover { transform: translateY(2rpx); opacity: 0.9; }
+
+.pill { display: inline-flex; align-items: center; padding: 6rpx 20rpx; border-radius: 999rpx; font-size: 22rpx; font-weight: 700; }
+.pill.sun { background: var(--sun); color: var(--fg); border: 2rpx solid var(--ink); }
+.pill.accent { background: var(--accent); color: #fff; }
+.pill.soft { background: #f6c3cf; color: var(--fg); }
+
+.seg { display: flex; background: var(--accent-soft); border-radius: 999rpx; padding: 6rpx; }
+.seg-item { flex: 1; text-align: center; padding: 14rpx 0; border-radius: 999rpx; font-size: 26rpx; font-weight: 700; color: var(--muted); }
+.seg-item.on { background: var(--surface); color: var(--fg); box-shadow: 0 4rpx 10rpx rgba(74, 38, 32, 0.12); }

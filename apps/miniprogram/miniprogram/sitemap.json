@@ -1,0 +1,8 @@
+{
+  "desc": "允许微信搜索收录首页和分享页",
+  "rules": [
+    { "action": "allow", "page": "pages/index/index" },
+    { "action": "allow", "page": "pages/share/index", "params": ["id"], "matching": "partial" },
+    { "action": "disallow", "page": "*" }
+  ]
+}

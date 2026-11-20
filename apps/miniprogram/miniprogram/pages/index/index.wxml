@@ -1,0 +1,34 @@
+<view class="wrap">
+  <view class="row gap brand">
+    <image src="/images/logo.png" class="logo" />
+    <text class="brand-name">Bead<text class="accent">Spark</text></text>
+  </view>
+
+  <view class="panel mt">
+    <text class="pill soft">免费拼豆图纸生成器</text>
+    <view class="title mt">你的照片，\n拼成一颗颗豆。</view>
+    <view class="muted mt">把喜欢的照片变成拼豆图纸，带色号，还有一份拿来就能用的用豆清单。</view>
+    <view class="pair mt-lg">
+      <view class="pair-card card"><image src="/images/hero-photo.jpg" mode="aspectFill" class="pair-img" /><text class="bold small">你的照片</text></view>
+      <text class="arrow">→</text>
+      <view class="pair-card card"><image src="/images/hero-pattern.jpg" mode="aspectFill" class="pair-img" /><text class="bold small">你的图纸</text></view>
+    </view>
+    <button class="btn primary block mt-lg" hover-class="btn-hover" bindtap="choosePhoto">上传照片，开始拼</button>
+    <view class="muted small center mt">先看效果 · 尺寸自己选 · 每种颜色都算好</view>
+  </view>
+
+  <view wx:if="{{hasWork}}" class="card resume mt-lg" bindtap="resume">
+    <view>
+      <view class="bold">继续上次的作品</view>
+      <view class="muted small">{{workInfo}}</view>
+    </view>
+    <text class="accent bold">继续 →</text>
+  </view>
+
+  <view class="features mt-lg">
+    <view class="feature"><text class="f-icon">🖼</text><text class="bold">照片变图纸</text></view>
+    <view class="feature"><text class="f-icon">▦</text><text class="bold">尺寸心里有数</text></view>
+    <view class="feature"><text class="f-icon">✓</text><text class="bold">用豆清单备好</text></view>
+  </view>
+  <view class="muted small center mt-lg">🔒 照片只在你的手机上处理，不会上传</view>
+</view>

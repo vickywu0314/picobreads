@@ -1,0 +1,141 @@
+import type { Pattern } from '../../lib/engine'
+import { api, clearSession, errorText, getUser, login, updateProfile, type User } from '../../utils/api'
+import { sizeCm, type BeadSize, type Look, type TierId } from '../../utils/config'
+import { drawFinished, getCanvas } from '../../utils/draw'
+import { palette } from '../../utils/generate'
+import { setWork } from '../../utils/store'
+import { sharePiece } from '../../utils/actions'
+
+interface ServerDraft {
+  id: string
+  name: string
+  updatedAt: number
+  data: { pattern: Pattern; placed?: string; settings?: { beadSize?: BeadSize; tier?: TierId; look?: Look; removeBg?: boolean; trim?: boolean } }
+}
+
+interface DraftRow {
+  id: string
+  name: string
+  size: string
+  updated: string
+  pct: number
+}
+
+Page({
+  data: { user: null as User | null, initial: '', drafts: [] as DraftRow[], loading: false },
+  raw: [] as ServerDraft[],
+
+  onShow() {
+    const user = getUser()
+    this.setData({ user, initial: user ? [...(user.name || '?').trim()][0] ?? '?' : '' })
+    if (user) void this.loadDrafts()
+    else this.setData({ drafts: [] })
+  },
+
+  async login() {
+    try {
+      wx.showLoading({ title: '登录中…', mask: true })
+      await login()
+      wx.hideLoading()
+      this.onShow()
+    } catch (e) {
+      wx.hideLoading()
+      wx.showToast({ title: errorText(e), icon: 'none' })
+    }
+  },
+
+  logout() {
+    wx.showModal({
+      title: '退出登录？',
+      content: '草稿都保存在账号里，下次登录还在。',
+      success: (r) => {
+        if (!r.confirm) return
+        api('/auth/logout', { data: {} }).catch(() => {})
+        clearSession()
+        this.onShow()
+      },
+    })
+  },
+
+  async setName(e: WechatMiniprogram.Input) {
+    const name = String(e.detail.value || '').trim()
+    if (!name || name === this.data.user?.name) return
+    try {
+      const user = await updateProfile(name)
+      this.setData({ user, initial: [...name][0] })
+      wx.showToast({ title: '昵称已更新', icon: 'success' })
+    } catch (err) {
+      wx.showToast({ title: errorText(err), icon: 'none' })
+    }
+  },
+
+  async loadDrafts() {
+    this.setData({ loading: !this.raw.length })
+    try {
+      const { designs } = await api<{ designs: ServerDraft[] }>('/designs')
+      this.raw = designs.filter((d) => d.data?.pattern?.cells)
+      this.setData({
+        loading: false,
+        drafts: this.raw.map((d) => {
+          const p = d.data.pattern
+          const total = p.cells.filter((c) => c >= 0).length
+          const done = [...(d.data.placed ?? '')].filter((c, i) => c === '1' && p.cells[i] >= 0).length
+          return {
+            id: d.id,
+            name: d.name,
+            size: `${p.width}×${p.height} · ≈ ${sizeCm(p.width, p.height, d.data.settings?.beadSize ?? '2.6mm')} cm`,
+            updated: new Date(d.updatedAt).toLocaleDateString('zh-CN'),
+            pct: total ? Math.round((done / total) * 100) : 0,
+          }
+        }),
+      })
+      // Thumbnails once the list is on screen.
+      wx.nextTick(() => this.raw.forEach((d, i) => getCanvas(this, `#thumb-${i}`).then((c) => drawFinished(c.ctx, c.width, c.height, d.data.pattern, palette())).catch(() => {})))
+    } catch (e) {
+      this.setData({ loading: false })
+      wx.showToast({ title: errorText(e), icon: 'none' })
+    }
+  },
+
+  open(e: WechatMiniprogram.TouchEvent) {
+    const d = this.raw[Number(e.currentTarget.dataset.i)]
+    const s = d.data.settings ?? {}
+    setWork({
+      pattern: d.data.pattern,
+      placed: d.data.placed && d.data.placed.length === d.data.pattern.cells.length ? d.data.placed : '0'.repeat(d.data.pattern.cells.length),
+      beadSize: s.beadSize ?? '2.6mm',
+      tier: s.tier ?? 'small',
+      look: s.look ?? 'classic',
+      draftId: d.id,
+      name: d.name,
+    })
+    wx.navigateTo({ url: '/pages/bead/index' })
+  },
+
+  share(e: WechatMiniprogram.TouchEvent) {
+    const d = this.raw[Number(e.currentTarget.dataset.i)]
+    void sharePiece({ name: d.name, pattern: d.data.pattern, placed: d.data.placed, beadSize: d.data.settings?.beadSize ?? '2.6mm' })
+  },
+
+  remove(e: WechatMiniprogram.TouchEvent) {
+    const d = this.raw[Number(e.currentTarget.dataset.i)]
+    wx.showModal({
+      title: '删除这个草稿？',
+      content: d.name,
+      confirmColor: '#d93d72',
+      success: async (r) => {
+        if (!r.confirm) return
+        try {
+          await api(`/designs/${d.id}`, { method: 'DELETE', data: {} })
+          void this.loadDrafts()
+        } catch (err) {
+          wx.showToast({ title: errorText(err), icon: 'none' })
+        }
+      },
+    })
+  },
+
+  newOne() {
+    wx.switchTab({ url: '/pages/index/index' })
+  },
+})

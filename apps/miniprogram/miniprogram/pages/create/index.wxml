@@ -1,0 +1,61 @@
+<view class="wrap">
+  <view class="title">选一个你喜欢的效果</view>
+  <view class="muted small mt">按图片细节推荐底板数：简单的图一块板就清楚，细节多的才用多块板。最后一张「像素风」颜色更少、色块更大。点选的那张就是你的图纸。</view>
+
+  <view class="mt-lg bold">豆子尺寸</view>
+  <view class="seg mt">
+    <view wx:for="{{beadSizes}}" wx:key="id" class="seg-item {{bead === item.id ? 'on' : ''}}" data-id="{{item.id}}" bindtap="setBead">{{item.label}}</view>
+  </view>
+  <view class="muted small mt">{{beadHint}}</view>
+
+  <view class="toggles mt">
+    <view class="toggle card">
+      <view><view class="bold">去掉背景</view><view class="muted small">纯色背景留空不拼，省豆子</view></view>
+      <switch checked="{{removeBg}}" color="#d93d72" bindchange="setRemoveBg" />
+    </view>
+    <view class="toggle card">
+      <view><view class="bold">裁掉空白边</view><view class="muted small">主体更大、更清楚</view></view>
+      <switch checked="{{trim}}" color="#d93d72" bindchange="setTrim" />
+    </view>
+  </view>
+
+  <view wx:if="{{loose}}" class="warn mt">主体只占画面 {{subjectPct}}%，裁紧一点，同样的底板能拼得更清楚。</view>
+
+  <view class="grid mt-lg">
+    <view wx:for="{{options}}" wx:key="key" class="opt card {{item.selected ? 'on' : ''}}" data-key="{{item.key}}" bindtap="pick">
+      <view class="badges">
+        <text wx:if="{{item.recommended}}" class="pill sun">★ 推荐</text>
+        <text wx:if="{{item.key === 'pixel'}}" class="pill soft">像素风</text>
+        <text wx:if="{{item.selected}}" class="pill accent sel">✓ 已选</text>
+      </view>
+      <view class="opt-art">
+        <canvas type="2d" id="opt-{{index}}" class="opt-canvas"></canvas>
+        <view wx:if="{{!item.ready}}" class="opt-loading muted small">生成中…</view>
+      </view>
+      <view class="bold small">{{item.title}}</view>
+      <view class="muted tiny">{{item.sub}}</view>
+      <view wx:if="{{item.note}}" class="muted tiny bold">{{item.note}}</view>
+    </view>
+  </view>
+
+  <view class="card preview mt-lg">
+    <view class="row between">
+      <text class="h2">效果预览</text>
+      <view class="seg seg-small">
+        <view class="seg-item {{view === 'final' ? 'on' : ''}}" data-v="final" bindtap="setView">完成后</view>
+        <view class="seg-item {{view === 'photo' ? 'on' : ''}}" data-v="photo" bindtap="setView">你的照片</view>
+      </view>
+    </view>
+    <view class="preview-box mt">
+      <canvas type="2d" id="preview" class="preview-canvas {{view === 'photo' ? 'hidden' : ''}}"></canvas>
+      <image wx:if="{{view === 'photo'}}" src="{{photo}}" mode="aspectFit" class="preview-photo" />
+    </view>
+    <view class="muted small center mt">{{previewInfo}}</view>
+  </view>
+
+  <view class="actions mt-lg">
+    <button class="btn primary block" hover-class="btn-hover" disabled="{{!canGo}}" bindtap="startBead">开始在线拼 →</button>
+    <button class="btn block mt" hover-class="btn-hover" disabled="{{!canGo}}" bindtap="saveDraft">存到草稿</button>
+  </view>
+  <view class="muted tiny center mt">🔒 照片只在你的手机上处理，不会上传</view>
+</view>

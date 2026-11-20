@@ -1,0 +1,44 @@
+<view class="wrap">
+  <view class="card me">
+    <block wx:if="{{user}}">
+      <view class="avatar">{{initial}}</view>
+      <view class="me-info">
+        <input type="nickname" class="name-input" value="{{user.name}}" placeholder="点这里设置昵称" bindblur="setName" bindconfirm="setName" />
+        <view class="muted small">昵称会显示在你分享的作品上</view>
+      </view>
+      <button class="btn small" hover-class="btn-hover" bindtap="logout">退出</button>
+    </block>
+    <block wx:else>
+      <view class="avatar">?</view>
+      <view class="me-info">
+        <view class="bold">登录后保存草稿、分享作品</view>
+        <view class="muted small">用微信一键登录</view>
+      </view>
+      <button class="btn small primary" hover-class="btn-hover" bindtap="login">微信登录</button>
+    </block>
+  </view>
+
+  <view class="row between mt-lg">
+    <text class="h2">我的草稿 <text class="muted small">({{drafts.length}})</text></text>
+    <button class="btn small" hover-class="btn-hover" bindtap="newOne">＋ 新做一个</button>
+  </view>
+
+  <view wx:if="{{loading}}" class="muted mt center">加载中…</view>
+  <view wx:elif="{{!user}}" class="card empty mt muted small">登录后可以在这里看到你存的草稿。</view>
+  <view wx:elif="{{drafts.length === 0}}" class="card empty mt muted small">还没有草稿。在线拼时点「存草稿」就会出现在这里。</view>
+
+  <view wx:for="{{drafts}}" wx:key="id" class="card draft mt">
+    <canvas type="2d" id="thumb-{{index}}" class="thumb"></canvas>
+    <view class="draft-info">
+      <view class="bold">{{item.name}}</view>
+      <view class="muted tiny">{{item.size}} · {{item.updated}}</view>
+      <view class="bar"><view class="bar-fill" style="width: {{item.pct}}%"></view></view>
+      <view class="muted tiny">已拼 {{item.pct}}%</view>
+      <view class="row gap mt-sm">
+        <button class="btn small primary" hover-class="btn-hover" data-i="{{index}}" bindtap="open">继续拼</button>
+        <button class="btn small" hover-class="btn-hover" data-i="{{index}}" bindtap="share">分享</button>
+        <text class="del muted small" data-i="{{index}}" bindtap="remove">删除</text>
+      </view>
+    </view>
+  </view>
+</view>

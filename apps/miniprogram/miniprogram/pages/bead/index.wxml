@@ -1,0 +1,41 @@
+<view class="page">
+  <view class="topbar">
+    <view class="progress">
+      <view class="row between small"><text class="bold">总进度 {{pct}}%</text><text class="muted">{{done}} / {{total}} 颗</text></view>
+      <view class="bar"><view class="bar-fill" style="width: {{pct}}%"></view></view>
+    </view>
+    <view class="row gap">
+      <button class="btn small" hover-class="btn-hover" disabled="{{!canUndo}}" bindtap="undo">撤销</button>
+      <button class="btn small" hover-class="btn-hover" bindtap="saveDraft">存草稿</button>
+      <button class="btn small primary" hover-class="btn-hover" bindtap="share">分享</button>
+    </view>
+  </view>
+
+  <view class="board">
+    <canvas type="2d" id="board" class="board-canvas" disable-scroll="true"
+      bindtouchstart="onTouchStart" bindtouchmove="onTouchMove" bindtouchend="onTouchEnd" bindtouchcancel="onTouchEnd"></canvas>
+    <view class="modes">
+      <view class="mode {{mode === 'place' ? 'on' : ''}}" data-m="place" bindtap="setMode">放豆</view>
+      <view class="mode {{mode === 'move' ? 'on' : ''}}" data-m="move" bindtap="setMode">移动</view>
+    </view>
+    <view class="zoom">
+      <view class="zbtn" bindtap="zoomIn">＋</view>
+      <view class="zbtn" bindtap="zoomOut">－</view>
+      <view class="zbtn small" bindtap="fit">全图</view>
+    </view>
+    <view wx:if="{{hint}}" class="hint">{{hint}}</view>
+  </view>
+
+  <view class="tray">
+    <view class="tray-head small"><text class="bold">{{selectedLabel}}</text><text class="muted">双指缩放 · 点颜色再在板上划</text></view>
+    <scroll-view scroll-x="true" enhanced="true" show-scrollbar="{{false}}" class="tray-scroll">
+      <view class="wells">
+        <view wx:for="{{wells}}" wx:key="color" class="well {{item.color === selected ? 'on' : ''}} {{item.left === 0 ? 'done' : ''}}" data-color="{{item.color}}" bindtap="selectColor">
+          <view class="dot" style="background: {{item.hex}}"><text class="num" style="color: {{item.text}}">{{item.left === 0 ? '✓' : item.number}}</text></view>
+          <view class="code">{{item.code}}</view>
+          <view class="left">{{item.left}}</view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+</view>

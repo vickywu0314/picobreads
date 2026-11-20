@@ -1,0 +1,41 @@
+<view class="wrap">
+  <view wx:if="{{state === 'loading'}}" class="muted center mt-lg">加载中…</view>
+  <view wx:elif="{{state === 'missing'}}" class="card empty mt-lg">
+    <view>这个分享不存在或已被删除。</view>
+    <button class="btn primary mt" hover-class="btn-hover" bindtap="makeMine">用我的照片做一个</button>
+  </view>
+  <block wx:else>
+    <view class="art-box">
+      <canvas type="2d" id="art" class="art"></canvas>
+    </view>
+    <view class="mt">
+      <text class="pill soft">作品分享</text>
+      <view class="title mt">{{name}}</view>
+      <view class="muted small mt">{{author}} 的作品 · {{views}} 次查看</view>
+      <view class="bold mt">{{stats}}</view>
+    </view>
+
+    <view wx:if="{{mine}}" class="card send mt-lg">
+      <view class="h2">分享出去</view>
+      <button class="btn primary block mt" hover-class="btn-hover" open-type="share">发给微信好友 / 群</button>
+      <button class="btn block mt" hover-class="btn-hover" bindtap="savePoster">保存分享海报到相册</button>
+      <view class="muted small mt">发朋友圈：点右上角「···」→「分享到朋友圈」；或者保存海报后发图，朋友扫图上的小程序码就能看。Instagram：保存海报后在 Instagram 里发图。</view>
+    </view>
+
+    <view class="row gap mt-lg">
+      <button class="btn primary grow" hover-class="btn-hover" bindtap="beadThis">照着拼一个</button>
+      <button class="btn grow" hover-class="btn-hover" bindtap="makeMine">用我的照片做一个</button>
+    </view>
+
+    <view class="h2 mt-lg">用豆清单 <text class="muted small">（{{colorCount}} 色）</text></view>
+    <view class="legend mt">
+      <view wx:for="{{legend}}" wx:key="code" class="chip">
+        <view class="dot" style="background: {{item.hex}}"></view>
+        <text class="bold small">{{item.code}}</text>
+        <text class="muted small count">×{{item.count}}</text>
+      </view>
+    </view>
+  </block>
+  <!-- Off-screen canvas for the share poster -->
+  <canvas type="2d" id="poster" class="poster"></canvas>
+</view>

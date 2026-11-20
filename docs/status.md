@@ -43,6 +43,12 @@
 
 部署细节、Nginx 配置、手动部署脚本：`docs/deploy-server.md`、`scripts/deploy.sh`。
 
+## 微信小程序（2026-11-20 起）
+
+- 代码在 `apps/miniprogram`（原生 + TypeScript，用法见该目录 README）：首页、定制（四种效果 + 推荐）、在线拼（立体钉板）、微信登录、草稿、分享（好友 / 朋友圈 / 海报带小程序码）。
+- 后端：`/api/auth/wxmp/login`（wx.login）、Bearer token、`/api/wxmp/qrcode/:id`。
+- 上线前：小程序 `API_BASE` 改成 https 域名；小程序后台配 request / downloadFile 合法域名、用户隐私保护指引（选照片、写相册）、服务类目；服务器 `api.env` 填 `WXMP_APP_ID`、`WXMP_APP_SECRET`。
+
 ## 上线前（后端 API）
 
 1. 服务器一次性配置：登录服务器运行 `sudo bash ~/beadspark-deploy/setup-api.sh`（自动装 Node、写配置、装服务、改 Nginx、发测试邮件）。手动步骤见 `docs/deploy-server.md`「后端 API」。

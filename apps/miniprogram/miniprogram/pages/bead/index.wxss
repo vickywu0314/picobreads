@@ -1,0 +1,26 @@
+page { height: 100%; }
+.page { height: 100vh; display: flex; flex-direction: column; background: #fbeee9; }
+.topbar { display: flex; align-items: center; gap: 20rpx; padding: 16rpx 24rpx; background: var(--surface); border-bottom: 2rpx solid var(--border); }
+.progress { flex: 1; }
+.bar { height: 12rpx; border-radius: 12rpx; background: var(--accent-soft); margin-top: 8rpx; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--accent); border-radius: 12rpx; }
+.board { flex: 1; position: relative; min-height: 0; }
+.board-canvas { width: 100%; height: 100%; }
+.modes { position: absolute; left: 20rpx; top: 20rpx; display: flex; background: var(--surface); border: 2rpx solid var(--ink); border-radius: 999rpx; padding: 4rpx; }
+.mode { padding: 10rpx 24rpx; border-radius: 999rpx; font-size: 24rpx; font-weight: 700; color: var(--muted); }
+.mode.on { background: var(--accent); color: #fff; }
+.zoom { position: absolute; right: 20rpx; top: 20rpx; display: flex; flex-direction: column; gap: 12rpx; }
+.zbtn { width: 72rpx; height: 72rpx; border-radius: 50%; background: var(--surface); border: 2rpx solid var(--ink); display: flex; align-items: center; justify-content: center; font-size: 36rpx; font-weight: 700; }
+.zbtn.small { font-size: 20rpx; }
+.hint { position: absolute; left: 50%; bottom: 24rpx; transform: translateX(-50%); background: rgba(74, 38, 32, 0.82); color: #fff; font-size: 24rpx; padding: 10rpx 24rpx; border-radius: 999rpx; white-space: nowrap; }
+.tray { background: var(--surface); border-top: 2rpx solid var(--border); padding: 12rpx 0 calc(12rpx + env(safe-area-inset-bottom)); }
+.tray-head { display: flex; justify-content: space-between; padding: 0 24rpx 8rpx; }
+.tray-scroll { width: 100%; white-space: nowrap; }
+.wells { display: inline-flex; gap: 16rpx; padding: 6rpx 24rpx; }
+.well { display: inline-flex; flex-direction: column; align-items: center; width: 96rpx; padding: 8rpx 0; border-radius: 20rpx; border: 3rpx solid transparent; }
+.well.on { border-color: var(--accent); background: var(--accent-soft); }
+.well.done { opacity: 0.45; }
+.dot { width: 60rpx; height: 60rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 -6rpx 0 rgba(0, 0, 0, 0.18), 0 2rpx 4rpx rgba(0, 0, 0, 0.2); }
+.num { font-size: 22rpx; font-weight: 800; }
+.code { font-size: 20rpx; font-weight: 700; margin-top: 4rpx; }
+.left { font-size: 20rpx; color: var(--muted); }
