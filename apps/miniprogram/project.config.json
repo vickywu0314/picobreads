@@ -4,7 +4,6 @@
   "compileType": "miniprogram",
   "appid": "wxad095cfa10de6ecd",
   "projectname": "beadspark",
-  "libVersion": "3.6.0",
   "setting": {
     "es6": true,
     "enhance": true,
