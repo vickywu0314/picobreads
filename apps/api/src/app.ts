@@ -13,6 +13,8 @@ export interface Deps {
   mailer: Mailer
   /** Third-party providers (tests pass fakes). */
   providers?: Record<ProviderId, Provider>
+  /** HTTP client for WeChat server APIs (tests pass a fake). */
+  fetch?: typeof fetch
   now?: () => number
 }
 
@@ -54,13 +56,20 @@ export function createApp(deps: Deps) {
     return { id: u.id, email: u.email, name: u.name || u.email?.split('@')[0] || 'BeadSpark', avatarUrl: u.avatar_url, hasPassword: !!u.password_hash, providers: ids.map((i) => i.provider) }
   }
 
+  /** New session: a cookie for the website; the token is also returned for the mini program. */
   const startSession = (c: Context, userId: string) => {
     const token = randomId(32)
     db.prepare('INSERT INTO sessions (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)').run(sha256(token), userId, now() + SESSION_DAYS * DAY, now())
     setCookie(c, COOKIE, token, { httpOnly: true, secure: cfg.secureCookies, sameSite: 'Lax', path: '/', maxAge: SESSION_DAYS * 86400 })
+    return token
+  }
+  /** Session token: website cookie, or `Authorization: Bearer …` from the mini program (no cookies there). */
+  const tokenOf = (c: Context) => {
+    const auth = c.req.header('authorization') ?? ''
+    return auth.startsWith('Bearer ') ? auth.slice(7).trim() : getCookie(c, COOKIE)
   }
   const sessionUser = (c: Context): UserRow | undefined => {
-    const token = getCookie(c, COOKIE)
+    const token = tokenOf(c)
     if (!token) return undefined
     const s = db.prepare('SELECT user_id, expires_at FROM sessions WHERE token_hash = ?').get(sha256(token)) as { user_id: string; expires_at: number } | undefined
     if (!s || s.expires_at < now()) return undefined
@@ -201,7 +210,7 @@ export function createApp(deps: Deps) {
   })
 
   app.post('/auth/logout', (c) => {
-    const token = getCookie(c, COOKIE)
+    const token = tokenOf(c)
     if (token) db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(sha256(token))
     deleteCookie(c, COOKIE, { path: '/' })
     return c.json({ ok: true })
@@ -271,6 +280,73 @@ export function createApp(deps: Deps) {
   }
   app.get('/auth/:provider/callback', callback)
   app.post('/auth/:provider/callback', callback)
+
+  // --- WeChat mini program ------------------------------------------------------
+  const wx = deps.fetch ?? fetch
+  const wxmpReady = () => !!(cfg.wxmp.appId && cfg.wxmp.secret)
+
+  /** wx.login() code → session. Same person across the mini program and website WeChat login via unionid. */
+  app.post('/auth/wxmp/login', async (c) => {
+    if (!wxmpReady()) return fail(c, 404, 'provider_not_configured')
+    const body = await c.req.json().catch(() => ({}))
+    if (typeof body.code !== 'string' || !body.code) return fail(c, 400, 'bad_code')
+    let r: { openid?: string; unionid?: string; errcode?: number; errmsg?: string }
+    try {
+      const q = new URLSearchParams({ appid: cfg.wxmp.appId, secret: cfg.wxmp.secret, js_code: body.code, grant_type: 'authorization_code' })
+      r = await (await wx(`https://api.weixin.qq.com/sns/jscode2session?${q}`)).json()
+    } catch (err) {
+      console.error('[wxmp] jscode2session', err)
+      return fail(c, 502, 'provider_failed')
+    }
+    if (!r.openid) {
+      console.error('[wxmp] jscode2session', r.errcode, r.errmsg)
+      return fail(c, 400, 'bad_code')
+    }
+    const pid = r.unionid || r.openid
+    const link = db.prepare("SELECT user_id FROM identities WHERE provider IN ('wxmp', 'wechat') AND provider_user_id = ?").get(pid) as { user_id: string } | undefined
+    let user = link ? getUser(link.user_id) : undefined
+    if (!user) {
+      user = createUser({ name: '微信用户' })
+      db.prepare('INSERT OR IGNORE INTO identities (provider, provider_user_id, user_id, created_at) VALUES (?, ?, ?, ?)').run('wxmp', pid, user.id, now())
+    }
+    const token = startSession(c, user.id)
+    return c.json({ token, user: publicUser(user) })
+  })
+
+  // Mini program code (小程序码) that opens a share — for share posters. Cached in memory.
+  let wxToken: { value: string; expires: number } | null = null
+  const qrCache = new Map<string, Uint8Array>()
+  const accessToken = async () => {
+    if (wxToken && wxToken.expires > now()) return wxToken.value
+    const q = new URLSearchParams({ grant_type: 'client_credential', appid: cfg.wxmp.appId, secret: cfg.wxmp.secret })
+    const r = (await (await wx(`https://api.weixin.qq.com/cgi-bin/token?${q}`)).json()) as { access_token?: string; expires_in?: number; errcode?: number; errmsg?: string }
+    if (!r.access_token) throw new Error(`token ${r.errcode} ${r.errmsg}`)
+    wxToken = { value: r.access_token, expires: now() + ((r.expires_in ?? 7200) - 300) * 1000 }
+    return wxToken.value
+  }
+  app.get('/wxmp/qrcode/:id', async (c) => {
+    if (!wxmpReady()) return fail(c, 404, 'provider_not_configured')
+    const id = c.req.param('id')
+    if (!/^[A-Za-z0-9]{6,32}$/.test(id) || !db.prepare('SELECT 1 FROM shares WHERE id = ?').get(id)) return fail(c, 404, 'not_found')
+    let img = qrCache.get(id)
+    if (!img) {
+      try {
+        const res = await wx(`https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=${await accessToken()}`, {
+          method: 'POST',
+          body: JSON.stringify({ scene: id, page: 'pages/share/index', check_path: false, env_version: cfg.wxmp.envVersion, width: 430 }),
+        })
+        if ((res.headers.get('content-type') ?? '').includes('json')) throw new Error(await res.text())
+        img = new Uint8Array(await res.arrayBuffer())
+      } catch (err) {
+        console.error('[wxmp] qrcode', err)
+        wxToken = null
+        return fail(c, 502, 'provider_failed')
+      }
+      if (qrCache.size > 500) qrCache.clear()
+      qrCache.set(id, img)
+    }
+    return c.body(img as unknown as ArrayBuffer, 200, { 'content-type': 'image/jpeg', 'cache-control': 'public, max-age=86400' })
+  })
 
   // --- drafts ------------------------------------------------------------------
   app.get('/designs', (c) => {

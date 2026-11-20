@@ -9,7 +9,7 @@ import { appleClientSecret, type Provider, type ProviderId } from '../src/oauth'
 
 const SITE = 'https://bead.test'
 
-function setup(extra: Record<string, string> = {}) {
+function setup(extra: Record<string, string> = {}, fetchImpl?: typeof fetch) {
   const cfg = loadConfig({ SITE_URL: SITE, ...extra })
   const db = openDb(':memory:')
   const sent: { to: string; text: string }[] = []
@@ -21,7 +21,7 @@ function setup(extra: Record<string, string> = {}) {
     profile: async (code) => ({ id: `${id}-${code}`, email, emailVerified: !!email, name: 'Fake User' }),
   })
   const providers = { google: fake('g', 'amy@example.com'), facebook: fake('f'), wechat: fake('w'), apple: { ...fake('a'), configured: false } } as Record<ProviderId, Provider>
-  const app = createApp({ cfg, db, mailer, providers, now: () => t })
+  const app = createApp({ cfg, db, mailer, providers, now: () => t, fetch: fetchImpl })
   let cookie = ''
   const call = async (method: string, path: string, body?: unknown, headers: Record<string, string> = {}) => {
     const res = await app.request(`/api${path}`, {
@@ -204,5 +204,63 @@ describe('helpers', () => {
     expect(validPattern(pattern)).toBe(true)
     expect(validPattern({ ...pattern, cells: [1, 2, 3, 1.5] })).toBe(false)
     expect(validPattern({ ...pattern, width: 400, height: 1, cells: Array(400).fill(0) })).toBe(false)
+  })
+})
+
+describe('WeChat mini program', () => {
+  const env = { WXMP_APP_ID: 'wx123', WXMP_APP_SECRET: 'sec' }
+  const calls: string[] = []
+  const fakeWx = (async (url: string | URL, init?: RequestInit) => {
+    const u = String(url)
+    calls.push(u)
+    const json = (o: object) => new Response(JSON.stringify(o), { headers: { 'content-type': 'application/json' } })
+    if (u.includes('jscode2session')) {
+      const code = new URL(u).searchParams.get('js_code')
+      if (code === 'bad') return json({ errcode: 40029, errmsg: 'invalid code' })
+      return json({ openid: `open-${code}`, unionid: code === 'u1' ? 'union-1' : undefined, session_key: 'k' })
+    }
+    if (u.includes('/cgi-bin/token')) return json({ access_token: 'AT', expires_in: 7200 })
+    if (u.includes('getwxacodeunlimit')) {
+      expect(JSON.parse(String(init?.body))).toMatchObject({ page: 'pages/share/index', check_path: false })
+      return new Response(new Uint8Array([0xff, 0xd8, 0xff]), { headers: { 'content-type': 'image/jpeg' } })
+    }
+    return new Response('?', { status: 404 })
+  }) as typeof fetch
+
+  it('signs in with wx.login code and a bearer token, same user next time', async () => {
+    const s = setup(env, fakeWx)
+    const r = await s.call('POST', '/auth/wxmp/login', { code: 'abc' })
+    expect(r.status).toBe(200)
+    expect(r.json.user).toMatchObject({ name: '微信用户', providers: ['wxmp'] })
+    s.resetCookie()
+    const me = await s.call('GET', '/auth/me', undefined, { authorization: `Bearer ${r.json.token}` })
+    expect(me.json.user.id).toBe(r.json.user.id)
+    // Drafts work with the token too.
+    expect((await s.call('PUT', '/designs/d1', { name: 'x', data: { pattern } }, { authorization: `Bearer ${r.json.token}` })).status).toBe(200)
+    s.resetCookie()
+    const again = await s.call('POST', '/auth/wxmp/login', { code: 'abc' })
+    expect(again.json.user.id).toBe(r.json.user.id)
+    expect((await s.call('POST', '/auth/wxmp/login', { code: 'bad' })).json.error).toBe('bad_code')
+  })
+
+  it('links to the website WeChat login through unionid', async () => {
+    const s = setup(env, fakeWx)
+    s.db.prepare("INSERT INTO users (id, name, created_at) VALUES ('web1', 'Web', 0)").run()
+    s.db.prepare("INSERT INTO identities (provider, provider_user_id, user_id, created_at) VALUES ('wechat', 'union-1', 'web1', 0)").run()
+    expect((await s.call('POST', '/auth/wxmp/login', { code: 'u1' })).json.user.id).toBe('web1')
+  })
+
+  it('serves a mini program code for a share', async () => {
+    const s = setup(env, fakeWx)
+    const { token } = (await s.call('POST', '/auth/wxmp/login', { code: 'q' })).json
+    const share = await s.call('POST', '/shares', { name: 'p', pattern }, { authorization: `Bearer ${token}` })
+    const res = await s.call('GET', `/wxmp/qrcode/${share.json.id}`)
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toBe('image/jpeg')
+    expect((await s.call('GET', '/wxmp/qrcode/nope12345')).status).toBe(404)
+  })
+
+  it('is off without an AppID', async () => {
+    expect((await setup().call('POST', '/auth/wxmp/login', { code: 'x' })).status).toBe(404)
   })
 })

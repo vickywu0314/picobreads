@@ -7,6 +7,8 @@ export interface Config {
   google: { id: string; secret: string }
   facebook: { id: string; secret: string }
   wechat: { id: string; secret: string }
+  /** WeChat mini program (微信小程序): AppID / AppSecret, and which version its share codes open. */
+  wxmp: { appId: string; secret: string; envVersion: 'release' | 'trial' | 'develop' }
   apple: { clientId: string; teamId: string; keyId: string; privateKey: string }
   /** Secure cookies (https). Off only for local http testing. */
   secureCookies: boolean
@@ -23,6 +25,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     google: { id: s('GOOGLE_CLIENT_ID'), secret: s('GOOGLE_CLIENT_SECRET') },
     facebook: { id: s('FACEBOOK_APP_ID'), secret: s('FACEBOOK_APP_SECRET') },
     wechat: { id: s('WECHAT_APP_ID'), secret: s('WECHAT_APP_SECRET') },
+    wxmp: { appId: s('WXMP_APP_ID'), secret: s('WXMP_APP_SECRET'), envVersion: (['trial', 'develop'].includes(s('WXMP_ENV')) ? s('WXMP_ENV') : 'release') as Config['wxmp']['envVersion'] },
     apple: { clientId: s('APPLE_CLIENT_ID'), teamId: s('APPLE_TEAM_ID'), keyId: s('APPLE_KEY_ID'), privateKey: s('APPLE_PRIVATE_KEY').replace(/\\n/g, '\n') },
     secureCookies: siteUrl.startsWith('https://'),
   }
