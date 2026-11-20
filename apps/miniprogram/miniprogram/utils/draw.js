@@ -25,24 +25,33 @@ __export(draw_exports, {
   fitView: () => fitView,
   getCanvas: () => getCanvas,
   onColor: () => onColor,
+  queryNode: () => queryNode,
   rgb: () => rgb,
   shade: () => shade
 });
 module.exports = __toCommonJS(draw_exports);
-function getCanvas(page, selector) {
-  return new Promise((resolve, reject) => {
-    wx.createSelectorQuery().in(page).select(selector).fields({ node: true, size: true }).exec((res) => {
-      const r = res == null ? void 0 : res[0];
-      if (!(r == null ? void 0 : r.node)) return reject(new Error(`canvas ${selector} not found`));
-      const dpr = Math.min(3, wx.getWindowInfo().pixelRatio || 2);
-      const canvas = r.node;
-      canvas.width = Math.round(r.width * dpr);
-      canvas.height = Math.round(r.height * dpr);
-      const ctx = canvas.getContext("2d");
-      ctx.scale(dpr, dpr);
-      resolve({ canvas, ctx, width: r.width, height: r.height });
+function queryNode(page, selector, fields) {
+  const ask = (q) => new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), 800);
+    q.select(selector).fields(fields).exec((res) => {
+      clearTimeout(timer);
+      resolve(res && res[0] || null);
     });
   });
+  const own = page.createSelectorQuery;
+  return ask(typeof own === "function" ? own.call(page) : wx.createSelectorQuery()).then((r) => r != null ? r : ask(wx.createSelectorQuery()));
+}
+async function getCanvas(page, selector) {
+  const r = await queryNode(page, selector, { node: true, size: true });
+  if (!r || !r.node) throw new Error(`\u627E\u4E0D\u5230\u753B\u5E03 ${selector}\uFF08\u67E5\u8BE2\u6CA1\u6709\u56DE\u5E94\uFF09`);
+  if (!r.width || !r.height) throw new Error(`\u753B\u5E03 ${selector} \u5927\u5C0F\u662F 0`);
+  const dpr = Math.min(3, wx.getWindowInfo().pixelRatio || 2);
+  const canvas = r.node;
+  canvas.width = Math.round(r.width * dpr);
+  canvas.height = Math.round(r.height * dpr);
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  return { canvas, ctx, width: r.width, height: r.height };
 }
 const rgb = ([r, g, b]) => `rgb(${r},${g},${b})`;
 function shade([r, g, b], k) {

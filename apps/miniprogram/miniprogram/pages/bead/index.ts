@@ -1,6 +1,6 @@
 import type { Pattern } from '../../lib/engine'
 import { BOARD_PEGS } from '../../utils/config'
-import { cellAt, cellCenter, drawBoard, fitView, getCanvas, onColor, rgb, type BoardView, type CanvasHandle } from '../../utils/draw'
+import { cellAt, cellCenter, drawBoard, fitView, getCanvas, onColor, queryNode, rgb, type BoardView, type CanvasHandle } from '../../utils/draw'
 import { legendOf, palette } from '../../utils/generate'
 import { getWork, setWork } from '../../utils/store'
 import { saveCurrentDraft, shareCurrent } from '../../utils/actions'
@@ -41,8 +41,8 @@ Page({
   bv: { scale: 8, ox: 0, oy: 0 } as BoardView,
   fitScale: 8,
   handle: null as CanvasHandle | null,
-  numbers: new Map<number, number>(),
-  totals: new Map<number, number>(),
+  numbers: null as unknown as Map<number, number>,
+  totals: null as unknown as Map<number, number>,
   undoStack: [] as number[][],
   batch: [] as number[],
   touch: null as null | { last: Pt; pinch?: { dist: number; mid: Pt } },
@@ -76,12 +76,10 @@ Page({
   /** Size the canvas to its box once the layout is known (retries while the box has no size yet). */
   async initCanvas(attempt: number) {
     if (!this.pattern) return
-    const box = await new Promise<{ width: number; height: number } | null>((resolve) =>
-      wx.createSelectorQuery().in(this).select('#board-box').boundingClientRect((r) => resolve(r ? { width: r.width, height: r.height } : null)).exec(),
-    )
+    const box = await queryNode<{ width: number; height: number }>(this, '#board-box', { size: true })
     if (!box || box.width < 10 || box.height < 10) {
       if (attempt < 20) setTimeout(() => void this.initCanvas(attempt + 1), 100)
-      else this.fail('量不到画布大小')
+      else this.fail(box ? `钉板区域大小不对：${box.width}×${box.height}` : '查询钉板区域没有回应')
       return
     }
     await new Promise<void>((resolve) => this.setData({ boardW: Math.floor(box.width), boardH: Math.floor(box.height) }, resolve))

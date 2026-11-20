@@ -11,25 +11,40 @@ export interface CanvasHandle {
   height: number
 }
 
+type PageLike = WechatMiniprogram.Component.TrivialInstance | WechatMiniprogram.Page.TrivialInstance
+
+/**
+ * Run a selector query on a page and wait for its answer. Uses the page's own createSelectorQuery
+ * (wx.createSelectorQuery().in(page) was ignored on some base library versions: "no proper page or
+ * component is found"); if nothing answers in time, tries the global query once, then gives up.
+ */
+export function queryNode<T>(page: PageLike, selector: string, fields: WechatMiniprogram.Fields): Promise<T | null> {
+  const ask = (q: WechatMiniprogram.SelectorQuery) =>
+    new Promise<T | null>((resolve) => {
+      const timer = setTimeout(() => resolve(null), 800)
+      q.select(selector)
+        .fields(fields)
+        .exec((res) => {
+          clearTimeout(timer)
+          resolve((res && res[0]) || null)
+        })
+    })
+  const own = (page as any).createSelectorQuery // eslint-disable-line @typescript-eslint/no-explicit-any
+  return ask(typeof own === 'function' ? own.call(page) : wx.createSelectorQuery()).then((r) => r ?? ask(wx.createSelectorQuery()))
+}
+
 /** A `<canvas type="2d">` on the page, sized for the screen's pixel ratio. */
-export function getCanvas(page: WechatMiniprogram.Component.TrivialInstance | WechatMiniprogram.Page.TrivialInstance, selector: string): Promise<CanvasHandle> {
-  return new Promise((resolve, reject) => {
-    wx.createSelectorQuery()
-      .in(page as any) // eslint-disable-line @typescript-eslint/no-explicit-any
-      .select(selector)
-      .fields({ node: true, size: true })
-      .exec((res) => {
-        const r = res?.[0]
-        if (!r?.node) return reject(new Error(`canvas ${selector} not found`))
-        const dpr = Math.min(3, wx.getWindowInfo().pixelRatio || 2)
-        const canvas = r.node
-        canvas.width = Math.round(r.width * dpr)
-        canvas.height = Math.round(r.height * dpr)
-        const ctx = canvas.getContext('2d')
-        ctx.scale(dpr, dpr)
-        resolve({ canvas, ctx, width: r.width, height: r.height })
-      })
-  })
+export async function getCanvas(page: PageLike, selector: string): Promise<CanvasHandle> {
+  const r = await queryNode<{ node: any; width: number; height: number }>(page, selector, { node: true, size: true }) // eslint-disable-line @typescript-eslint/no-explicit-any
+  if (!r || !r.node) throw new Error(`找不到画布 ${selector}（查询没有回应）`)
+  if (!r.width || !r.height) throw new Error(`画布 ${selector} 大小是 0`)
+  const dpr = Math.min(3, wx.getWindowInfo().pixelRatio || 2)
+  const canvas = r.node
+  canvas.width = Math.round(r.width * dpr)
+  canvas.height = Math.round(r.height * dpr)
+  const ctx = canvas.getContext('2d')
+  ctx.scale(dpr, dpr)
+  return { canvas, ctx, width: r.width, height: r.height }
 }
 
 export const rgb = ([r, g, b]: Rgb) => `rgb(${r},${g},${b})`

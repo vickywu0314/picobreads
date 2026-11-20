@@ -26,8 +26,8 @@ Page({
   bv: { scale: 8, ox: 0, oy: 0 },
   fitScale: 8,
   handle: null,
-  numbers: /* @__PURE__ */ new Map(),
-  totals: /* @__PURE__ */ new Map(),
+  numbers: null,
+  totals: null,
   undoStack: [],
   batch: [],
   touch: null,
@@ -59,12 +59,10 @@ Page({
   async initCanvas(attempt) {
     var _a;
     if (!this.pattern) return;
-    const box = await new Promise(
-      (resolve) => wx.createSelectorQuery().in(this).select("#board-box").boundingClientRect((r) => resolve(r ? { width: r.width, height: r.height } : null)).exec()
-    );
+    const box = await (0, import_draw.queryNode)(this, "#board-box", { size: true });
     if (!box || box.width < 10 || box.height < 10) {
       if (attempt < 20) setTimeout(() => void this.initCanvas(attempt + 1), 100);
-      else this.fail("\u91CF\u4E0D\u5230\u753B\u5E03\u5927\u5C0F");
+      else this.fail(box ? `\u9489\u677F\u533A\u57DF\u5927\u5C0F\u4E0D\u5BF9\uFF1A${box.width}\xD7${box.height}` : "\u67E5\u8BE2\u9489\u677F\u533A\u57DF\u6CA1\u6709\u56DE\u5E94");
       return;
     }
     await new Promise((resolve) => this.setData({ boardW: Math.floor(box.width), boardH: Math.floor(box.height) }, resolve));
