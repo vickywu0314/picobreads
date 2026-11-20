@@ -111,9 +111,12 @@ export function createApp(deps: Deps) {
   app.use('*', async (c, next) => {
     const m = c.req.method
     const isCallback = /\/auth\/[a-z]+\/callback$/.test(c.req.path)
+    // The origin check protects cookie sessions from other websites; the mini program (bearer token,
+    // or its login call) isn't a website and its dev tools send their own Origin.
+    const fromApp = (c.req.header('authorization') ?? '').startsWith('Bearer ') || c.req.path.endsWith('/auth/wxmp/login')
     if (m !== 'GET' && m !== 'HEAD' && !isCallback) {
       const origin = c.req.header('origin')
-      if (origin && origin !== siteOrigin) return fail(c, 403, 'bad_origin')
+      if (origin && origin !== siteOrigin && !fromApp) return fail(c, 403, 'bad_origin')
       if (!(c.req.header('content-type') ?? '').includes('application/json')) return fail(c, 400, 'json_only')
     }
     c.header('Cache-Control', 'no-store')

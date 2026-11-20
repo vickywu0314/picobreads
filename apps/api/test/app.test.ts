@@ -241,6 +241,9 @@ describe('WeChat mini program', () => {
     const again = await s.call('POST', '/auth/wxmp/login', { code: 'abc' })
     expect(again.json.user.id).toBe(r.json.user.id)
     expect((await s.call('POST', '/auth/wxmp/login', { code: 'bad' })).json.error).toBe('bad_code')
+    // The dev tools send their own Origin: allowed for the app's login and bearer-token calls only.
+    expect((await s.call('POST', '/auth/wxmp/login', { code: 'abc' }, { origin: 'https://servicewechat.com' })).status).toBe(200)
+    expect((await s.call('PUT', '/designs/d2', { name: 'y', data: { pattern } }, { origin: 'https://servicewechat.com', authorization: `Bearer ${r.json.token}` })).status).toBe(200)
   })
 
   it('links to the website WeChat login through unionid', async () => {
