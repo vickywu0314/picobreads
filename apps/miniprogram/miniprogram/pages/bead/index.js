@@ -36,6 +36,7 @@ Page({
   lastBuzz: 0,
   finishedShown: false,
   failed: false,
+  drawn: false,
   async onLoad() {
     const w = (0, import_store.getWork)();
     if (!w.pattern) {
@@ -140,14 +141,17 @@ Page({
       var _a;
       this.frame = 0;
       try {
+        if (!this.drawn) {
+          this.drawn = true;
+          console.log("[bead] first draw", { canvas: `${c.width}x${c.height}`, view: this.bv, pattern: `${this.pattern.width}x${this.pattern.height}` });
+        }
         (0, import_draw.drawBoard)(c.ctx, c.width, c.height, this.bv, { pattern: this.pattern, placed: this.placed.join(""), selected: this.data.selected, numbers: this.numbers }, (0, import_generate.palette)(), import_config.BOARD_PEGS[(0, import_store.getWork)().beadSize]);
       } catch (e) {
         this.fail(String((_a = e == null ? void 0 : e.stack) != null ? _a : e));
       }
     };
     this.frame = 1;
-    if (typeof c.canvas.requestAnimationFrame === "function") c.canvas.requestAnimationFrame(paint);
-    else setTimeout(paint, 16);
+    setTimeout(paint, 16);
   },
   fit() {
     if (!this.handle || !this.pattern) return;

@@ -51,6 +51,7 @@ Page({
   lastBuzz: 0,
   finishedShown: false,
   failed: false,
+  drawn: false,
 
   async onLoad() {
     const w = getWork()
@@ -159,14 +160,19 @@ Page({
     const paint = () => {
       this.frame = 0
       try {
+        if (!this.drawn) {
+          this.drawn = true
+          console.log('[bead] first draw', { canvas: `${c.width}x${c.height}`, view: this.bv, pattern: `${this.pattern!.width}x${this.pattern!.height}` })
+        }
         drawBoard(c.ctx, c.width, c.height, this.bv, { pattern: this.pattern!, placed: this.placed.join(''), selected: this.data.selected, numbers: this.numbers }, palette(), BOARD_PEGS[getWork().beadSize])
       } catch (e) {
         this.fail(String((e as Error)?.stack ?? e))
       }
     }
+    // A plain timer, not canvas.requestAnimationFrame: in some environments its callback never
+    // fires, which left the board blank forever (every later draw was skipped as "already pending").
     this.frame = 1
-    if (typeof c.canvas.requestAnimationFrame === 'function') c.canvas.requestAnimationFrame(paint)
-    else setTimeout(paint, 16)
+    setTimeout(paint, 16)
   },
 
   fit() {
