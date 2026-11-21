@@ -11,24 +11,26 @@
     </view>
   </view>
 
-  <view class="board" id="board-box">
-    <canvas type="2d" id="board" class="board-canvas" style="width: {{boardW}}px; height: {{boardH}}px" disable-scroll="true"
-      bindtouchstart="onTouchStart" bindtouchmove="onTouchMove" bindtouchend="onTouchEnd" bindtouchcancel="onTouchEnd"></canvas>
+  <view class="tools">
     <view class="modes">
       <view class="mode {{mode === 'place' ? 'on' : ''}}" data-m="place" bindtap="setMode">放豆</view>
       <view class="mode {{mode === 'move' ? 'on' : ''}}" data-m="move" bindtap="setMode">移动</view>
     </view>
+    <view wx:if="{{testMode}}" class="test-btn" bindtap="testFinish">测试：一键拼完</view>
     <view class="zoom">
-      <view class="zbtn" bindtap="zoomIn">＋</view>
       <view class="zbtn" bindtap="zoomOut">－</view>
+      <view class="zbtn" bindtap="zoomIn">＋</view>
       <view class="zbtn small" bindtap="fit">全图</view>
     </view>
-    <view wx:if="{{testMode}}" class="test-btn" bindtap="testFinish">测试：一键拼完</view>
-    <view wx:if="{{hint}}" class="hint">{{hint}}</view>
+  </view>
+
+  <view class="board" id="board-box">
+    <canvas type="2d" id="board" class="board-canvas" style="width: {{boardW}}px; height: {{boardH}}px" disable-scroll="true"
+      bindtouchstart="onTouchStart" bindtouchmove="onTouchMove" bindtouchend="onTouchEnd" bindtouchcancel="onTouchEnd"></canvas>
   </view>
 
   <view class="tray">
-    <view class="tray-head small"><text class="bold">{{selectedLabel}}</text><text class="muted">选颜色后点或划放豆 · 没选时拖动移画布</text></view>
+    <view class="tray-head small"><text class="bold {{hint ? 'accent' : ''}}">{{hint || selectedLabel}}</text><text class="muted">选颜色后点或划放豆 · 没选时拖动移画布</text></view>
     <scroll-view scroll-x="true" enhanced="true" show-scrollbar="{{false}}" class="tray-scroll">
       <view class="wells">
         <view wx:for="{{wells}}" wx:key="color" class="well {{item.color === selected ? 'on' : ''}} {{item.left === 0 ? 'done' : ''}}" data-color="{{item.color}}" bindtap="selectColor">
