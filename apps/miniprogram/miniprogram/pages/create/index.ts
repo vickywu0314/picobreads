@@ -1,6 +1,6 @@
 import type { Pattern } from '../../lib/engine'
 import { BEAD_SIZES, PIXEL_TIER, boardCount, perSideOf, sizeCm, type BeadSize, type Look, type TierId } from '../../utils/config'
-import { drawFinished, getCanvas, type CanvasHandle } from '../../utils/draw'
+import { patternImage } from '../../utils/png'
 import { beadCount, generate, legendOf, optionKeys, palette, recommend, yieldUI } from '../../utils/generate'
 import { applyPattern, getWork, setWork } from '../../utils/store'
 
@@ -14,6 +14,7 @@ interface OptionView {
   recommended: boolean
   selected: boolean
   ready: boolean
+  image: string
 }
 
 /** Pictures whose recommendation was already applied (a later manual pick is kept). */
@@ -30,14 +31,15 @@ Page({
     view: 'final' as 'final' | 'photo',
     photo: '',
     previewInfo: '',
+    previewImage: '',
     loose: false,
     subjectPct: 100,
     canGo: false,
   },
 
-  // Not in data (not rendered): generated patterns and canvases.
+  // Not in data (not rendered): generated patterns and their picture files.
   patterns: {} as Record<string, Pattern | null>,
-  canvases: {} as Record<string, CanvasHandle>,
+  images: {} as Record<string, string>,
   run: 0,
   perSide: 0,
 
@@ -61,8 +63,9 @@ Page({
     const run = ++this.run
     const w = getWork()
     this.patterns = {}
+    this.images = {}
     this.perSide = 0
-    this.setData({ options: this.optionViews(), canGo: false, previewInfo: '生成中…' })
+    this.setData({ options: this.optionViews(), canGo: false, previewInfo: '生成中…', previewImage: '' })
     const keys = optionKeys()
     // The selected one first, so the preview shows up quickly.
     const order = [...keys].sort((a, b) => Number(this.isSelected(b.key)) - Number(this.isSelected(a.key)))
@@ -118,21 +121,15 @@ Page({
         recommended: !isPixel && this.perSide === per,
         selected: this.isSelected(o.key),
         ready: !!p,
+        image: this.images[o.key] || '',
       }
     })
   },
 
-  async canvasFor(id: string) {
-    if (!this.canvases[id]) this.canvases[id] = await getCanvas(this, `#${id}`)
-    return this.canvases[id]
-  },
-
+  /** The result card's picture (a PNG file shown by <image>, not a canvas). */
   async drawOption(key: string) {
-    const idx = optionKeys().findIndex((o) => o.key === key)
     const p = this.patterns[key]
-    const c = await this.canvasFor(`opt-${idx}`)
-    if (p) drawFinished(c.ctx, c.width, c.height, p, palette())
-    else c.ctx.clearRect(0, 0, c.width, c.height)
+    this.images[key] = p ? patternImage(`opt-${key}`, p, palette(), 330) : ''
   },
 
   selectedPattern(): Pattern | null {
@@ -143,10 +140,9 @@ Page({
   async refreshPreview() {
     const p = this.selectedPattern()
     const w = getWork()
-    const c = await this.canvasFor('preview')
-    if (!p) return c.ctx.clearRect(0, 0, c.width, c.height)
-    drawFinished(c.ctx, c.width, c.height, p, palette())
+    if (!p) return this.setData({ previewImage: '' })
     this.setData({
+      previewImage: patternImage('preview', p, palette(), 720),
       canGo: true,
       previewInfo: `${boardCount(p.width, p.height, w.beadSize)} 块底板 · ${p.width} × ${p.height} · ≈ ${sizeCm(p.width, p.height, w.beadSize)} cm · ${legendOf(p).length} 色 · 共 ${beadCount(p)} 颗`,
     })

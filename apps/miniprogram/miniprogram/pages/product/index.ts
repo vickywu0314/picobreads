@@ -1,6 +1,7 @@
 import type { Pattern } from '../../lib/engine'
 import { BOARD_PEGS, boardCount, sizeCm } from '../../utils/config'
-import { drawFinished, getCanvas, onColor, rgb } from '../../utils/draw'
+import { getCanvas, onColor, rgb } from '../../utils/draw'
+import { patternImage } from '../../utils/png'
 import { beadCount, legendOf, palette } from '../../utils/generate'
 import { getWork } from '../../utils/store'
 
@@ -11,6 +12,8 @@ Page({
     stats: [] as { k: string; v: string }[],
     legend: [] as { code: string; hex: string; count: number }[],
     listOpen: false,
+    thumb: '',
+    rendering: false,
   },
 
   onLoad() {
@@ -24,6 +27,7 @@ Page({
     const pal = palette()
     const legend = legendOf(p)
     this.setData({
+      thumb: patternImage('product', p, pal, 300),
       stats: [
         { k: '尺寸', v: `${p.width} × ${p.height} 格` },
         { k: '成品大小', v: `≈ ${sizeCm(p.width, p.height, w.beadSize)} cm` },
@@ -33,11 +37,6 @@ Page({
       ],
       legend: legend.map((l) => ({ code: pal.colors[l.color].code, hex: rgb(pal.colors[l.color].rgb as Rgb), count: l.count })),
     })
-  },
-
-  onReady() {
-    const p = getWork().pattern
-    if (p) getCanvas(this, '#thumb').then((c) => drawFinished(c.ctx, c.width, c.height, p, palette())).catch((e) => console.error(e))
   },
 
   toggleList() {
@@ -59,6 +58,8 @@ Page({
     const p = w.pattern as Pattern
     wx.showLoading({ title: '生成图纸…', mask: true })
     try {
+      // The canvas only exists while the sheet is being made.
+      await new Promise<void>((resolve) => this.setData({ rendering: true }, resolve))
       const h = await getCanvas(this, '#sheet')
       const pal = palette()
       const legend = legendOf(p)
@@ -182,6 +183,7 @@ Page({
         wx.canvasToTempFilePath({ canvas: c, fileType: 'png', success: (r) => resolve(r.tempFilePath), fail: reject } as WechatMiniprogram.CanvasToTempFilePathOption),
       )
       wx.hideLoading()
+      this.setData({ rendering: false })
       wx.saveImageToPhotosAlbum({
         filePath: file,
         success: () => wx.showToast({ title: '图纸已保存到相册', icon: 'success' }),
@@ -194,6 +196,7 @@ Page({
     } catch (e) {
       console.error(e)
       wx.hideLoading()
+      this.setData({ rendering: false })
       wx.showModal({ title: '图纸没生成成功', content: String((e as Error)?.message ?? e).slice(0, 200), showCancel: false })
     }
   },

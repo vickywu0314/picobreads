@@ -2,6 +2,7 @@
 var import_api = require("../../utils/api");
 var import_config = require("../../utils/config");
 var import_draw = require("../../utils/draw");
+var import_png = require("../../utils/png");
 var import_generate = require("../../utils/generate");
 var import_store = require("../../utils/store");
 Page({
@@ -13,13 +14,14 @@ Page({
     views: 0,
     stats: "",
     colorCount: 0,
-    legend: []
+    legend: [],
+    art: "",
+    rendering: false
   },
   share: null,
   id: "",
   /** Share card picture (5:4), made from the art canvas. */
   cardImage: "",
-  art: null,
   onLoad(q) {
     this.id = q.id || decodeURIComponent(q.scene || "");
     this.setData({ mine: q.mine === "1" });
@@ -44,11 +46,8 @@ Page({
         legend: legend.map((l) => ({ code: pal.colors[l.color].code, hex: (0, import_draw.rgb)(pal.colors[l.color].rgb), count: l.count }))
       });
       wx.setNavigationBarTitle({ title: s.name });
-      wx.nextTick(async () => {
-        this.art = await (0, import_draw.getCanvas)(this, "#art");
-        (0, import_draw.drawFinished)(this.art.ctx, this.art.width, this.art.height, p, pal, "#f9dfe4");
-        wx.canvasToTempFilePath({ canvas: this.art.canvas, fileType: "jpg", quality: 0.9, success: (r) => this.cardImage = r.tempFilePath });
-      });
+      this.cardImage = (0, import_png.patternImage)("share", p, pal, 600);
+      this.setData({ art: this.cardImage });
     } catch (e) {
       this.setData({ state: "missing" });
     }
@@ -83,6 +82,7 @@ Page({
     if (!s) return;
     wx.showLoading({ title: "\u751F\u6210\u6D77\u62A5\u2026", mask: true });
     try {
+      await new Promise((resolve) => this.setData({ rendering: true }, resolve));
       const h = await (0, import_draw.getCanvas)(this, "#poster");
       const c = h.canvas;
       c.width = 1080;
@@ -150,6 +150,7 @@ Page({
         (resolve, reject) => wx.canvasToTempFilePath({ canvas: c, fileType: "jpg", quality: 0.92, success: (r) => resolve(r.tempFilePath), fail: reject })
       );
       wx.hideLoading();
+      this.setData({ rendering: false });
       wx.saveImageToPhotosAlbum({
         filePath: file,
         success: () => wx.showToast({ title: "\u5DF2\u4FDD\u5B58\u5230\u76F8\u518C", icon: "success" }),
@@ -167,6 +168,7 @@ Page({
     } catch (e) {
       console.error(e);
       wx.hideLoading();
+      this.setData({ rendering: false });
       wx.showToast({ title: "\u6D77\u62A5\u751F\u6210\u5931\u8D25", icon: "none" });
     }
   }

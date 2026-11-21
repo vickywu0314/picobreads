@@ -1,13 +1,16 @@
 "use strict";
 var import_config = require("../../utils/config");
 var import_draw = require("../../utils/draw");
+var import_png = require("../../utils/png");
 var import_generate = require("../../utils/generate");
 var import_store = require("../../utils/store");
 Page({
   data: {
     stats: [],
     legend: [],
-    listOpen: false
+    listOpen: false,
+    thumb: "",
+    rendering: false
   },
   onLoad() {
     const w = (0, import_store.getWork)();
@@ -20,6 +23,7 @@ Page({
     const pal = (0, import_generate.palette)();
     const legend = (0, import_generate.legendOf)(p);
     this.setData({
+      thumb: (0, import_png.patternImage)("product", p, pal, 300),
       stats: [
         { k: "\u5C3A\u5BF8", v: `${p.width} \xD7 ${p.height} \u683C` },
         { k: "\u6210\u54C1\u5927\u5C0F", v: `\u2248 ${(0, import_config.sizeCm)(p.width, p.height, w.beadSize)} cm` },
@@ -29,10 +33,6 @@ Page({
       ],
       legend: legend.map((l) => ({ code: pal.colors[l.color].code, hex: (0, import_draw.rgb)(pal.colors[l.color].rgb), count: l.count }))
     });
-  },
-  onReady() {
-    const p = (0, import_store.getWork)().pattern;
-    if (p) (0, import_draw.getCanvas)(this, "#thumb").then((c) => (0, import_draw.drawFinished)(c.ctx, c.width, c.height, p, (0, import_generate.palette)())).catch((e) => console.error(e));
   },
   toggleList() {
     this.setData({ listOpen: !this.data.listOpen });
@@ -53,6 +53,7 @@ Page({
     const p = w.pattern;
     wx.showLoading({ title: "\u751F\u6210\u56FE\u7EB8\u2026", mask: true });
     try {
+      await new Promise((resolve) => this.setData({ rendering: true }, resolve));
       const h = await (0, import_draw.getCanvas)(this, "#sheet");
       const pal = (0, import_generate.palette)();
       const legend = (0, import_generate.legendOf)(p);
@@ -167,6 +168,7 @@ Page({
         (resolve, reject) => wx.canvasToTempFilePath({ canvas: c, fileType: "png", success: (r) => resolve(r.tempFilePath), fail: reject })
       );
       wx.hideLoading();
+      this.setData({ rendering: false });
       wx.saveImageToPhotosAlbum({
         filePath: file,
         success: () => wx.showToast({ title: "\u56FE\u7EB8\u5DF2\u4FDD\u5B58\u5230\u76F8\u518C", icon: "success" }),
@@ -179,6 +181,7 @@ Page({
     } catch (e) {
       console.error(e);
       wx.hideLoading();
+      this.setData({ rendering: false });
       wx.showModal({ title: "\u56FE\u7EB8\u6CA1\u751F\u6210\u6210\u529F", content: String((_b = e == null ? void 0 : e.message) != null ? _b : e).slice(0, 200), showCancel: false });
     }
   }

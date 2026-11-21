@@ -28,7 +28,7 @@
   <view wx:elif="{{drafts.length === 0}}" class="card empty mt muted small">还没有草稿。在线拼时点「存草稿」就会出现在这里。</view>
 
   <view wx:for="{{drafts}}" wx:key="id" class="card draft mt">
-    <canvas type="2d" id="thumb-{{index}}" class="thumb"></canvas>
+    <image src="{{item.thumb}}" mode="aspectFit" class="thumb" />
     <view class="draft-info">
       <view class="bold">{{item.name}}</view>
       <view class="muted tiny">{{item.size}} · {{item.updated}}</view>

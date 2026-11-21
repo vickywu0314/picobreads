@@ -1,8 +1,10 @@
 "use strict";
 var import_api = require("./utils/api");
+var import_png = require("./utils/png");
 App({
   onLaunch() {
     var _a;
+    (0, import_png.cleanPictures)();
     if (!(0, import_api.getToken)()) (0, import_api.login)().catch((e) => console.warn("[login] silent sign-in failed:", e && e.code));
     const m = (_a = wx.getUpdateManager) == null ? void 0 : _a.call(wx);
     m == null ? void 0 : m.onUpdateReady(() => {

@@ -1,7 +1,7 @@
 "use strict";
 var import_api = require("../../utils/api");
 var import_config = require("../../utils/config");
-var import_draw = require("../../utils/draw");
+var import_png = require("../../utils/png");
 var import_generate = require("../../utils/generate");
 var import_store = require("../../utils/store");
 var import_actions = require("../../utils/actions");
@@ -61,22 +61,21 @@ Page({
       });
       this.setData({
         loading: false,
-        drafts: this.raw.map((d) => {
+        drafts: this.raw.map((d, i) => {
           var _a, _b, _c;
           const p = d.data.pattern;
           const total = p.cells.filter((c) => c >= 0).length;
-          const done = [...(_a = d.data.placed) != null ? _a : ""].filter((c, i) => c === "1" && p.cells[i] >= 0).length;
+          const done = [...(_a = d.data.placed) != null ? _a : ""].filter((c, i2) => c === "1" && p.cells[i2] >= 0).length;
           return {
             id: d.id,
             name: d.name,
             size: `${p.width}\xD7${p.height} \xB7 \u2248 ${(0, import_config.sizeCm)(p.width, p.height, (_c = (_b = d.data.settings) == null ? void 0 : _b.beadSize) != null ? _c : "2.6mm")} cm`,
             updated: new Date(d.updatedAt).toLocaleDateString("zh-CN"),
-            pct: total ? Math.round(done / total * 100) : 0
+            pct: total ? Math.round(done / total * 100) : 0,
+            thumb: (0, import_png.patternImage)(`draft-${i}`, p, (0, import_generate.palette)(), 220)
           };
         })
       });
-      wx.nextTick(() => this.raw.forEach((d, i) => (0, import_draw.getCanvas)(this, `#thumb-${i}`).then((c) => (0, import_draw.drawFinished)(c.ctx, c.width, c.height, d.data.pattern, (0, import_generate.palette)())).catch(() => {
-      })));
     } catch (e) {
       this.setData({ loading: false });
       wx.showToast({ title: (0, import_api.errorText)(e), icon: "none" });

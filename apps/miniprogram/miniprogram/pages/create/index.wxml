@@ -29,7 +29,7 @@
         <text wx:if="{{item.selected}}" class="pill accent sel">✓ 已选</text>
       </view>
       <view class="opt-art">
-        <canvas type="2d" id="opt-{{index}}" class="opt-canvas"></canvas>
+        <image wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFit" class="opt-canvas" />
         <view wx:if="{{!item.ready}}" class="opt-loading muted small">生成中…</view>
       </view>
       <view class="bold small">{{item.title}}</view>
@@ -47,7 +47,7 @@
       </view>
     </view>
     <view class="preview-box mt">
-      <canvas type="2d" id="preview" class="preview-canvas {{view === 'photo' ? 'hidden' : ''}}"></canvas>
+      <image wx:if="{{view === 'final' && previewImage}}" src="{{previewImage}}" mode="aspectFit" class="preview-photo" />
       <image wx:if="{{view === 'photo'}}" src="{{photo}}" mode="aspectFit" class="preview-photo" />
     </view>
     <view class="muted small center mt">{{previewInfo}}</view>

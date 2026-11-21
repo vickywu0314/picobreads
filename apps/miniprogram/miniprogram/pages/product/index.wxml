@@ -25,7 +25,7 @@
   </view>
 
   <view class="card yours mt-lg">
-    <canvas type="2d" id="thumb" class="thumb"></canvas>
+    <image src="{{thumb}}" mode="aspectFit" class="thumb" />
     <view class="yours-info">
       <view class="row between"><text class="h2">你的图纸</text><text class="accent bold small" bindtap="edit">修改</text></view>
       <view class="stat" wx:for="{{stats}}" wx:key="k"><text class="muted small">{{item.k}}</text><text class="bold small">{{item.v}}</text></view>
@@ -47,5 +47,5 @@
     <button class="btn primary block" hover-class="btn-hover" bindtap="saveSheet">保存图纸到相册</button>
     <button class="btn block mt" hover-class="btn-hover" bindtap="bead">先在线拼拼看</button>
   </view>
-  <canvas type="2d" id="sheet" class="sheet"></canvas>
+  <canvas wx:if="{{rendering}}" type="2d" id="sheet" class="sheet"></canvas>
 </view>

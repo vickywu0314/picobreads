@@ -6,7 +6,7 @@
   </view>
   <block wx:else>
     <view class="art-box">
-      <canvas type="2d" id="art" class="art"></canvas>
+      <image src="{{art}}" mode="aspectFit" class="art" />
     </view>
     <view class="mt">
       <text class="pill soft">作品分享</text>
@@ -37,5 +37,5 @@
     </view>
   </block>
   <!-- Off-screen canvas for the share poster -->
-  <canvas type="2d" id="poster" class="poster"></canvas>
+  <canvas wx:if="{{rendering}}" type="2d" id="poster" class="poster"></canvas>
 </view>

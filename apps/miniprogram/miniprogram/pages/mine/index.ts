@@ -1,7 +1,7 @@
 import type { Pattern } from '../../lib/engine'
 import { api, clearSession, errorText, getUser, login, updateProfile, type User } from '../../utils/api'
 import { sizeCm, type BeadSize, type Look, type TierId } from '../../utils/config'
-import { drawFinished, getCanvas } from '../../utils/draw'
+import { patternImage } from '../../utils/png'
 import { palette } from '../../utils/generate'
 import { setWork } from '../../utils/store'
 import { sharePiece } from '../../utils/actions'
@@ -19,6 +19,7 @@ interface DraftRow {
   size: string
   updated: string
   pct: number
+  thumb: string
 }
 
 Page({
@@ -76,7 +77,7 @@ Page({
       this.raw = designs.filter((d) => d.data?.pattern?.cells)
       this.setData({
         loading: false,
-        drafts: this.raw.map((d) => {
+        drafts: this.raw.map((d, i) => {
           const p = d.data.pattern
           const total = p.cells.filter((c) => c >= 0).length
           const done = [...(d.data.placed ?? '')].filter((c, i) => c === '1' && p.cells[i] >= 0).length
@@ -86,11 +87,10 @@ Page({
             size: `${p.width}×${p.height} · ≈ ${sizeCm(p.width, p.height, d.data.settings?.beadSize ?? '2.6mm')} cm`,
             updated: new Date(d.updatedAt).toLocaleDateString('zh-CN'),
             pct: total ? Math.round((done / total) * 100) : 0,
+            thumb: patternImage(`draft-${i}`, p, palette(), 220),
           }
         }),
       })
-      // Thumbnails once the list is on screen.
-      wx.nextTick(() => this.raw.forEach((d, i) => getCanvas(this, `#thumb-${i}`).then((c) => drawFinished(c.ctx, c.width, c.height, d.data.pattern, palette())).catch(() => {})))
     } catch (e) {
       this.setData({ loading: false })
       wx.showToast({ title: errorText(e), icon: 'none' })

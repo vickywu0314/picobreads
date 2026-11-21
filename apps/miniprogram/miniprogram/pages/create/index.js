@@ -1,6 +1,6 @@
 "use strict";
 var import_config = require("../../utils/config");
-var import_draw = require("../../utils/draw");
+var import_png = require("../../utils/png");
 var import_generate = require("../../utils/generate");
 var import_store = require("../../utils/store");
 const autoPicked = /* @__PURE__ */ new Set();
@@ -15,13 +15,14 @@ Page({
     view: "final",
     photo: "",
     previewInfo: "",
+    previewImage: "",
     loose: false,
     subjectPct: 100,
     canGo: false
   },
-  // Not in data (not rendered): generated patterns and canvases.
+  // Not in data (not rendered): generated patterns and their picture files.
   patterns: {},
-  canvases: {},
+  images: {},
   run: 0,
   perSide: 0,
   onLoad() {
@@ -42,8 +43,9 @@ Page({
     const run = ++this.run;
     const w = (0, import_store.getWork)();
     this.patterns = {};
+    this.images = {};
     this.perSide = 0;
-    this.setData({ options: this.optionViews(), canGo: false, previewInfo: "\u751F\u6210\u4E2D\u2026" });
+    this.setData({ options: this.optionViews(), canGo: false, previewInfo: "\u751F\u6210\u4E2D\u2026", previewImage: "" });
     const keys = (0, import_generate.optionKeys)();
     const order = [...keys].sort((a, b) => Number(this.isSelected(b.key)) - Number(this.isSelected(a.key)));
     for (const o of order) {
@@ -93,20 +95,15 @@ Page({
         note,
         recommended: !isPixel && this.perSide === per,
         selected: this.isSelected(o.key),
-        ready: !!p
+        ready: !!p,
+        image: this.images[o.key] || ""
       };
     });
   },
-  async canvasFor(id) {
-    if (!this.canvases[id]) this.canvases[id] = await (0, import_draw.getCanvas)(this, `#${id}`);
-    return this.canvases[id];
-  },
+  /** The result card's picture (a PNG file shown by <image>, not a canvas). */
   async drawOption(key) {
-    const idx = (0, import_generate.optionKeys)().findIndex((o) => o.key === key);
     const p = this.patterns[key];
-    const c = await this.canvasFor(`opt-${idx}`);
-    if (p) (0, import_draw.drawFinished)(c.ctx, c.width, c.height, p, (0, import_generate.palette)());
-    else c.ctx.clearRect(0, 0, c.width, c.height);
+    this.images[key] = p ? (0, import_png.patternImage)(`opt-${key}`, p, (0, import_generate.palette)(), 330) : "";
   },
   selectedPattern() {
     var _a;
@@ -116,10 +113,9 @@ Page({
   async refreshPreview() {
     const p = this.selectedPattern();
     const w = (0, import_store.getWork)();
-    const c = await this.canvasFor("preview");
-    if (!p) return c.ctx.clearRect(0, 0, c.width, c.height);
-    (0, import_draw.drawFinished)(c.ctx, c.width, c.height, p, (0, import_generate.palette)());
+    if (!p) return this.setData({ previewImage: "" });
     this.setData({
+      previewImage: (0, import_png.patternImage)("preview", p, (0, import_generate.palette)(), 720),
       canGo: true,
       previewInfo: `${(0, import_config.boardCount)(p.width, p.height, w.beadSize)} \u5757\u5E95\u677F \xB7 ${p.width} \xD7 ${p.height} \xB7 \u2248 ${(0, import_config.sizeCm)(p.width, p.height, w.beadSize)} cm \xB7 ${(0, import_generate.legendOf)(p).length} \u8272 \xB7 \u5171 ${(0, import_generate.beadCount)(p)} \u9897`
     });

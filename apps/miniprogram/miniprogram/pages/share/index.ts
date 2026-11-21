@@ -1,7 +1,8 @@
 import type { Pattern } from '../../lib/engine'
 import { api } from '../../utils/api'
 import { API_BASE, sizeCm, type BeadSize } from '../../utils/config'
-import { drawFinished, getCanvas, rgb, type CanvasHandle } from '../../utils/draw'
+import { drawFinished, getCanvas, rgb } from '../../utils/draw'
+import { patternImage } from '../../utils/png'
 import { beadCount, legendOf, palette } from '../../utils/generate'
 import { applyPattern, setWork } from '../../utils/store'
 
@@ -25,12 +26,13 @@ Page({
     stats: '',
     colorCount: 0,
     legend: [] as { code: string; hex: string; count: number }[],
+    art: '',
+    rendering: false,
   },
   share: null as Shared | null,
   id: '',
   /** Share card picture (5:4), made from the art canvas. */
   cardImage: '',
-  art: null as CanvasHandle | null,
 
   onLoad(q: Record<string, string | undefined>) {
     // From a link (?id=…) or from scanning the mini program code (scene=…).
@@ -58,11 +60,9 @@ Page({
         legend: legend.map((l) => ({ code: pal.colors[l.color].code, hex: rgb(pal.colors[l.color].rgb as [number, number, number]), count: l.count })),
       })
       wx.setNavigationBarTitle({ title: s.name })
-      wx.nextTick(async () => {
-        this.art = await getCanvas(this, '#art')
-        drawFinished(this.art.ctx, this.art.width, this.art.height, p, pal, '#f9dfe4')
-        wx.canvasToTempFilePath({ canvas: this.art.canvas, fileType: 'jpg', quality: 0.9, success: (r) => (this.cardImage = r.tempFilePath) } as WechatMiniprogram.CanvasToTempFilePathOption)
-      })
+      // Also used as the picture on the share card.
+      this.cardImage = patternImage('share', p, pal, 600)
+      this.setData({ art: this.cardImage })
     } catch {
       this.setData({ state: 'missing' })
     }
@@ -102,6 +102,7 @@ Page({
     if (!s) return
     wx.showLoading({ title: '生成海报…', mask: true })
     try {
+      await new Promise<void>((resolve) => this.setData({ rendering: true }, resolve))
       const h = await getCanvas(this, '#poster')
       const c = h.canvas
       c.width = 1080
@@ -171,6 +172,7 @@ Page({
         wx.canvasToTempFilePath({ canvas: c, fileType: 'jpg', quality: 0.92, success: (r) => resolve(r.tempFilePath), fail: reject } as WechatMiniprogram.CanvasToTempFilePathOption),
       )
       wx.hideLoading()
+      this.setData({ rendering: false })
       wx.saveImageToPhotosAlbum({
         filePath: file,
         success: () => wx.showToast({ title: '已保存到相册', icon: 'success' }),
@@ -188,6 +190,7 @@ Page({
     } catch (e) {
       console.error(e)
       wx.hideLoading()
+      this.setData({ rendering: false })
       wx.showToast({ title: '海报生成失败', icon: 'none' })
     }
   },

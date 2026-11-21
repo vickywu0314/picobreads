@@ -75,6 +75,17 @@ Page({
     void this.initCanvas(0)
   },
 
+  /** Back from another page (share, …): set the canvas up again and repaint, keeping the zoom. */
+  onShow() {
+    if (!this.handle) return
+    getCanvas(this, '#board')
+      .then((h) => {
+        this.handle = h
+        this.draw()
+      })
+      .catch(() => {})
+  },
+
   /** Size the canvas to its box once the layout is known (retries while the box has no size yet). */
   async initCanvas(attempt: number) {
     if (!this.pattern) return
