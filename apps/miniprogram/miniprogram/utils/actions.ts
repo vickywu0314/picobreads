@@ -1,5 +1,5 @@
 import type { Pattern } from '../lib/engine'
-import { api, ensureLogin, errorText } from './api'
+import { api, ensureLogin, errorText, getToken, login } from './api'
 import type { BeadSize } from './config'
 import { draftData, getWork, newDraftId, setWork } from './store'
 
@@ -44,4 +44,24 @@ export function shareCurrent() {
   const w = getWork()
   if (!w.pattern) return
   return sharePiece({ name: w.name || '我的拼豆', pattern: w.pattern, placed: w.placed, beadSize: w.beadSize })
+}
+
+/**
+ * Quietly keep the current work on the account (no toasts): everything the user has beaded shows
+ * up under "我的" without tapping "存草稿". Does nothing until at least one bead is placed.
+ */
+export async function syncDraft(): Promise<boolean> {
+  const w = getWork()
+  if (!w.pattern || !w.placed.includes('1')) return false
+  try {
+    if (!getToken()) await login()
+    const id = w.draftId ?? newDraftId()
+    const name = w.name || `作品 ${new Date().toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })}`
+    if (!w.draftId || !w.name) setWork({ draftId: id, name })
+    await api(`/designs/${id}`, { method: 'PUT', data: { name, data: draftData(getWork()) } })
+    return true
+  } catch (e) {
+    console.warn('[sync] draft not saved:', e)
+    return false
+  }
 }

@@ -6,7 +6,7 @@
     </view>
     <view class="actions">
       <button class="btn small" hover-class="btn-hover" disabled="{{!canUndo}}" bindtap="undo">撤销上一步</button>
-      <button class="btn small" hover-class="btn-hover" bindtap="saveDraft">存草稿</button>
+      <button class="btn small" hover-class="btn-hover" bindtap="saveDraft">保存</button>
       <button class="btn small primary" hover-class="btn-hover" bindtap="share">分享</button>
     </view>
   </view>

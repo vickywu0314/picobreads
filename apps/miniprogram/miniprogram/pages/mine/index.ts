@@ -20,17 +20,19 @@ interface DraftRow {
   updated: string
   pct: number
   thumb: string
+  /** Index into the raw list (rows are shown in two groups). */
+  i: number
 }
 
 Page({
-  data: { user: null as User | null, initial: '', drafts: [] as DraftRow[], loading: false },
+  data: { user: null as User | null, initial: '', drafts: [] as DraftRow[], groups: [] as { title: string; items: DraftRow[] }[], loading: false },
   raw: [] as ServerDraft[],
 
   onShow() {
     const user = getUser()
     this.setData({ user, initial: user ? [...(user.name || '?').trim()][0] ?? '?' : '' })
     if (user) void this.loadDrafts()
-    else this.setData({ drafts: [] })
+    else this.setData({ drafts: [], groups: [] })
   },
 
   async login() {
@@ -75,9 +77,7 @@ Page({
     try {
       const { designs } = await api<{ designs: ServerDraft[] }>('/designs')
       this.raw = designs.filter((d) => d.data?.pattern?.cells)
-      this.setData({
-        loading: false,
-        drafts: this.raw.map((d, i) => {
+      const rows = this.raw.map((d, i) => {
           const p = d.data.pattern
           const total = p.cells.filter((c) => c >= 0).length
           const done = [...(d.data.placed ?? '')].filter((c, i) => c === '1' && p.cells[i] >= 0).length
@@ -86,10 +86,19 @@ Page({
             name: d.name,
             size: `${p.width}×${p.height} · ≈ ${sizeCm(p.width, p.height, d.data.settings?.beadSize ?? '2.6mm')} cm`,
             updated: new Date(d.updatedAt).toLocaleDateString('zh-CN'),
-            pct: total ? Math.round((done / total) * 100) : 0,
+            // 100 only when every bead is placed (99.6 % must not count as finished).
+            pct: !total ? 0 : done >= total ? 100 : Math.min(99, Math.round((done / total) * 100)),
             thumb: patternImage(`draft-${i}`, p, palette(), 220),
+            i,
           }
-        }),
+        })
+      this.setData({
+        loading: false,
+        drafts: rows,
+        groups: [
+          { title: '拼好的', items: rows.filter((r) => r.pct === 100) },
+          { title: '拼到一半的', items: rows.filter((r) => r.pct < 100) },
+        ],
       })
     } catch (e) {
       this.setData({ loading: false })
@@ -110,6 +119,11 @@ Page({
       name: d.name,
     })
     wx.navigateTo({ url: '/pages/bead/index' })
+  },
+
+  buy() {
+    // Ordering finished pieces isn't open yet (price and WeChat Pay to come).
+    wx.showToast({ title: '成品购买即将开放', icon: 'none' })
   },
 
   share(e: WechatMiniprogram.TouchEvent) {

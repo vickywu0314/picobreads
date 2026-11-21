@@ -1,0 +1,16 @@
+<view class="wrap">
+  <view class="panel hero">
+    <view class="title center">拼完啦 🎉</view>
+    <view class="muted center mt-sm">{{name}} · {{stats}}</view>
+    <view class="art-box mt"><image src="{{art}}" mode="aspectFit" class="art" /></view>
+    <view class="muted small center mt">已经存到「我的」里，随时可以回来看。</view>
+  </view>
+
+  <view class="card ask mt-lg">
+    <view class="h2">想要一个拼好的实物吗？</view>
+    <view class="muted small mt-sm">我们按这张图帮你拼好、熨烫好，收到就能摆起来或送人。</view>
+    <button class="btn primary block mt" hover-class="btn-hover" bindtap="buy">购买拼好的成品</button>
+    <button class="btn block mt" hover-class="btn-hover" bindtap="share">分享给朋友</button>
+    <view class="later muted" bindtap="later">先不了</view>
+  </view>
+</view>

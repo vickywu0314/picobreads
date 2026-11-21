@@ -19,26 +19,33 @@
   </view>
 
   <view class="row between mt-lg">
-    <text class="h2">我的草稿 <text class="muted small">({{drafts.length}})</text></text>
+    <text class="h2">我的作品 <text class="muted small">({{drafts.length}})</text></text>
     <button class="btn small" hover-class="btn-hover" bindtap="newOne">＋ 新做一个</button>
   </view>
 
   <view wx:if="{{loading}}" class="muted mt center">加载中…</view>
-  <view wx:elif="{{!user}}" class="card empty mt muted small">登录后可以在这里看到你存的草稿。</view>
-  <view wx:elif="{{drafts.length === 0}}" class="card empty mt muted small">还没有草稿。在线拼时点「存草稿」就会出现在这里。</view>
+  <view wx:elif="{{!user}}" class="card empty mt muted small">登录后可以在这里看到你拼过的作品。</view>
+  <view wx:elif="{{drafts.length === 0}}" class="card empty mt muted small">还没有作品。在线拼时放过豆子的图，会自动出现在这里。</view>
 
-  <view wx:for="{{drafts}}" wx:key="id" class="card draft mt">
-    <image src="{{item.thumb}}" mode="aspectFit" class="thumb" />
-    <view class="draft-info">
-      <view class="bold">{{item.name}}</view>
-      <view class="muted tiny">{{item.size}} · {{item.updated}}</view>
-      <view class="bar"><view class="bar-fill" style="width: {{item.pct}}%"></view></view>
-      <view class="muted tiny">已拼 {{item.pct}}%</view>
-      <view class="row gap mt-sm">
-        <button class="btn small primary" hover-class="btn-hover" data-i="{{index}}" bindtap="open">继续拼</button>
-        <button class="btn small" hover-class="btn-hover" data-i="{{index}}" bindtap="share">分享</button>
-        <text class="del muted small" data-i="{{index}}" bindtap="remove">删除</text>
+  <block wx:for="{{groups}}" wx:for-item="g" wx:key="title">
+    <view wx:if="{{g.items.length}}" class="group-title mt-lg">{{g.title}} <text class="muted small">({{g.items.length}})</text></view>
+    <view wx:for="{{g.items}}" wx:key="id" class="card draft mt">
+      <image src="{{item.thumb}}" mode="aspectFit" class="thumb" />
+      <view class="draft-info">
+        <view class="row gap"><text class="bold">{{item.name}}</text><text wx:if="{{item.pct === 100}}" class="pill sun">✓ 拼好了</text></view>
+        <view class="muted tiny">{{item.size}} · {{item.updated}}</view>
+        <block wx:if="{{item.pct < 100}}">
+          <view class="bar"><view class="bar-fill" style="width: {{item.pct}}%"></view></view>
+          <view class="muted tiny">已拼 {{item.pct}}%</view>
+        </block>
+        <view class="row gap mt-sm">
+          <button wx:if="{{item.pct === 100}}" class="btn small primary" hover-class="btn-hover" data-i="{{item.i}}" bindtap="buy">买成品</button>
+          <button wx:else class="btn small primary" hover-class="btn-hover" data-i="{{item.i}}" bindtap="open">继续拼</button>
+          <button class="btn small" hover-class="btn-hover" data-i="{{item.i}}" bindtap="share">分享</button>
+          <button wx:if="{{item.pct === 100}}" class="btn small" hover-class="btn-hover" data-i="{{item.i}}" bindtap="open">查看</button>
+          <text class="del muted small" data-i="{{item.i}}" bindtap="remove">删除</text>
+        </view>
       </view>
     </view>
-  </view>
+  </block>
 </view>

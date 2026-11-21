@@ -3,7 +3,7 @@ import { BOARD_PEGS } from '../../utils/config'
 import { cellAt, cellCenter, drawBoard, fitView, getCanvas, onColor, queryNode, rgb, type BoardView, type CanvasHandle } from '../../utils/draw'
 import { legendOf, palette } from '../../utils/generate'
 import { getWork, setWork } from '../../utils/store'
-import { saveCurrentDraft, shareCurrent } from '../../utils/actions'
+import { saveCurrentDraft, shareCurrent, syncDraft } from '../../utils/actions'
 
 interface Well {
   color: number
@@ -52,6 +52,7 @@ Page({
   touch: null as null | { last: Pt; start: Pt; moved: boolean; pinch?: { dist: number; mid: Pt } },
   frame: 0,
   saveTimer: 0 as number,
+  syncTimer: 0 as number,
   lastBuzz: 0,
   finishedShown: false,
   failed: false,
@@ -141,9 +142,13 @@ Page({
 
   onUnload() {
     this.persist()
+    clearTimeout(this.syncTimer)
+    void syncDraft()
   },
   onHide() {
     this.persist()
+    clearTimeout(this.syncTimer)
+    void syncDraft()
   },
 
   countTotal() {
@@ -182,13 +187,9 @@ Page({
     if (total && done === total && !this.finishedShown) {
       this.finishedShown = true
       this.persist()
-      wx.showModal({
-        title: '拼完啦 🎉',
-        content: '整张图都拼好了！分享给朋友看看？',
-        confirmText: '去分享',
-        cancelText: '先不了',
-        success: (r) => r.confirm && this.share(),
-      })
+      void syncDraft()
+      // Finished: buy the finished piece / share / not now.
+      setTimeout(() => wx.navigateTo({ url: '/pages/done/index' }), 350)
     }
   },
 
@@ -354,9 +355,15 @@ Page({
   schedulePersist() {
     clearTimeout(this.saveTimer)
     this.saveTimer = setTimeout(() => this.persist(), 800) as unknown as number
+    this.scheduleSync()
   },
   persist() {
     if (this.pattern) setWork({ placed: this.placed.join('') })
+  },
+  /** Save to the account a few seconds after the last bead (and when leaving the page). */
+  scheduleSync() {
+    clearTimeout(this.syncTimer)
+    this.syncTimer = setTimeout(() => void syncDraft(), 4000) as unknown as number
   },
 
   async saveDraft() {

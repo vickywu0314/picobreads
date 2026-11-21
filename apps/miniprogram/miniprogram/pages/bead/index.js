@@ -36,6 +36,7 @@ Page({
   touch: null,
   frame: 0,
   saveTimer: 0,
+  syncTimer: 0,
   lastBuzz: 0,
   finishedShown: false,
   failed: false,
@@ -118,9 +119,13 @@ Page({
   },
   onUnload() {
     this.persist();
+    clearTimeout(this.syncTimer);
+    void (0, import_actions.syncDraft)();
   },
   onHide() {
     this.persist();
+    clearTimeout(this.syncTimer);
+    void (0, import_actions.syncDraft)();
   },
   countTotal() {
     let n = 0;
@@ -159,13 +164,8 @@ Page({
     if (total && done === total && !this.finishedShown) {
       this.finishedShown = true;
       this.persist();
-      wx.showModal({
-        title: "\u62FC\u5B8C\u5566 \u{1F389}",
-        content: "\u6574\u5F20\u56FE\u90FD\u62FC\u597D\u4E86\uFF01\u5206\u4EAB\u7ED9\u670B\u53CB\u770B\u770B\uFF1F",
-        confirmText: "\u53BB\u5206\u4EAB",
-        cancelText: "\u5148\u4E0D\u4E86",
-        success: (r) => r.confirm && this.share()
-      });
+      void (0, import_actions.syncDraft)();
+      setTimeout(() => wx.navigateTo({ url: "/pages/done/index" }), 350);
     }
   },
   draw() {
@@ -315,9 +315,15 @@ Page({
   schedulePersist() {
     clearTimeout(this.saveTimer);
     this.saveTimer = setTimeout(() => this.persist(), 800);
+    this.scheduleSync();
   },
   persist() {
     if (this.pattern) (0, import_store.setWork)({ placed: this.placed.join("") });
+  },
+  /** Save to the account a few seconds after the last bead (and when leaving the page). */
+  scheduleSync() {
+    clearTimeout(this.syncTimer);
+    this.syncTimer = setTimeout(() => void (0, import_actions.syncDraft)(), 4e3);
   },
   async saveDraft() {
     this.persist();

@@ -6,14 +6,14 @@ var import_generate = require("../../utils/generate");
 var import_store = require("../../utils/store");
 var import_actions = require("../../utils/actions");
 Page({
-  data: { user: null, initial: "", drafts: [], loading: false },
+  data: { user: null, initial: "", drafts: [], groups: [], loading: false },
   raw: [],
   onShow() {
     var _a;
     const user = (0, import_api.getUser)();
     this.setData({ user, initial: user ? (_a = [...(user.name || "?").trim()][0]) != null ? _a : "?" : "" });
     if (user) void this.loadDrafts();
-    else this.setData({ drafts: [] });
+    else this.setData({ drafts: [], groups: [] });
   },
   async login() {
     try {
@@ -59,22 +59,29 @@ Page({
         var _a, _b;
         return (_b = (_a = d.data) == null ? void 0 : _a.pattern) == null ? void 0 : _b.cells;
       });
+      const rows = this.raw.map((d, i) => {
+        var _a, _b, _c;
+        const p = d.data.pattern;
+        const total = p.cells.filter((c) => c >= 0).length;
+        const done = [...(_a = d.data.placed) != null ? _a : ""].filter((c, i2) => c === "1" && p.cells[i2] >= 0).length;
+        return {
+          id: d.id,
+          name: d.name,
+          size: `${p.width}\xD7${p.height} \xB7 \u2248 ${(0, import_config.sizeCm)(p.width, p.height, (_c = (_b = d.data.settings) == null ? void 0 : _b.beadSize) != null ? _c : "2.6mm")} cm`,
+          updated: new Date(d.updatedAt).toLocaleDateString("zh-CN"),
+          // 100 only when every bead is placed (99.6 % must not count as finished).
+          pct: !total ? 0 : done >= total ? 100 : Math.min(99, Math.round(done / total * 100)),
+          thumb: (0, import_png.patternImage)(`draft-${i}`, p, (0, import_generate.palette)(), 220),
+          i
+        };
+      });
       this.setData({
         loading: false,
-        drafts: this.raw.map((d, i) => {
-          var _a, _b, _c;
-          const p = d.data.pattern;
-          const total = p.cells.filter((c) => c >= 0).length;
-          const done = [...(_a = d.data.placed) != null ? _a : ""].filter((c, i2) => c === "1" && p.cells[i2] >= 0).length;
-          return {
-            id: d.id,
-            name: d.name,
-            size: `${p.width}\xD7${p.height} \xB7 \u2248 ${(0, import_config.sizeCm)(p.width, p.height, (_c = (_b = d.data.settings) == null ? void 0 : _b.beadSize) != null ? _c : "2.6mm")} cm`,
-            updated: new Date(d.updatedAt).toLocaleDateString("zh-CN"),
-            pct: total ? Math.round(done / total * 100) : 0,
-            thumb: (0, import_png.patternImage)(`draft-${i}`, p, (0, import_generate.palette)(), 220)
-          };
-        })
+        drafts: rows,
+        groups: [
+          { title: "\u62FC\u597D\u7684", items: rows.filter((r) => r.pct === 100) },
+          { title: "\u62FC\u5230\u4E00\u534A\u7684", items: rows.filter((r) => r.pct < 100) }
+        ]
       });
     } catch (e) {
       this.setData({ loading: false });
@@ -95,6 +102,9 @@ Page({
       name: d.name
     });
     wx.navigateTo({ url: "/pages/bead/index" });
+  },
+  buy() {
+    wx.showToast({ title: "\u6210\u54C1\u8D2D\u4E70\u5373\u5C06\u5F00\u653E", icon: "none" });
   },
   share(e) {
     var _a, _b;

@@ -20,7 +20,8 @@ var actions_exports = {};
 __export(actions_exports, {
   saveCurrentDraft: () => saveCurrentDraft,
   shareCurrent: () => shareCurrent,
-  sharePiece: () => sharePiece
+  sharePiece: () => sharePiece,
+  syncDraft: () => syncDraft
 });
 module.exports = __toCommonJS(actions_exports);
 var import_api = require("./api");
@@ -63,4 +64,20 @@ function shareCurrent() {
   const w = (0, import_store.getWork)();
   if (!w.pattern) return;
   return sharePiece({ name: w.name || "\u6211\u7684\u62FC\u8C46", pattern: w.pattern, placed: w.placed, beadSize: w.beadSize });
+}
+async function syncDraft() {
+  var _a;
+  const w = (0, import_store.getWork)();
+  if (!w.pattern || !w.placed.includes("1")) return false;
+  try {
+    if (!(0, import_api.getToken)()) await (0, import_api.login)();
+    const id = (_a = w.draftId) != null ? _a : (0, import_store.newDraftId)();
+    const name = w.name || `\u4F5C\u54C1 ${(/* @__PURE__ */ new Date()).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" })}`;
+    if (!w.draftId || !w.name) (0, import_store.setWork)({ draftId: id, name });
+    await (0, import_api.api)(`/designs/${id}`, { method: "PUT", data: { name, data: (0, import_store.draftData)((0, import_store.getWork)()) } });
+    return true;
+  } catch (e) {
+    console.warn("[sync] draft not saved:", e);
+    return false;
+  }
 }
