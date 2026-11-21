@@ -13,3 +13,7 @@
 .mt-sm { margin-top: 12rpx; }
 .del { margin-left: auto; padding: 8rpx; }
 .group-title { font-size: 30rpx; font-weight: 800; }
+.order { display: flex; gap: 20rpx; padding: 20rpx; }
+.order-thumb { width: 140rpx; height: 140rpx; border-radius: 16rpx; background: #f6efec; flex-shrink: 0; }
+.accent { color: var(--accent); }
+.links { gap: 32rpx; }

@@ -4,15 +4,29 @@ var import_draw = require("../../utils/draw");
 var import_png = require("../../utils/png");
 var import_generate = require("../../utils/generate");
 var import_store = require("../../utils/store");
+var import_api = require("../../utils/api");
+var import_shop = require("../../utils/shop");
 Page({
   data: {
     stats: [],
     legend: [],
     listOpen: false,
     thumb: "",
-    rendering: false
+    rendering: false,
+    form: "digital",
+    forms: [],
+    address: null,
+    formName: "",
+    itemPrice: "",
+    shipping: "",
+    total: "",
+    paying: false,
+    started: false
   },
-  onLoad() {
+  shop: null,
+  wanted: "digital",
+  onLoad(q) {
+    this.wanted = q.form === "kit" || q.form === "finished" ? q.form : "digital";
     const w = (0, import_store.getWork)();
     const p = w.pattern;
     if (!p) {
@@ -34,11 +48,79 @@ Page({
       legend: legend.map((l) => ({ code: pal.colors[l.color].code, hex: (0, import_draw.rgb)(pal.colors[l.color].rgb), count: l.count }))
     });
   },
+  onShow() {
+    this.setData({ started: (0, import_store.getWork)().placed.includes("1") });
+    void this.refreshShop();
+  },
+  /** Which forms are open and their prices for this pattern's size. */
+  async refreshShop() {
+    const w = (0, import_store.getWork)();
+    if (!w.pattern) return;
+    const shop = this.shop = await (0, import_shop.loadShop)();
+    const tier = (0, import_shop.tierOf)(w.pattern, w.beadSize);
+    const price = (f) => shop.forms[f].open ? (0, import_shop.yuan)(shop.forms[f].prices[tier]) : "";
+    this.setData({
+      forms: [
+        { id: "digital", icon: "\u2B07", title: "\u514D\u8D39\u4E0B\u8F7D\u56FE\u7EB8", body: "\u56FE\u7EB8\u603B\u89C8 + \u6750\u6599\u6E05\u5355\uFF0C\u4FDD\u5B58\u5230\u76F8\u518C\uFF0C\u7528\u4F60\u81EA\u5DF1\u7684\u8C46\u5B50\u62FC\u3002", open: true, price: "\u514D\u8D39" },
+        { id: "kit", icon: "\u{1F4E6}", title: "\u8D2D\u4E70\u6750\u6599\u5305", body: "\u6309\u56FE\u7EB8\u6570\u597D\u7684\u8C46\u5B50\uFF08\u591A 10% \u5907\u7528\uFF09\u3001\u5E95\u677F\u3001\u71A8\u70EB\u7EB8\u548C\u6253\u5370\u597D\u7684\u56FE\u7EB8\u3002", open: shop.forms.kit.open, price: price("kit") },
+        { id: "finished", icon: "\u2728", title: "\u76F4\u63A5\u8D2D\u4E70\u6210\u54C1", body: "\u6211\u4EEC\u5E2E\u4F60\u62FC\u597D\u3001\u71A8\u70EB\u597D\uFF0C\u6536\u5230\u5C31\u80FD\u76F4\u63A5\u9001\u4EBA\u3002", open: shop.forms.finished.open, price: price("finished") }
+      ]
+    });
+    const want = this.wanted;
+    this.wanted = "digital";
+    if (want !== "digital") {
+      if (shop.forms[want].open) this.select(want);
+      else wx.showToast({ title: `${import_shop.FORM_NAME[want]}\u5373\u5C06\u5F00\u653E`, icon: "none" });
+    } else if (this.data.form !== "digital") this.select(this.data.form);
+  },
+  select(form) {
+    const w = (0, import_store.getWork)();
+    const shop = this.shop;
+    if (form === "digital" || !shop || !w.pattern) return this.setData({ form: "digital" });
+    const item = shop.forms[form].prices[(0, import_shop.tierOf)(w.pattern, w.beadSize)];
+    this.setData({ form, formName: import_shop.FORM_NAME[form], itemPrice: (0, import_shop.yuan)(item), shipping: shop.shippingFen ? (0, import_shop.yuan)(shop.shippingFen) : "\u5305\u90AE", total: (0, import_shop.yuan)(item + shop.shippingFen) });
+  },
+  pick(e) {
+    const id = e.currentTarget.dataset.id;
+    const f = this.data.forms.find((x) => x.id === id);
+    if (!(f == null ? void 0 : f.open)) return wx.showToast({ title: "\u5373\u5C06\u5F00\u653E\uFF0C\u656C\u8BF7\u671F\u5F85", icon: "none" });
+    this.select(id);
+  },
+  async chooseAddress() {
+    const a = await (0, import_shop.chooseAddress)();
+    if (a) this.setData({ address: a });
+  },
+  async pay() {
+    const w = (0, import_store.getWork)();
+    const form = this.data.form;
+    if (form === "digital" || !w.pattern) return;
+    let address = this.data.address;
+    if (!address) {
+      address = await (0, import_shop.chooseAddress)();
+      if (!address) return wx.showToast({ title: "\u8BF7\u5148\u9009\u62E9\u6536\u8D27\u5730\u5740", icon: "none" });
+      this.setData({ address });
+    }
+    this.setData({ paying: true });
+    wx.showLoading({ title: "\u6B63\u5728\u4E0B\u5355\u2026", mask: true });
+    try {
+      const order = await (0, import_shop.buy)({ form, name: w.name || "\u6211\u7684\u62FC\u8C46", pattern: w.pattern, placed: w.placed, beadSize: w.beadSize, address });
+      wx.hideLoading();
+      wx.showModal({
+        title: order.status === "paid" ? "\u652F\u4ED8\u6210\u529F \u{1F389}" : "\u5DF2\u63D0\u4EA4",
+        content: order.status === "paid" ? "\u6211\u4EEC\u5F00\u59CB\u51C6\u5907\u4E86\uFF0C\u8BA2\u5355\u5728\u300C\u6211\u7684 \u2192 \u6211\u7684\u8BA2\u5355\u300D\u91CC\u53EF\u4EE5\u770B\u5230\u3002" : "\u4ED8\u6B3E\u7ED3\u679C\u8FD8\u5728\u786E\u8BA4\uFF0C\u7A0D\u540E\u5728\u300C\u6211\u7684 \u2192 \u6211\u7684\u8BA2\u5355\u300D\u91CC\u67E5\u770B\u3002",
+        showCancel: false,
+        confirmText: "\u770B\u8BA2\u5355",
+        success: () => wx.switchTab({ url: "/pages/mine/index" })
+      });
+    } catch (e) {
+      wx.hideLoading();
+      if (e.message !== "cancelled") wx.showToast({ title: (0, import_api.errorText)(e), icon: "none" });
+    } finally {
+      this.setData({ paying: false });
+    }
+  },
   toggleList() {
     this.setData({ listOpen: !this.data.listOpen });
-  },
-  soon() {
-    wx.showToast({ title: "\u5373\u5C06\u5F00\u653E\uFF0C\u656C\u8BF7\u671F\u5F85", icon: "none" });
   },
   edit() {
     wx.navigateBack();

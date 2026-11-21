@@ -2,25 +2,13 @@
   <view class="title">你想要哪种形式？</view>
 
   <view class="forms mt-lg">
-    <view class="form card on">
-      <view class="row between"><text class="f-icon">⬇</text><text class="pill accent">✓ 已选</text></view>
-      <view class="h2 mt-sm">免费下载图纸</view>
-      <view class="muted small">图纸总览 + 材料清单，保存到相册，用你自己的豆子拼。</view>
-      <view class="bold mt-sm">免费</view>
-    </view>
-    <view class="form card soon" bindtap="soon">
-      <view class="veil"></view>
-      <text class="pill sun tag">即将开放</text>
-      <text class="f-icon">📦</text>
-      <view class="h2 mt-sm">购买材料包</view>
-      <view class="muted small">按图纸数好的豆子（多 10% 备用）、底板、熨烫纸和打印好的图纸。</view>
-    </view>
-    <view class="form card soon" bindtap="soon">
-      <view class="veil"></view>
-      <text class="pill sun tag">即将开放</text>
-      <text class="f-icon">✨</text>
-      <view class="h2 mt-sm">直接购买成品</view>
-      <view class="muted small">我们帮你拼好、熨烫好，收到就能直接送人。</view>
+    <view wx:for="{{forms}}" wx:key="id" class="form card {{form === item.id ? 'on' : ''}} {{item.open ? '' : 'soon'}}" data-id="{{item.id}}" bindtap="pick">
+      <view wx:if="{{!item.open}}" class="veil"></view>
+      <text wx:if="{{!item.open}}" class="pill sun tag">即将开放</text>
+      <view class="row between"><text class="f-icon">{{item.icon}}</text><text wx:if="{{form === item.id}}" class="pill accent">✓ 已选</text></view>
+      <view class="h2 mt-sm">{{item.title}}</view>
+      <view class="muted small">{{item.body}}</view>
+      <view wx:if="{{item.open}}" class="bold mt-sm price">{{item.price}}</view>
     </view>
   </view>
 
@@ -43,9 +31,31 @@
     </view>
   </view>
 
-  <view class="mt-lg">
-    <button class="btn primary block" hover-class="btn-hover" bindtap="saveSheet">保存图纸到相册</button>
-    <button class="btn block mt" hover-class="btn-hover" bindtap="bead">先在线拼拼看</button>
-  </view>
+  <block wx:if="{{form === 'digital'}}">
+    <view class="mt-lg">
+      <button class="btn primary block" hover-class="btn-hover" bindtap="saveSheet">保存图纸到相册</button>
+      <button class="btn block mt" hover-class="btn-hover" bindtap="bead">{{started ? '继续在线拼' : '先在线拼拼看'}}</button>
+    </view>
+  </block>
+  <block wx:else>
+    <view class="card addr mt-lg" bindtap="chooseAddress">
+      <view wx:if="{{address}}">
+        <view class="bold">{{address.name}} {{address.phone}}</view>
+        <view class="muted small">{{address.province}}{{address.city}}{{address.county}}{{address.detail}}</view>
+      </view>
+      <view wx:else class="bold">＋ 选择收货地址</view>
+      <text class="muted">›</text>
+    </view>
+    <view class="card total mt">
+      <view class="row between"><text class="muted">{{formName}}</text><text>{{itemPrice}}</text></view>
+      <view class="row between"><text class="muted">运费</text><text>{{shipping}}</text></view>
+      <view class="row between sum"><text class="bold">合计</text><text class="bold accent">{{total}}</text></view>
+    </view>
+    <view class="mt-lg">
+      <button class="btn primary block" hover-class="btn-hover" disabled="{{paying}}" bindtap="pay">微信支付 {{total}}</button>
+      <button class="btn block mt" hover-class="btn-hover" bindtap="bead">{{started ? '继续在线拼' : '先在线拼拼看'}}</button>
+    </view>
+    <view class="muted small center mt">{{form === 'kit' ? '材料包：按图纸数好的豆子（多 10% 备用）、底板、熨烫纸和打印好的图纸。' : '成品：我们按这张图拼好、熨烫好再寄给你。'}}定制商品付款后开始制作。</view>
+  </block>
   <canvas wx:if="{{rendering}}" type="2d" id="sheet" class="sheet"></canvas>
 </view>

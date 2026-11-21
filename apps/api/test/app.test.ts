@@ -1,4 +1,4 @@
-import { generateKeyPairSync } from 'node:crypto'
+import { createCipheriv, createVerify, generateKeyPairSync } from 'node:crypto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createApp, validPattern } from '../src/app'
 import { loadConfig } from '../src/config'
@@ -265,5 +265,109 @@ describe('WeChat mini program', () => {
 
   it('is off without an AppID', async () => {
     expect((await setup().call('POST', '/auth/wxmp/login', { code: 'x' })).status).toBe(404)
+  })
+})
+
+describe('shop: orders and WeChat Pay', () => {
+  const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
+  const V3KEY = '0123456789abcdef0123456789abcdef'
+  const env = {
+    WXMP_APP_ID: 'wx123',
+    WXMP_APP_SECRET: 'sec',
+    WXPAY_MCH_ID: '1900000001',
+    WXPAY_API_V3_KEY: V3KEY,
+    WXPAY_SERIAL_NO: 'SERIAL',
+    WXPAY_PRIVATE_KEY: privateKey.export({ type: 'pkcs8', format: 'pem' }).toString(),
+    PRICE_KIT_SMALL: '39.9',
+    PRICE_KIT_STANDARD: '99',
+    PRICE_KIT_LARGE: '199',
+    PRICE_SHIPPING: '8',
+    ADMIN_EMAIL: 'boss@example.com',
+  }
+  const address = { name: '小豆', phone: '13800000000', province: '北京市', city: '北京市', county: '朝阳区', detail: '某路 1 号' }
+
+  function shop(extra: Record<string, string> = {}) {
+    const state = { trade: 'NOTPAY', prepayBody: null as any, authorized: false } // eslint-disable-line @typescript-eslint/no-explicit-any
+    const fake = (async (url: string | URL, init?: RequestInit) => {
+      const u = String(url)
+      const json = (o: object, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json' } })
+      if (u.includes('jscode2session')) return json({ openid: 'openid-1' })
+      if (u.includes('/v3/pay/transactions/jsapi')) {
+        state.prepayBody = JSON.parse(String(init?.body))
+        state.authorized = String((init?.headers as Record<string, string>).authorization).startsWith('WECHATPAY2-SHA256-RSA2048 mchid="1900000001"')
+        return json({ prepay_id: 'PREPAY1' })
+      }
+      if (u.includes('/v3/pay/transactions/out-trade-no/')) return json({ trade_state: state.trade, transaction_id: 'TX1', amount: { total: state.prepayBody?.amount.total } })
+      return new Response('?', { status: 404 })
+    }) as typeof fetch
+    const s = setup({ SITE_URL: 'https://bead.test', ...env, ...extra }, fake)
+    return { s, state }
+  }
+  const signIn = async (s: ReturnType<typeof setup>) => ({ authorization: `Bearer ${(await s.call('POST', '/auth/wxmp/login', { code: 'c' })).json.token}` })
+
+  it('lists what is on sale: only forms with all prices set', async () => {
+    const { s } = shop()
+    const r = (await s.call('GET', '/shop')).json
+    expect(r.forms.kit).toEqual({ open: true, prices: { small: 3990, standard: 9900, large: 19900 } })
+    expect(r.forms.finished.open).toBe(false)
+    expect(r.shippingFen).toBe(800)
+    // Without the merchant settings nothing is on sale.
+    expect((await shop({ WXPAY_MCH_ID: '' }).s.call('GET', '/shop')).json.forms.kit.open).toBe(false)
+  })
+
+  it('creates an order, returns signed pay parameters, and marks it paid after WeChat confirms', async () => {
+    const { s, state } = shop()
+    const auth = await signIn(s)
+    expect((await s.call('POST', '/orders', { form: 'finished', pattern, address }, auth)).json.error).toBe('not_on_sale')
+    expect((await s.call('POST', '/orders', { form: 'kit', pattern, address: { ...address, phone: '' } }, auth)).json.error).toBe('bad_address')
+    const r = await s.call('POST', '/orders', { form: 'kit', name: '柯基', pattern, beadSize: '2.6mm', address }, auth)
+    expect(r.status).toBe(200)
+    expect(r.json.order).toMatchObject({ form: 'kit', tier: 'small', amountFen: 3990 + 800, status: 'pending' })
+    expect(state.authorized).toBe(true)
+    expect(state.prepayBody).toMatchObject({ appid: 'wx123', mchid: '1900000001', out_trade_no: r.json.order.id, notify_url: 'https://bead.test/api/pay/wechat/notify', amount: { total: 4790 }, payer: { openid: 'openid-1' } })
+    // paySign verifies with the merchant public key.
+    const pay = r.json.pay
+    expect(pay.package).toBe('prepay_id=PREPAY1')
+    expect(createVerify('RSA-SHA256').update(`wx123\n${pay.timeStamp}\n${pay.nonceStr}\n${pay.package}\n`).verify(publicKey, pay.paySign, 'base64')).toBe(true)
+
+    // Not paid yet.
+    expect((await s.call('GET', `/orders/${r.json.order.id}`, undefined, auth)).json.order.status).toBe('pending')
+    state.trade = 'SUCCESS'
+    const paid = (await s.call('GET', `/orders/${r.json.order.id}`, undefined, auth)).json.order
+    expect(paid.status).toBe('paid')
+    expect((await s.call('GET', '/orders', undefined, auth)).json.orders).toHaveLength(1)
+    // The owner got one email with the address and a link to the pattern.
+    const mail = s.sent.filter((m) => m.to === 'boss@example.com')
+    expect(mail).toHaveLength(1)
+    expect(mail[0].text).toContain('13800000000')
+    expect(mail[0].text).toMatch(/https:\/\/bead\.test\/s\/\?id=\w+/)
+    // Someone else can't read it.
+    s.resetCookie()
+    expect((await s.call('GET', `/orders/${r.json.order.id}`)).status).toBe(401)
+  })
+
+  it('accepts a genuine payment notification and rejects a forged one', async () => {
+    const { s, state } = shop()
+    const auth = await signIn(s)
+    const id = (await s.call('POST', '/orders', { form: 'kit', pattern, address }, auth)).json.order.id
+    const encrypt = (key: string) => {
+      const nonce = 'abcdefghijkl'
+      const c = createCipheriv('aes-256-gcm', Buffer.from(key), Buffer.from(nonce))
+      c.setAAD(Buffer.from('transaction'))
+      const data = Buffer.concat([c.update(JSON.stringify({ out_trade_no: id, trade_state: 'SUCCESS' })), c.final(), c.getAuthTag()])
+      return { resource: { ciphertext: data.toString('base64'), nonce, associated_data: 'transaction' } }
+    }
+    state.trade = 'SUCCESS'
+    expect((await s.call('POST', '/pay/wechat/notify', encrypt('x'.repeat(32)))).status).toBe(400)
+    expect((await s.call('GET', '/orders', undefined, auth)).json.orders[0].status).toBe('pending')
+    expect((await s.call('POST', '/pay/wechat/notify', encrypt(V3KEY))).json.code).toBe('SUCCESS')
+    expect((await s.call('GET', '/orders', undefined, auth)).json.orders[0].status).toBe('paid')
+  })
+
+  it('prices by size: 4 sections is the middle price', async () => {
+    const { s } = shop()
+    const auth = await signIn(s)
+    const big = { width: 60, height: 60, paletteId: 'mard-264', cells: Array(3600).fill(1) }
+    expect((await s.call('POST', '/orders', { form: 'kit', pattern: big, beadSize: '2.6mm', address }, auth)).json.order).toMatchObject({ tier: 'standard', amountFen: 9900 + 800 })
   })
 })

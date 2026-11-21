@@ -5,6 +5,8 @@ import type { Config } from './config'
 import { hashPassword, randomId, sha256, shortId, sixDigits, verifyPassword } from './crypto'
 import type { DB } from './db'
 import { codeEmail, type Mailer } from './mail'
+import { decryptNotify, prepay, queryOrder, wxPayReady } from './wxpay'
+import type { ShopForm, ShopTier } from './config'
 import { PROVIDERS, providers as makeProviders, type Profile, type Provider, type ProviderId } from './oauth'
 
 export interface Deps {
@@ -312,6 +314,8 @@ export function createApp(deps: Deps) {
       user = createUser({ name: '微信用户' })
       db.prepare('INSERT OR IGNORE INTO identities (provider, provider_user_id, user_id, created_at) VALUES (?, ?, ?, ?)').run('wxmp', pid, user.id, now())
     }
+    // The openid is needed to pay inside the mini program.
+    db.prepare('INSERT INTO wx_openids (user_id, openid) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET openid = excluded.openid').run(user.id, r.openid)
     const token = startSession(c, user.id)
     return c.json({ token, user: publicUser(user) })
   })
@@ -415,6 +419,150 @@ export function createApp(deps: Deps) {
     db.prepare('UPDATE shares SET views = views + 1 WHERE id = ?').run(row.id)
     c.header('Cache-Control', 'public, max-age=60')
     return c.json({ id: row.id, name: row.name, author: row.author || 'BeadSpark', createdAt: row.created_at, views: row.views + 1, ...JSON.parse(row.data) })
+  })
+
+  // --- shop: bead kits and finished pieces (mini program, WeChat Pay) --------------
+  const FORMS: ShopForm[] = ['kit', 'finished']
+  const FORM_NAME: Record<ShopForm, string> = { kit: '拼豆材料包', finished: '拼好的成品' }
+  const formOpen = (f: ShopForm) => wxPayReady(cfg.wxpay) && cfg.prices[f].small > 0 && cfg.prices[f].standard > 0 && cfg.prices[f].large > 0
+  /** Size class by how many standard sections (52 or 29 pegs a side) the pattern covers. */
+  const tierOf = (p: { width: number; height: number }, beadSize: string): ShopTier => {
+    const pegs = beadSize === '5mm' ? 29 : 52
+    const n = Math.ceil(p.width / pegs) * Math.ceil(p.height / pegs)
+    return n <= 1 ? 'small' : n <= 4 ? 'standard' : 'large'
+  }
+  interface OrderRow {
+    id: string
+    user_id: string
+    form: ShopForm
+    tier: ShopTier
+    name: string
+    amount_fen: number
+    status: string
+    data: string
+    address: string
+    share_id: string | null
+    transaction_id: string | null
+    created_at: number
+    paid_at: number | null
+  }
+  const publicOrder = (o: OrderRow) => ({ id: o.id, form: o.form, tier: o.tier, name: o.name, amountFen: o.amount_fen, status: o.status, createdAt: o.created_at, paidAt: o.paid_at, address: JSON.parse(o.address), pattern: JSON.parse(o.data).pattern })
+
+  /** Mark an order paid (once) and tell the shop owner by email. */
+  const markPaid = (o: OrderRow, transactionId?: string) => {
+    const done = db.prepare("UPDATE orders SET status = 'paid', paid_at = ?, transaction_id = ? WHERE id = ? AND status = 'pending'").run(now(), transactionId ?? null, o.id)
+    if (!done.changes) return
+    if (!cfg.adminEmail) return
+    const a = JSON.parse(o.address) as Record<string, string>
+    const p = JSON.parse(o.data).pattern as { width: number; height: number }
+    const lines = [
+      `新订单 ${o.id}（已付款 ¥${(o.amount_fen / 100).toFixed(2)}）`,
+      `商品：${FORM_NAME[o.form]} · ${o.name} · ${p.width}×${p.height} 格 · ${JSON.parse(o.data).beadSize}`,
+      `收货：${a.name} ${a.phone}`,
+      `地址：${a.province ?? ''}${a.city ?? ''}${a.county ?? ''}${a.detail ?? ''}`,
+      o.share_id ? `图纸：${cfg.siteUrl}/s/?id=${o.share_id}` : '',
+    ].filter(Boolean)
+    mailer.send(cfg.adminEmail, `BeadSpark 新订单 ${o.id} · ${FORM_NAME[o.form]}`, lines.join('\n'), `<pre style="font-size:14px">${lines.join('\n').replace(/</g, '&lt;')}</pre>`).catch((e) => console.error('[order mail]', e))
+  }
+
+  /** Ask WeChat whether a pending order has been paid. */
+  const refreshOrder = async (o: OrderRow) => {
+    if (o.status !== 'pending' || !wxPayReady(cfg.wxpay)) return
+    try {
+      const st = await queryOrder(cfg.wxpay, wx, o.id)
+      if (st.state === 'SUCCESS' && st.totalFen === o.amount_fen) markPaid(o, st.transactionId)
+      else if (st.state === 'CLOSED') db.prepare("UPDATE orders SET status = 'closed' WHERE id = ? AND status = 'pending'").run(o.id)
+    } catch (e) {
+      console.warn('[wxpay] query', o.id, (e as Error).message)
+    }
+  }
+  const getOrder = (id: string) => db.prepare('SELECT * FROM orders WHERE id = ?').get(id) as OrderRow | undefined
+
+  /** What is on sale and for how much (fen). Forms without prices / payment set up are closed. */
+  app.get('/shop', (c) => {
+    c.header('Cache-Control', 'public, max-age=60')
+    return c.json({ forms: Object.fromEntries(FORMS.map((f) => [f, { open: formOpen(f), prices: cfg.prices[f] }])), shippingFen: cfg.shippingFen })
+  })
+  app.use('/orders', bodyLimit({ maxSize: 2 * 1024 * 1024, onError: (c) => fail(c, 400, 'too_large') }))
+
+  app.post('/orders', async (c) => {
+    const u = sessionUser(c)
+    if (!u) return fail(c, 401, 'not_signed_in')
+    const body = await c.req.json().catch(() => null)
+    const form = body?.form as ShopForm
+    if (!body || !FORMS.includes(form) || !validPattern(body.pattern)) return fail(c, 400, 'bad_order')
+    if (!formOpen(form)) return fail(c, 409, 'not_on_sale')
+    const a = body.address ?? {}
+    const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
+    const address = { name: str(a.name, 40), phone: str(a.phone, 30), province: str(a.province, 30), city: str(a.city, 30), county: str(a.county, 30), detail: str(a.detail, 200) }
+    if (!address.name || !/^[0-9+\- ]{6,30}$/.test(address.phone) || !address.detail) return fail(c, 400, 'bad_address')
+    const openid = (db.prepare('SELECT openid FROM wx_openids WHERE user_id = ?').get(u.id) as { openid: string } | undefined)?.openid
+    if (!openid) return fail(c, 409, 'no_openid')
+    const beadSize = body.beadSize === '5mm' ? '5mm' : '2.6mm'
+    const tier = tierOf(body.pattern, beadSize)
+    const amount = cfg.prices[form][tier] + cfg.shippingFen
+    const name = str(body.name, 60) || 'BeadSpark'
+    const pattern = { width: body.pattern.width, height: body.pattern.height, paletteId: body.pattern.paletteId, cells: body.pattern.cells }
+    // A share of the pattern, so whoever packs the order can open the exact pattern.
+    let shareId = shortId()
+    while (db.prepare('SELECT 1 FROM shares WHERE id = ?').get(shareId)) shareId = shortId()
+    db.prepare('INSERT INTO shares (id, user_id, name, data, created_at) VALUES (?, ?, ?, ?, ?)').run(shareId, u.id, name, JSON.stringify({ pattern, beadSize }), now())
+    const id = `BS${new Date(now()).toISOString().slice(2, 10).replace(/-/g, '')}${shortId(8).toUpperCase()}`
+    db.prepare('INSERT INTO orders (id, user_id, form, tier, name, amount_fen, status, data, address, share_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
+      id,
+      u.id,
+      form,
+      tier,
+      name,
+      amount,
+      'pending',
+      JSON.stringify({ pattern, beadSize, placed: typeof body.placed === 'string' ? body.placed : undefined }),
+      JSON.stringify(address),
+      shareId,
+      now(),
+    )
+    try {
+      const pay = await prepay(cfg.wxpay, wx, { outTradeNo: id, description: `BeadSpark ${FORM_NAME[form]} · ${name}`, amountFen: amount, openid })
+      return c.json({ order: publicOrder(getOrder(id)!), pay })
+    } catch (e) {
+      console.error('[wxpay] prepay', e)
+      db.prepare("UPDATE orders SET status = 'closed' WHERE id = ?").run(id)
+      return fail(c, 502, 'pay_failed')
+    }
+  })
+
+  app.get('/orders', async (c) => {
+    const u = sessionUser(c)
+    if (!u) return fail(c, 401, 'not_signed_in')
+    let rows = db.prepare("SELECT * FROM orders WHERE user_id = ? AND status != 'closed' ORDER BY created_at DESC LIMIT 50").all(u.id) as unknown as OrderRow[]
+    // Unpaid orders are only interesting for a while.
+    rows = rows.filter((o) => o.status !== 'pending' || now() - o.created_at < 2 * 60 * MINUTE)
+    return c.json({ orders: rows.map(publicOrder) })
+  })
+
+  app.get('/orders/:id', async (c) => {
+    const u = sessionUser(c)
+    if (!u) return fail(c, 401, 'not_signed_in')
+    let o = getOrder(c.req.param('id'))
+    if (!o || o.user_id !== u.id) return fail(c, 404, 'not_found')
+    await refreshOrder(o)
+    o = getOrder(o.id)!
+    return c.json({ order: publicOrder(o) })
+  })
+
+  // WeChat calls this when a payment succeeds. Only a holder of the APIv3 key can produce a
+  // resource that decrypts; the state is confirmed with WeChat again before marking the order paid.
+  app.post('/pay/wechat/notify', async (c) => {
+    const body = await c.req.json().catch(() => null)
+    try {
+      const data = decryptNotify(cfg.wxpay, body.resource)
+      const o = getOrder(String(data.out_trade_no ?? ''))
+      if (o) await refreshOrder(o)
+      return c.json({ code: 'SUCCESS', message: 'OK' })
+    } catch (e) {
+      console.warn('[wxpay] bad notify', (e as Error).message)
+      return c.json({ code: 'FAIL', message: 'invalid' }, 400)
+    }
   })
 
   app.notFound((c) => fail(c, 404, 'not_found'))

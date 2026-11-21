@@ -5,6 +5,7 @@ import { patternImage } from '../../utils/png'
 import { palette } from '../../utils/generate'
 import { setWork } from '../../utils/store'
 import { sharePiece } from '../../utils/actions'
+import { FORM_NAME, STATUS_NAME, yuan, type Order } from '../../utils/shop'
 
 interface ServerDraft {
   id: string
@@ -25,14 +26,16 @@ interface DraftRow {
 }
 
 Page({
-  data: { user: null as User | null, initial: '', drafts: [] as DraftRow[], groups: [] as { title: string; items: DraftRow[] }[], loading: false },
+  data: { user: null as User | null, initial: '', drafts: [] as DraftRow[], groups: [] as { title: string; items: DraftRow[] }[], loading: false, orders: [] as { id: string; title: string; name: string; size: string; date: string; amount: string; status: string; paid: boolean; thumb: string }[] },
   raw: [] as ServerDraft[],
 
   onShow() {
     const user = getUser()
     this.setData({ user, initial: user ? [...(user.name || '?').trim()][0] ?? '?' : '' })
-    if (user) void this.loadDrafts()
-    else this.setData({ drafts: [], groups: [] })
+    if (user) {
+      void this.loadDrafts()
+      void this.loadOrders()
+    } else this.setData({ drafts: [], groups: [], orders: [] })
   },
 
   async login() {
@@ -106,8 +109,27 @@ Page({
     }
   },
 
-  open(e: WechatMiniprogram.TouchEvent) {
-    const d = this.raw[Number(e.currentTarget.dataset.i)]
+  async loadOrders() {
+    try {
+      const { orders } = await api<{ orders: Order[] }>('/orders')
+      this.setData({
+        orders: orders.map((o, i) => ({
+          id: o.id,
+          title: FORM_NAME[o.form],
+          name: o.name,
+          size: `${o.pattern.width}×${o.pattern.height}`,
+          date: new Date(o.createdAt).toLocaleDateString('zh-CN'),
+          amount: yuan(o.amountFen),
+          status: STATUS_NAME[o.status] ?? o.status,
+          paid: o.status === 'paid' || o.status === 'shipped',
+          thumb: patternImage(`order-${i}`, { ...o.pattern, id: o.id } as Pattern, palette(), 160),
+        })),
+      })
+    } catch {}
+  },
+
+  /** Load a draft as the current work (without leaving the page). */
+  useDraft(d: ServerDraft) {
     const s = d.data.settings ?? {}
     setWork({
       pattern: d.data.pattern,
@@ -118,12 +140,17 @@ Page({
       draftId: d.id,
       name: d.name,
     })
+  },
+
+  open(e: WechatMiniprogram.TouchEvent) {
+    this.useDraft(this.raw[Number(e.currentTarget.dataset.i)])
     wx.navigateTo({ url: '/pages/bead/index' })
   },
 
-  buy() {
-    // Ordering finished pieces isn't open yet (price and WeChat Pay to come).
-    wx.showToast({ title: '成品购买即将开放', icon: 'none' })
+  /** Buy the kit / the finished piece for a saved work (half done or finished). */
+  buy(e: WechatMiniprogram.TouchEvent) {
+    this.useDraft(this.raw[Number(e.currentTarget.dataset.i)])
+    wx.navigateTo({ url: `/pages/product/index?form=${e.currentTarget.dataset.form === 'kit' ? 'kit' : 'finished'}` })
   },
 
   share(e: WechatMiniprogram.TouchEvent) {

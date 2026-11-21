@@ -64,6 +64,26 @@ export function openDb(path: string): DB {
       updated_at INTEGER NOT NULL,
       PRIMARY KEY (user_id, id)
     );
+    CREATE TABLE IF NOT EXISTS wx_openids (
+      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      openid TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS orders (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      form TEXT NOT NULL,
+      tier TEXT NOT NULL,
+      name TEXT NOT NULL,
+      amount_fen INTEGER NOT NULL,
+      status TEXT NOT NULL,
+      data TEXT NOT NULL,
+      address TEXT NOT NULL,
+      share_id TEXT,
+      transaction_id TEXT,
+      created_at INTEGER NOT NULL,
+      paid_at INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS orders_user ON orders(user_id, created_at);
     CREATE TABLE IF NOT EXISTS shares (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

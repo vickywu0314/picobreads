@@ -21,14 +21,8 @@ Page({
   },
 
   buy() {
-    // Ordering finished pieces isn't open yet (price and WeChat Pay to come).
-    wx.showModal({
-      title: '成品购买即将开放',
-      content: '这个作品已经存在「我的 → 拼好的」里，开放后可以直接从那里下单。',
-      confirmText: '去看看',
-      cancelText: '知道了',
-      success: (r) => r.confirm && wx.switchTab({ url: '/pages/mine/index' }),
-    })
+    // The product page shows the price and takes the order (or says "coming soon" until it's on sale).
+    wx.navigateTo({ url: '/pages/product/index?form=finished' })
   },
 
   share() {

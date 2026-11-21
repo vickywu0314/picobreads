@@ -49,6 +49,15 @@
 - 后端：`/api/auth/wxmp/login`（wx.login）、Bearer token、`/api/wxmp/qrcode/:id`。
 - 上线前：小程序 `API_BASE` 改成 https 域名；小程序后台配 request / downloadFile 合法域名、用户隐私保护指引（选照片、写相册）、服务类目；服务器 `api.env` 填 `WXMP_APP_ID`、`WXMP_APP_SECRET`。
 
+## 上线前（小程序购买 / 微信支付，2026-11-21）
+
+1. 微信支付商户号开通，并在商户平台把小程序 AppID `wxad095cfa10de6ecd` 关联上；拿到商户号、APIv3 密钥、API 证书（序列号 + apiclient_key.pem）。
+2. 价格待定：材料包、成品各三档（小 / 中 / 大）+ 运费。
+3. https 域名（支付通知地址必须 https）。
+4. 服务器上传 apiclient_key.pem 到 `/etc/beadspark/`，运行 `sudo bash ~/beadspark-deploy/set-shop.sh`。
+5. 小程序后台隐私指引加「收货地址」。
+6. 还没做：退款、发货状态、订单管理后台（现在靠新订单邮件）。
+
 ## 上线前（后端 API）
 
 1. 服务器一次性配置：登录服务器运行 `sudo bash ~/beadspark-deploy/setup-api.sh`（自动装 Node、写配置、装服务、改 Nginx、发测试邮件）。手动步骤见 `docs/deploy-server.md`「后端 API」。

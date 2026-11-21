@@ -4,6 +4,8 @@ import { getCanvas, onColor, rgb } from '../../utils/draw'
 import { patternImage } from '../../utils/png'
 import { beadCount, legendOf, palette } from '../../utils/generate'
 import { getWork } from '../../utils/store'
+import { errorText } from '../../utils/api'
+import { FORM_NAME, buy, chooseAddress, loadShop, tierOf, yuan, type Address, type Form, type Shop } from '../../utils/shop'
 
 type Rgb = [number, number, number]
 
@@ -14,9 +16,23 @@ Page({
     listOpen: false,
     thumb: '',
     rendering: false,
+    form: 'digital' as Form,
+    forms: [] as { id: Form; icon: string; title: string; body: string; open: boolean; price: string }[],
+    address: null as Address | null,
+    formName: '',
+    itemPrice: '',
+    shipping: '',
+    total: '',
+    paying: false,
+    started: false,
   },
+  shop: null as Shop | null,
+  wanted: 'digital' as Form,
 
-  onLoad() {
+
+  onLoad(q: Record<string, string | undefined>) {
+    // ?form=kit / finished: came here to buy (from 我的 or the finished page).
+    this.wanted = q.form === 'kit' || q.form === 'finished' ? q.form : 'digital'
     const w = getWork()
     const p = w.pattern
     if (!p) {
@@ -39,11 +55,86 @@ Page({
     })
   },
 
+  onShow() {
+    this.setData({ started: getWork().placed.includes('1') })
+    void this.refreshShop()
+  },
+
+  /** Which forms are open and their prices for this pattern's size. */
+  async refreshShop() {
+    const w = getWork()
+    if (!w.pattern) return
+    const shop = (this.shop = await loadShop())
+    const tier = tierOf(w.pattern, w.beadSize)
+    const price = (f: 'kit' | 'finished') => (shop.forms[f].open ? yuan(shop.forms[f].prices[tier]) : '')
+    this.setData({
+      forms: [
+        { id: 'digital', icon: '⬇', title: '免费下载图纸', body: '图纸总览 + 材料清单，保存到相册，用你自己的豆子拼。', open: true, price: '免费' },
+        { id: 'kit', icon: '📦', title: '购买材料包', body: '按图纸数好的豆子（多 10% 备用）、底板、熨烫纸和打印好的图纸。', open: shop.forms.kit.open, price: price('kit') },
+        { id: 'finished', icon: '✨', title: '直接购买成品', body: '我们帮你拼好、熨烫好，收到就能直接送人。', open: shop.forms.finished.open, price: price('finished') },
+      ],
+    })
+    // Preselect what the visitor came for, if it's on sale.
+    const want = this.wanted
+    this.wanted = 'digital'
+    if (want !== 'digital') {
+      if (shop.forms[want].open) this.select(want)
+      else wx.showToast({ title: `${FORM_NAME[want]}即将开放`, icon: 'none' })
+    } else if (this.data.form !== 'digital') this.select(this.data.form)
+  },
+
+  select(form: Form) {
+    const w = getWork()
+    const shop = this.shop
+    if (form === 'digital' || !shop || !w.pattern) return this.setData({ form: 'digital' })
+    const item = shop.forms[form].prices[tierOf(w.pattern, w.beadSize)]
+    this.setData({ form, formName: FORM_NAME[form], itemPrice: yuan(item), shipping: shop.shippingFen ? yuan(shop.shippingFen) : '包邮', total: yuan(item + shop.shippingFen) })
+  },
+
+  pick(e: WechatMiniprogram.TouchEvent) {
+    const id = e.currentTarget.dataset.id as Form
+    const f = this.data.forms.find((x) => x.id === id)
+    if (!f?.open) return wx.showToast({ title: '即将开放，敬请期待', icon: 'none' })
+    this.select(id)
+  },
+
+  async chooseAddress() {
+    const a = await chooseAddress()
+    if (a) this.setData({ address: a })
+  },
+
+  async pay() {
+    const w = getWork()
+    const form = this.data.form
+    if (form === 'digital' || !w.pattern) return
+    let address = this.data.address
+    if (!address) {
+      address = await chooseAddress()
+      if (!address) return wx.showToast({ title: '请先选择收货地址', icon: 'none' })
+      this.setData({ address })
+    }
+    this.setData({ paying: true })
+    wx.showLoading({ title: '正在下单…', mask: true })
+    try {
+      const order = await buy({ form, name: w.name || '我的拼豆', pattern: w.pattern, placed: w.placed, beadSize: w.beadSize, address })
+      wx.hideLoading()
+      wx.showModal({
+        title: order.status === 'paid' ? '支付成功 🎉' : '已提交',
+        content: order.status === 'paid' ? '我们开始准备了，订单在「我的 → 我的订单」里可以看到。' : '付款结果还在确认，稍后在「我的 → 我的订单」里查看。',
+        showCancel: false,
+        confirmText: '看订单',
+        success: () => wx.switchTab({ url: '/pages/mine/index' }),
+      })
+    } catch (e) {
+      wx.hideLoading()
+      if ((e as Error).message !== 'cancelled') wx.showToast({ title: errorText(e), icon: 'none' })
+    } finally {
+      this.setData({ paying: false })
+    }
+  },
+
   toggleList() {
     this.setData({ listOpen: !this.data.listOpen })
-  },
-  soon() {
-    wx.showToast({ title: '即将开放，敬请期待', icon: 'none' })
   },
   edit() {
     wx.navigateBack()

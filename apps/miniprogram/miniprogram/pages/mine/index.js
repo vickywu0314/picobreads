@@ -5,15 +5,18 @@ var import_png = require("../../utils/png");
 var import_generate = require("../../utils/generate");
 var import_store = require("../../utils/store");
 var import_actions = require("../../utils/actions");
+var import_shop = require("../../utils/shop");
 Page({
-  data: { user: null, initial: "", drafts: [], groups: [], loading: false },
+  data: { user: null, initial: "", drafts: [], groups: [], loading: false, orders: [] },
   raw: [],
   onShow() {
     var _a;
     const user = (0, import_api.getUser)();
     this.setData({ user, initial: user ? (_a = [...(user.name || "?").trim()][0]) != null ? _a : "?" : "" });
-    if (user) void this.loadDrafts();
-    else this.setData({ drafts: [], groups: [] });
+    if (user) {
+      void this.loadDrafts();
+      void this.loadOrders();
+    } else this.setData({ drafts: [], groups: [], orders: [] });
   },
   async login() {
     try {
@@ -88,9 +91,31 @@ Page({
       wx.showToast({ title: (0, import_api.errorText)(e), icon: "none" });
     }
   },
-  open(e) {
+  async loadOrders() {
+    try {
+      const { orders } = await (0, import_api.api)("/orders");
+      this.setData({
+        orders: orders.map((o, i) => {
+          var _a;
+          return {
+            id: o.id,
+            title: import_shop.FORM_NAME[o.form],
+            name: o.name,
+            size: `${o.pattern.width}\xD7${o.pattern.height}`,
+            date: new Date(o.createdAt).toLocaleDateString("zh-CN"),
+            amount: (0, import_shop.yuan)(o.amountFen),
+            status: (_a = import_shop.STATUS_NAME[o.status]) != null ? _a : o.status,
+            paid: o.status === "paid" || o.status === "shipped",
+            thumb: (0, import_png.patternImage)(`order-${i}`, { ...o.pattern, id: o.id }, (0, import_generate.palette)(), 160)
+          };
+        })
+      });
+    } catch (e) {
+    }
+  },
+  /** Load a draft as the current work (without leaving the page). */
+  useDraft(d) {
     var _a, _b, _c, _d;
-    const d = this.raw[Number(e.currentTarget.dataset.i)];
     const s = (_a = d.data.settings) != null ? _a : {};
     (0, import_store.setWork)({
       pattern: d.data.pattern,
@@ -101,10 +126,15 @@ Page({
       draftId: d.id,
       name: d.name
     });
+  },
+  open(e) {
+    this.useDraft(this.raw[Number(e.currentTarget.dataset.i)]);
     wx.navigateTo({ url: "/pages/bead/index" });
   },
-  buy() {
-    wx.showToast({ title: "\u6210\u54C1\u8D2D\u4E70\u5373\u5C06\u5F00\u653E", icon: "none" });
+  /** Buy the kit / the finished piece for a saved work (half done or finished). */
+  buy(e) {
+    this.useDraft(this.raw[Number(e.currentTarget.dataset.i)]);
+    wx.navigateTo({ url: `/pages/product/index?form=${e.currentTarget.dataset.form === "kit" ? "kit" : "finished"}` });
   },
   share(e) {
     var _a, _b;

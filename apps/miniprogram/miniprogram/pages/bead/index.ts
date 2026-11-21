@@ -366,6 +366,13 @@ Page({
     this.syncTimer = setTimeout(() => void syncDraft(), 4000) as unknown as number
   },
 
+  /** Buy the kit or the finished piece for this pattern, at any point of the beading. */
+  buy() {
+    this.persist()
+    void syncDraft()
+    wx.navigateTo({ url: '/pages/product/index?form=kit' })
+  },
+
   async saveDraft() {
     this.persist()
     await saveCurrentDraft()

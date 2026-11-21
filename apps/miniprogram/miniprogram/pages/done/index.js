@@ -18,13 +18,7 @@ Page({
     void (0, import_actions.syncDraft)();
   },
   buy() {
-    wx.showModal({
-      title: "\u6210\u54C1\u8D2D\u4E70\u5373\u5C06\u5F00\u653E",
-      content: "\u8FD9\u4E2A\u4F5C\u54C1\u5DF2\u7ECF\u5B58\u5728\u300C\u6211\u7684 \u2192 \u62FC\u597D\u7684\u300D\u91CC\uFF0C\u5F00\u653E\u540E\u53EF\u4EE5\u76F4\u63A5\u4ECE\u90A3\u91CC\u4E0B\u5355\u3002",
-      confirmText: "\u53BB\u770B\u770B",
-      cancelText: "\u77E5\u9053\u4E86",
-      success: (r) => r.confirm && wx.switchTab({ url: "/pages/mine/index" })
-    });
+    wx.navigateTo({ url: "/pages/product/index?form=finished" });
   },
   share() {
     void (0, import_actions.shareCurrent)();

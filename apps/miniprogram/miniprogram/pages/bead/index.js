@@ -325,6 +325,12 @@ Page({
     clearTimeout(this.syncTimer);
     this.syncTimer = setTimeout(() => void (0, import_actions.syncDraft)(), 4e3);
   },
+  /** Buy the kit or the finished piece for this pattern, at any point of the beading. */
+  buy() {
+    this.persist();
+    void (0, import_actions.syncDraft)();
+    wx.navigateTo({ url: "/pages/product/index?form=kit" });
+  },
   async saveDraft() {
     this.persist();
     await (0, import_actions.saveCurrentDraft)();
