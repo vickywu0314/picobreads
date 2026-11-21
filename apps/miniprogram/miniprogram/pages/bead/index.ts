@@ -19,6 +19,8 @@ type Pt = { x: number; y: number }
 const MAX_SCALE = 60
 /** A bead only goes in when the finger is this close to the cell's middle (share of the cell), so strokes don't spill into the next row. */
 const HIT_RADIUS = 0.45
+/** The simulator shows vibration by shaking the whole phone picture, which looks like a glitch. */
+const CAN_VIBRATE = wx.getDeviceInfo ? wx.getDeviceInfo().platform !== 'devtools' : true
 
 Page({
   data: {
@@ -233,7 +235,7 @@ Page({
     const now = Date.now()
     if (now - this.lastBuzz > 60) {
       this.lastBuzz = now
-      wx.vibrateShort?.({ type: 'light' })
+      if (CAN_VIBRATE) wx.vibrateShort?.({ type: 'light' })
     }
     this.draw()
   },

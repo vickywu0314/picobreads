@@ -6,6 +6,7 @@ var import_store = require("../../utils/store");
 var import_actions = require("../../utils/actions");
 const MAX_SCALE = 60;
 const HIT_RADIUS = 0.45;
+const CAN_VIBRATE = wx.getDeviceInfo ? wx.getDeviceInfo().platform !== "devtools" : true;
 Page({
   data: {
     pct: 0,
@@ -206,7 +207,7 @@ Page({
     const now = Date.now();
     if (now - this.lastBuzz > 60) {
       this.lastBuzz = now;
-      (_a = wx.vibrateShort) == null ? void 0 : _a.call(wx, { type: "light" });
+      if (CAN_VIBRATE) (_a = wx.vibrateShort) == null ? void 0 : _a.call(wx, { type: "light" });
     }
     this.draw();
   },

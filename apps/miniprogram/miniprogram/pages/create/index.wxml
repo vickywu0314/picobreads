@@ -54,8 +54,8 @@
   </view>
 
   <view class="actions mt-lg">
-    <button class="btn primary block" hover-class="btn-hover" disabled="{{!canGo}}" bindtap="startBead">开始在线拼 →</button>
-    <button class="btn block mt" hover-class="btn-hover" disabled="{{!canGo}}" bindtap="saveDraft">存到草稿</button>
+    <button class="btn primary block" hover-class="btn-hover" disabled="{{!canGo}}" bindtap="next">下一步 →</button>
+    <button class="btn block mt" hover-class="btn-hover" disabled="{{!canGo}}" bindtap="startBead">先在线拼拼看？</button>
   </view>
   <view class="muted tiny center mt">🔒 照片只在你的手机上处理，不会上传</view>
 </view>

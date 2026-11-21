@@ -2,6 +2,7 @@
   "pages": [
     "pages/index/index",
     "pages/create/index",
+    "pages/product/index",
     "pages/bead/index",
     "pages/mine/index",
     "pages/share/index"

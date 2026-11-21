@@ -3,7 +3,6 @@ var import_config = require("../../utils/config");
 var import_draw = require("../../utils/draw");
 var import_generate = require("../../utils/generate");
 var import_store = require("../../utils/store");
-var import_actions = require("../../utils/actions");
 const autoPicked = /* @__PURE__ */ new Set();
 Page({
   data: {
@@ -162,7 +161,7 @@ Page({
   startBead() {
     if (this.useSelected()) wx.navigateTo({ url: "/pages/bead/index" });
   },
-  async saveDraft() {
-    if (this.useSelected()) await (0, import_actions.saveCurrentDraft)();
+  next() {
+    if (this.useSelected()) wx.navigateTo({ url: "/pages/product/index" });
   }
 });

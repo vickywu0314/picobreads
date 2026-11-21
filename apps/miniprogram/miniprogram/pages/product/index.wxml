@@ -1,0 +1,51 @@
+<view class="wrap">
+  <view class="title">你想要哪种形式？</view>
+
+  <view class="forms mt-lg">
+    <view class="form card on">
+      <view class="row between"><text class="f-icon">⬇</text><text class="pill accent">✓ 已选</text></view>
+      <view class="h2 mt-sm">免费下载图纸</view>
+      <view class="muted small">图纸总览 + 材料清单，保存到相册，用你自己的豆子拼。</view>
+      <view class="bold mt-sm">免费</view>
+    </view>
+    <view class="form card soon" bindtap="soon">
+      <view class="veil"></view>
+      <text class="pill sun tag">即将开放</text>
+      <text class="f-icon">📦</text>
+      <view class="h2 mt-sm">购买材料包</view>
+      <view class="muted small">按图纸数好的豆子（多 10% 备用）、底板、熨烫纸和打印好的图纸。</view>
+    </view>
+    <view class="form card soon" bindtap="soon">
+      <view class="veil"></view>
+      <text class="pill sun tag">即将开放</text>
+      <text class="f-icon">✨</text>
+      <view class="h2 mt-sm">直接购买成品</view>
+      <view class="muted small">我们帮你拼好、熨烫好，收到就能直接送人。</view>
+    </view>
+  </view>
+
+  <view class="card yours mt-lg">
+    <canvas type="2d" id="thumb" class="thumb"></canvas>
+    <view class="yours-info">
+      <view class="row between"><text class="h2">你的图纸</text><text class="accent bold small" bindtap="edit">修改</text></view>
+      <view class="stat" wx:for="{{stats}}" wx:key="k"><text class="muted small">{{item.k}}</text><text class="bold small">{{item.v}}</text></view>
+    </view>
+  </view>
+
+  <view class="card list mt">
+    <view class="row between" bindtap="toggleList"><text class="h2">材料清单 <text class="muted small">（{{legend.length}} 色）</text></text><text class="muted">{{listOpen ? '收起 ▲' : '展开 ▼'}}</text></view>
+    <view wx:if="{{listOpen}}" class="legend mt">
+      <view wx:for="{{legend}}" wx:key="code" class="chip">
+        <view class="dot" style="background: {{item.hex}}"></view>
+        <text class="bold small">{{item.code}}</text>
+        <text class="muted small count">×{{item.count}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="mt-lg">
+    <button class="btn primary block" hover-class="btn-hover" bindtap="saveSheet">保存图纸到相册</button>
+    <button class="btn block mt" hover-class="btn-hover" bindtap="bead">先在线拼拼看</button>
+  </view>
+  <canvas type="2d" id="sheet" class="sheet"></canvas>
+</view>

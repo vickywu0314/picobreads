@@ -3,7 +3,6 @@ import { BEAD_SIZES, PIXEL_TIER, boardCount, perSideOf, sizeCm, type BeadSize, t
 import { drawFinished, getCanvas, type CanvasHandle } from '../../utils/draw'
 import { beadCount, generate, legendOf, optionKeys, palette, recommend, yieldUI } from '../../utils/generate'
 import { applyPattern, getWork, setWork } from '../../utils/store'
-import { saveCurrentDraft } from '../../utils/actions'
 
 interface OptionView {
   key: string
@@ -194,8 +193,8 @@ Page({
     if (this.useSelected()) wx.navigateTo({ url: '/pages/bead/index' })
   },
 
-  async saveDraft() {
-    if (this.useSelected()) await saveCurrentDraft()
+  next() {
+    if (this.useSelected()) wx.navigateTo({ url: '/pages/product/index' })
   },
 })
 
