@@ -23,6 +23,7 @@
       <view class="zbtn" bindtap="zoomOut">－</view>
       <view class="zbtn small" bindtap="fit">全图</view>
     </view>
+    <view wx:if="{{testMode}}" class="test-btn" bindtap="testFinish">测试：一键拼完</view>
     <view wx:if="{{hint}}" class="hint">{{hint}}</view>
   </view>
 
