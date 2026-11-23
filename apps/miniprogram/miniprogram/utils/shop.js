@@ -21,8 +21,11 @@ __export(shop_exports, {
   FORM_NAME: () => FORM_NAME,
   STATUS_NAME: () => STATUS_NAME,
   buy: () => buy,
+  cancelOrder: () => cancelOrder,
   chooseAddress: () => chooseAddress,
+  getOrder: () => getOrder,
   loadShop: () => loadShop,
+  payOrder: () => payOrder,
   tierOf: () => tierOf,
   yuan: () => yuan
 });
@@ -43,7 +46,7 @@ function tierOf(p, bead) {
 }
 const yuan = (fen) => `\xA5${(fen / 100).toFixed(fen % 100 ? 2 : 0)}`;
 const FORM_NAME = { digital: "\u514D\u8D39\u56FE\u7EB8", kit: "\u6750\u6599\u5305", finished: "\u62FC\u597D\u7684\u6210\u54C1" };
-const STATUS_NAME = { pending: "\u5F85\u4ED8\u6B3E", paid: "\u5DF2\u4ED8\u6B3E\uFF0C\u5907\u8D27\u4E2D", shipped: "\u5DF2\u53D1\u8D27", closed: "\u5DF2\u5173\u95ED" };
+const STATUS_NAME = { pending: "\u5F85\u4ED8\u6B3E", paid: "\u5DF2\u4ED8\u6B3E\uFF0C\u5236\u4F5C\u4E2D", shipped: "\u5DF2\u53D1\u8D27", refunded: "\u5DF2\u9000\u6B3E", closed: "\u5DF2\u53D6\u6D88" };
 function chooseAddress() {
   return new Promise(
     (resolve) => wx.chooseAddress({
@@ -51,6 +54,22 @@ function chooseAddress() {
       fail: () => resolve(null)
     })
   );
+}
+async function payAndConfirm(order, pay) {
+  const done = await new Promise(
+    (resolve, reject) => wx.requestPayment({
+      ...pay,
+      success: () => resolve(true),
+      fail: (err) => /cancel/i.test(err.errMsg) ? resolve(false) : reject(new Error(err.errMsg))
+    })
+  );
+  if (!done) return { order, outcome: "cancelled" };
+  for (let i = 0; i < 4; i++) {
+    const r = await (0, import_api.api)(`/orders/${order.id}`);
+    if (r.order.status !== "pending") return { order: r.order, outcome: "paid" };
+    await new Promise((x) => setTimeout(x, 1200));
+  }
+  return { order, outcome: "pending" };
 }
 async function buy(o) {
   await (0, import_api.ensureLogin)();
@@ -63,17 +82,24 @@ async function buy(o) {
     await (0, import_api.login)();
     r = await (0, import_api.api)("/orders", { data: body });
   }
-  await new Promise(
-    (resolve, reject) => wx.requestPayment({
-      ...r.pay,
-      success: () => resolve(),
-      fail: (err) => reject(new Error(/cancel/i.test(err.errMsg) ? "cancelled" : err.errMsg))
-    })
-  );
-  for (let i = 0; i < 4; i++) {
-    const { order } = await (0, import_api.api)(`/orders/${r.order.id}`);
-    if (order.status !== "pending") return order;
-    await new Promise((x) => setTimeout(x, 1200));
+  return payAndConfirm(r.order, r.pay);
+}
+async function payOrder(id) {
+  await (0, import_api.ensureLogin)();
+  let r;
+  try {
+    r = await (0, import_api.api)(`/orders/${id}/pay`, { data: {} });
+  } catch (e) {
+    if (e.code !== "no_openid") throw e;
+    await (0, import_api.login)();
+    r = await (0, import_api.api)(`/orders/${id}/pay`, { data: {} });
   }
-  return r.order;
+  if (!r.pay) return { order: r.order, outcome: r.order.status === "pending" ? "pending" : "paid" };
+  return payAndConfirm(r.order, r.pay);
+}
+async function cancelOrder(id) {
+  return (await (0, import_api.api)(`/orders/${id}/cancel`, { data: {} })).order;
+}
+async function getOrder(id) {
+  return (await (0, import_api.api)(`/orders/${id}`)).order;
 }

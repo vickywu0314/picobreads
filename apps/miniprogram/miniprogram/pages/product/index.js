@@ -103,18 +103,12 @@ Page({
     this.setData({ paying: true });
     wx.showLoading({ title: "\u6B63\u5728\u4E0B\u5355\u2026", mask: true });
     try {
-      const order = await (0, import_shop.buy)({ form, name: w.name || "\u6211\u7684\u62FC\u8C46", pattern: w.pattern, placed: w.placed, beadSize: w.beadSize, address });
+      const { order } = await (0, import_shop.buy)({ form, name: w.name || "\u6211\u7684\u62FC\u8C46", pattern: w.pattern, placed: w.placed, beadSize: w.beadSize, address });
       wx.hideLoading();
-      wx.showModal({
-        title: order.status === "paid" ? "\u652F\u4ED8\u6210\u529F \u{1F389}" : "\u5DF2\u63D0\u4EA4",
-        content: order.status === "paid" ? "\u6211\u4EEC\u5F00\u59CB\u51C6\u5907\u4E86\uFF0C\u8BA2\u5355\u5728\u300C\u6211\u7684 \u2192 \u6211\u7684\u8BA2\u5355\u300D\u91CC\u53EF\u4EE5\u770B\u5230\u3002" : "\u4ED8\u6B3E\u7ED3\u679C\u8FD8\u5728\u786E\u8BA4\uFF0C\u7A0D\u540E\u5728\u300C\u6211\u7684 \u2192 \u6211\u7684\u8BA2\u5355\u300D\u91CC\u67E5\u770B\u3002",
-        showCancel: false,
-        confirmText: "\u770B\u8BA2\u5355",
-        success: () => wx.switchTab({ url: "/pages/mine/index" })
-      });
+      wx.redirectTo({ url: `/pages/order/index?id=${order.id}` });
     } catch (e) {
       wx.hideLoading();
-      if (e.message !== "cancelled") wx.showToast({ title: (0, import_api.errorText)(e), icon: "none" });
+      wx.showToast({ title: (0, import_api.errorText)(e), icon: "none" });
     } finally {
       this.setData({ paying: false });
     }

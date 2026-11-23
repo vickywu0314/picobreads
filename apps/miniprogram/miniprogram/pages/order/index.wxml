@@ -1,0 +1,53 @@
+<view class="wrap">
+  <view wx:if="{{state === 'loading'}}" class="muted center mt-lg">加载中…</view>
+  <view wx:elif="{{state === 'missing'}}" class="card pad center mt-lg">找不到这个订单。</view>
+  <block wx:else>
+    <view class="panel status">
+      <view class="title">{{statusTitle}}</view>
+      <view class="muted mt-sm">{{statusHint}}</view>
+    </view>
+
+    <view wx:if="{{order.status === 'shipped'}}" class="card pad mt">
+      <view class="row between">
+        <view>
+          <view class="bold">{{order.carrier}}</view>
+          <view class="muted small">运单号 {{order.trackingNo}}</view>
+        </view>
+        <button class="btn small" hover-class="btn-hover" bindtap="copyTracking">复制单号</button>
+      </view>
+    </view>
+
+    <view class="card item mt">
+      <image src="{{thumb}}" mode="aspectFit" class="thumb" />
+      <view class="info">
+        <view class="bold">{{formName}}</view>
+        <view class="muted small">{{order.name}}</view>
+        <view class="muted small">{{size}}</view>
+        <view class="bold accent mt-sm">{{amount}}</view>
+      </view>
+    </view>
+
+    <view class="card pad mt">
+      <view class="muted small">收货信息</view>
+      <view class="bold mt-sm">{{order.address.name}} {{order.address.phone}}</view>
+      <view class="small">{{order.address.province}}{{order.address.city}}{{order.address.county}}{{order.address.detail}}</view>
+    </view>
+
+    <view class="card pad mt lines">
+      <view class="row between"><text class="muted small">订单号</text><text class="small" bindtap="copyId">{{order.id}} 复制</text></view>
+      <view class="row between"><text class="muted small">下单时间</text><text class="small">{{created}}</text></view>
+      <view wx:if="{{paid}}" class="row between"><text class="muted small">付款时间</text><text class="small">{{paid}}</text></view>
+      <view wx:if="{{shipped}}" class="row between"><text class="muted small">发货时间</text><text class="small">{{shipped}}</text></view>
+    </view>
+
+    <view class="mt-lg">
+      <block wx:if="{{order.status === 'pending'}}">
+        <button class="btn primary block" hover-class="btn-hover" disabled="{{busy}}" bindtap="pay">继续支付 {{amount}}</button>
+        <button class="btn block mt" hover-class="btn-hover" disabled="{{busy}}" bindtap="cancel">取消订单</button>
+      </block>
+      <button wx:else class="btn primary block" hover-class="btn-hover" bindtap="toMine">回到我的</button>
+      <button class="btn block mt" hover-class="btn-hover" open-type="contact">联系客服</button>
+    </view>
+    <view class="muted small center mt">定制商品付款后开始制作；有问题随时联系客服。</view>
+  </block>
+</view>

@@ -26,7 +26,7 @@ interface DraftRow {
 }
 
 Page({
-  data: { user: null as User | null, initial: '', drafts: [] as DraftRow[], groups: [] as { title: string; items: DraftRow[] }[], loading: false, orders: [] as { id: string; title: string; name: string; size: string; date: string; amount: string; status: string; paid: boolean; thumb: string }[] },
+  data: { user: null as User | null, initial: '', drafts: [] as DraftRow[], groups: [] as { title: string; items: DraftRow[] }[], loading: false, orders: [] as { id: string; title: string; name: string; size: string; date: string; amount: string; status: string; paid: boolean; pending: boolean; thumb: string }[] },
   raw: [] as ServerDraft[],
 
   onShow() {
@@ -122,10 +122,15 @@ Page({
           amount: yuan(o.amountFen),
           status: STATUS_NAME[o.status] ?? o.status,
           paid: o.status === 'paid' || o.status === 'shipped',
+          pending: o.status === 'pending',
           thumb: patternImage(`order-${i}`, { ...o.pattern, id: o.id } as Pattern, palette(), 160),
         })),
       })
     } catch {}
+  },
+
+  openOrder(e: WechatMiniprogram.TouchEvent) {
+    wx.navigateTo({ url: `/pages/order/index?id=${e.currentTarget.dataset.id}` })
   },
 
   /** Load a draft as the current work (without leaving the page). */

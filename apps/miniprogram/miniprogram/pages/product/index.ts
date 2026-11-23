@@ -116,18 +116,13 @@ Page({
     this.setData({ paying: true })
     wx.showLoading({ title: '正在下单…', mask: true })
     try {
-      const order = await buy({ form, name: w.name || '我的拼豆', pattern: w.pattern, placed: w.placed, beadSize: w.beadSize, address })
+      const { order } = await buy({ form, name: w.name || '我的拼豆', pattern: w.pattern, placed: w.placed, beadSize: w.beadSize, address })
       wx.hideLoading()
-      wx.showModal({
-        title: order.status === 'paid' ? '支付成功 🎉' : '已提交',
-        content: order.status === 'paid' ? '我们开始准备了，订单在「我的 → 我的订单」里可以看到。' : '付款结果还在确认，稍后在「我的 → 我的订单」里查看。',
-        showCancel: false,
-        confirmText: '看订单',
-        success: () => wx.switchTab({ url: '/pages/mine/index' }),
-      })
+      // Paid, still confirming, or cancelled: the order page shows where it stands (and lets them pay later).
+      wx.redirectTo({ url: `/pages/order/index?id=${order.id}` })
     } catch (e) {
       wx.hideLoading()
-      if ((e as Error).message !== 'cancelled') wx.showToast({ title: errorText(e), icon: 'none' })
+      wx.showToast({ title: errorText(e), icon: 'none' })
     } finally {
       this.setData({ paying: false })
     }

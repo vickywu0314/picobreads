@@ -1,0 +1,9 @@
+.center { text-align: center; }
+.mt-sm { margin-top: 10rpx; }
+.pad { padding: 28rpx; }
+.status { padding: 36rpx; }
+.item { display: flex; gap: 24rpx; padding: 24rpx; }
+.thumb { width: 200rpx; height: 200rpx; border-radius: 20rpx; background: #f6efec; flex-shrink: 0; }
+.info { flex: 1; min-width: 0; }
+.accent { color: var(--accent); font-size: 34rpx; }
+.lines { display: flex; flex-direction: column; gap: 14rpx; }

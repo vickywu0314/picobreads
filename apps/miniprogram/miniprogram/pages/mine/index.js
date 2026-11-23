@@ -106,12 +106,16 @@ Page({
             amount: (0, import_shop.yuan)(o.amountFen),
             status: (_a = import_shop.STATUS_NAME[o.status]) != null ? _a : o.status,
             paid: o.status === "paid" || o.status === "shipped",
+            pending: o.status === "pending",
             thumb: (0, import_png.patternImage)(`order-${i}`, { ...o.pattern, id: o.id }, (0, import_generate.palette)(), 160)
           };
         })
       });
     } catch (e) {
     }
+  },
+  openOrder(e) {
+    wx.navigateTo({ url: `/pages/order/index?id=${e.currentTarget.dataset.id}` });
   },
   /** Load a draft as the current work (without leaving the page). */
   useDraft(d) {

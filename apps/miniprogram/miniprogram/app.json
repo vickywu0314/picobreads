@@ -5,6 +5,7 @@
     "pages/product/index",
     "pages/bead/index",
     "pages/done/index",
+    "pages/order/index",
     "pages/mine/index",
     "pages/share/index"
   ],
