@@ -228,6 +228,8 @@ export function createApp(deps: Deps) {
     const body = await c.req.json().catch(() => ({}))
     const name = typeof body.name === 'string' ? body.name.trim().slice(0, 40) : ''
     if (!name) return fail(c, 400, 'bad_name')
+    // Nicknames show on shared pieces: WeChat requires such text to pass its content check.
+    if (await textIsRisky(u.id, name)) return fail(c, 400, 'risky_text')
     db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name, u.id)
     return c.json({ user: publicUser(getUser(u.id)!) })
   })
@@ -332,6 +334,33 @@ export function createApp(deps: Deps) {
     wxToken = { value: r.access_token, expires: now() + ((r.expires_in ?? 7200) - 300) * 1000 }
     return wxToken.value
   }
+  /**
+   * WeChat's text check (msgSecCheck) for words users type that others will see. True only when
+   * WeChat says "risky"; when the check can't run (not a mini program user, WeChat unreachable)
+   * the text is let through rather than blocking everyone.
+   */
+  const textIsRisky = async (userId: string, text: string): Promise<boolean> => {
+    if (!wxmpReady()) return false
+    const openid = (db.prepare('SELECT openid FROM wx_openids WHERE user_id = ?').get(userId) as { openid: string } | undefined)?.openid
+    if (!openid) return false
+    try {
+      const res = await wx(`https://api.weixin.qq.com/wxa/msg_sec_check?access_token=${await accessToken()}`, {
+        method: 'POST',
+        body: JSON.stringify({ content: text, version: 2, scene: 1, openid }),
+      })
+      const r = (await res.json()) as { errcode?: number; result?: { suggest?: string } }
+      if (r.errcode) {
+        console.warn('[wxmp] msg_sec_check', r.errcode)
+        if (r.errcode === 40001 || r.errcode === 42001) wxToken = null
+        return false
+      }
+      return r.result?.suggest === 'risky'
+    } catch (e) {
+      console.warn('[wxmp] msg_sec_check', (e as Error).message)
+      return false
+    }
+  }
+
   app.get('/wxmp/qrcode/:id', async (c) => {
     if (!wxmpReady()) return fail(c, 404, 'provider_not_configured')
     const id = c.req.param('id')

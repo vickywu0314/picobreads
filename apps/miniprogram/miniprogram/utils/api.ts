@@ -100,6 +100,7 @@ const MESSAGES: Record<string, string> = {
   not_signed_in: '请先登录',
   too_many_shares: '今天分享太多次了，明天再试',
   too_many_designs: '草稿太多了，先删掉一些',
+  risky_text: '昵称里有不合适的内容，换一个吧',
   not_on_sale: '这个还没开放购买',
   bad_address: '收货地址不完整，请重新选择',
   pay_failed: '没能发起支付，请稍后再试',

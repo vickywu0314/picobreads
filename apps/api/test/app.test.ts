@@ -220,6 +220,11 @@ describe('WeChat mini program', () => {
       return json({ openid: `open-${code}`, unionid: code === 'u1' ? 'union-1' : undefined, session_key: 'k' })
     }
     if (u.includes('/cgi-bin/token')) return json({ access_token: 'AT', expires_in: 7200 })
+    if (u.includes('msg_sec_check')) {
+      const b = JSON.parse(String(init?.body))
+      expect(b).toMatchObject({ version: 2, scene: 1, openid: expect.stringContaining('open-') })
+      return json({ errcode: 0, result: { suggest: b.content.includes('坏词') ? 'risky' : 'pass' } })
+    }
     if (u.includes('getwxacodeunlimit')) {
       expect(JSON.parse(String(init?.body))).toMatchObject({ page: 'pages/share/index', check_path: false })
       return new Response(new Uint8Array([0xff, 0xd8, 0xff]), { headers: { 'content-type': 'image/jpeg' } })
@@ -261,6 +266,13 @@ describe('WeChat mini program', () => {
     expect(res.status).toBe(200)
     expect(res.headers.get('content-type')).toBe('image/jpeg')
     expect((await s.call('GET', '/wxmp/qrcode/nope12345')).status).toBe(404)
+  })
+
+  it('checks nicknames with WeChat before saving them', async () => {
+    const s = setup(env, fakeWx)
+    const auth = { authorization: `Bearer ${(await s.call('POST', '/auth/wxmp/login', { code: 'n1' })).json.token}` }
+    expect((await s.call('POST', '/auth/profile', { name: '有坏词的名字' }, auth)).json.error).toBe('risky_text')
+    expect((await s.call('POST', '/auth/profile', { name: '小豆' }, auth)).json.user.name).toBe('小豆')
   })
 
   it('is off without an AppID', async () => {
