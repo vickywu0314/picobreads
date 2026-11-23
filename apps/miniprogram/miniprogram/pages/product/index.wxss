@@ -22,3 +22,5 @@
 .total { padding: 24rpx 28rpx; display: flex; flex-direction: column; gap: 10rpx; }
 .sum { border-top: 2rpx dashed var(--border); padding-top: 12rpx; font-size: 32rpx; }
 .center { text-align: center; }
+.neterr { display: flex; align-items: center; gap: 16rpx; padding: 20rpx 24rpx; border: 3rpx dashed var(--accent); border-radius: 24rpx; background: var(--accent-soft); }
+.neterr .btn { flex-shrink: 0; }

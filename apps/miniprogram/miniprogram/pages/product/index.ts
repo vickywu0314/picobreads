@@ -25,6 +25,8 @@ Page({
     total: '',
     paying: false,
     started: false,
+    /** Why the prices couldn't be loaded ('' = loaded). */
+    shopError: '',
   },
   shop: null as Shop | null,
   wanted: 'digital' as Form,
@@ -68,6 +70,7 @@ Page({
     const tier = tierOf(w.pattern, w.beadSize)
     const price = (f: 'kit' | 'finished') => (shop.forms[f].open ? yuan(shop.forms[f].prices[tier]) : '')
     this.setData({
+      shopError: shop.error ? (shop.error === 'network' ? '连不上服务器，购买暂时用不了。' : `服务器返回了错误（${shop.error}）。`) : '',
       forms: [
         { id: 'digital', icon: '⬇', title: '免费下载图纸', body: '图纸总览 + 材料清单，保存到相册，用你自己的豆子拼。', open: true, price: '免费' },
         { id: 'kit', icon: '📦', title: '购买材料包', body: '按图纸数好的豆子（多 10% 备用）、底板、熨烫纸和打印好的图纸。', open: shop.forms.kit.open, price: price('kit') },
@@ -79,8 +82,13 @@ Page({
     this.wanted = 'digital'
     if (want !== 'digital') {
       if (shop.forms[want].open) this.select(want)
-      else wx.showToast({ title: `${FORM_NAME[want]}即将开放`, icon: 'none' })
+      else if (!shop.error) wx.showToast({ title: `${FORM_NAME[want]}即将开放`, icon: 'none' })
     } else if (this.data.form !== 'digital') this.select(this.data.form)
+  },
+
+  retryShop() {
+    wx.showLoading({ title: '重试中…' })
+    void this.refreshShop().then(() => wx.hideLoading())
   },
 
   select(form: Form) {
@@ -94,7 +102,7 @@ Page({
   pick(e: WechatMiniprogram.TouchEvent) {
     const id = e.currentTarget.dataset.id as Form
     const f = this.data.forms.find((x) => x.id === id)
-    if (!f?.open) return wx.showToast({ title: '即将开放，敬请期待', icon: 'none' })
+    if (!f?.open) return wx.showToast({ title: this.data.shopError ? '连不上服务器，点上面的「重试」' : '即将开放，敬请期待', icon: 'none' })
     this.select(id)
   },
 

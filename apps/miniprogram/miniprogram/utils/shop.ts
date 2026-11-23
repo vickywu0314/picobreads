@@ -8,6 +8,8 @@ export type Tier = 'small' | 'standard' | 'large'
 export interface Shop {
   forms: Record<'kit' | 'finished', { open: boolean; prices: Record<Tier, number> }>
   shippingFen: number
+  /** Set when the server couldn't be reached (so "closed" isn't mistaken for "not on sale"). */
+  error?: string
 }
 
 export interface Address {
@@ -43,8 +45,8 @@ export async function loadShop(): Promise<Shop> {
   const closed = { open: false, prices: { small: 0, standard: 0, large: 0 } }
   try {
     return await api<Shop>('/shop')
-  } catch {
-    return { forms: { kit: closed, finished: closed }, shippingFen: 0 }
+  } catch (e) {
+    return { forms: { kit: closed, finished: closed }, shippingFen: 0, error: (e as { code?: string }).code || 'network' }
   }
 }
 

@@ -1,10 +1,18 @@
 <view class="wrap">
   <view class="title">你想要哪种形式？</view>
 
+  <view wx:if="{{shopError}}" class="neterr mt">
+    <view>
+      <view class="bold">{{shopError}}</view>
+      <view class="small">开发版请先打开调试：右上角「···」→「开发调试」→ 打开调试，再重新进入小程序。</view>
+    </view>
+    <button class="btn small" hover-class="btn-hover" bindtap="retryShop">重试</button>
+  </view>
+
   <view class="forms mt-lg">
     <view wx:for="{{forms}}" wx:key="id" class="form card {{form === item.id ? 'on' : ''}} {{item.open ? '' : 'soon'}}" data-id="{{item.id}}" bindtap="pick">
       <view wx:if="{{!item.open}}" class="veil"></view>
-      <text wx:if="{{!item.open}}" class="pill sun tag">即将开放</text>
+      <text wx:if="{{!item.open}}" class="pill sun tag">{{shopError ? '暂时连不上' : '即将开放'}}</text>
       <view class="row between"><text class="f-icon">{{item.icon}}</text><text wx:if="{{form === item.id}}" class="pill accent">✓ 已选</text></view>
       <view class="h2 mt-sm">{{item.title}}</view>
       <view class="muted small">{{item.body}}</view>

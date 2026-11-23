@@ -21,7 +21,9 @@ Page({
     shipping: "",
     total: "",
     paying: false,
-    started: false
+    started: false,
+    /** Why the prices couldn't be loaded ('' = loaded). */
+    shopError: ""
   },
   shop: null,
   wanted: "digital",
@@ -60,6 +62,7 @@ Page({
     const tier = (0, import_shop.tierOf)(w.pattern, w.beadSize);
     const price = (f) => shop.forms[f].open ? (0, import_shop.yuan)(shop.forms[f].prices[tier]) : "";
     this.setData({
+      shopError: shop.error ? shop.error === "network" ? "\u8FDE\u4E0D\u4E0A\u670D\u52A1\u5668\uFF0C\u8D2D\u4E70\u6682\u65F6\u7528\u4E0D\u4E86\u3002" : `\u670D\u52A1\u5668\u8FD4\u56DE\u4E86\u9519\u8BEF\uFF08${shop.error}\uFF09\u3002` : "",
       forms: [
         { id: "digital", icon: "\u2B07", title: "\u514D\u8D39\u4E0B\u8F7D\u56FE\u7EB8", body: "\u56FE\u7EB8\u603B\u89C8 + \u6750\u6599\u6E05\u5355\uFF0C\u4FDD\u5B58\u5230\u76F8\u518C\uFF0C\u7528\u4F60\u81EA\u5DF1\u7684\u8C46\u5B50\u62FC\u3002", open: true, price: "\u514D\u8D39" },
         { id: "kit", icon: "\u{1F4E6}", title: "\u8D2D\u4E70\u6750\u6599\u5305", body: "\u6309\u56FE\u7EB8\u6570\u597D\u7684\u8C46\u5B50\uFF08\u591A 10% \u5907\u7528\uFF09\u3001\u5E95\u677F\u3001\u71A8\u70EB\u7EB8\u548C\u6253\u5370\u597D\u7684\u56FE\u7EB8\u3002", open: shop.forms.kit.open, price: price("kit") },
@@ -70,8 +73,12 @@ Page({
     this.wanted = "digital";
     if (want !== "digital") {
       if (shop.forms[want].open) this.select(want);
-      else wx.showToast({ title: `${import_shop.FORM_NAME[want]}\u5373\u5C06\u5F00\u653E`, icon: "none" });
+      else if (!shop.error) wx.showToast({ title: `${import_shop.FORM_NAME[want]}\u5373\u5C06\u5F00\u653E`, icon: "none" });
     } else if (this.data.form !== "digital") this.select(this.data.form);
+  },
+  retryShop() {
+    wx.showLoading({ title: "\u91CD\u8BD5\u4E2D\u2026" });
+    void this.refreshShop().then(() => wx.hideLoading());
   },
   select(form) {
     const w = (0, import_store.getWork)();
@@ -83,7 +90,7 @@ Page({
   pick(e) {
     const id = e.currentTarget.dataset.id;
     const f = this.data.forms.find((x) => x.id === id);
-    if (!(f == null ? void 0 : f.open)) return wx.showToast({ title: "\u5373\u5C06\u5F00\u653E\uFF0C\u656C\u8BF7\u671F\u5F85", icon: "none" });
+    if (!(f == null ? void 0 : f.open)) return wx.showToast({ title: this.data.shopError ? "\u8FDE\u4E0D\u4E0A\u670D\u52A1\u5668\uFF0C\u70B9\u4E0A\u9762\u7684\u300C\u91CD\u8BD5\u300D" : "\u5373\u5C06\u5F00\u653E\uFF0C\u656C\u8BF7\u671F\u5F85", icon: "none" });
     this.select(id);
   },
   async chooseAddress() {

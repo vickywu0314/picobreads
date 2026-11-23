@@ -94,7 +94,7 @@ export async function updateProfile(name: string): Promise<User> {
 }
 
 const MESSAGES: Record<string, string> = {
-  network: '连不上服务器，请检查网络',
+  network: '连不上服务器（开发版要先打开调试）',
   wx_login_failed: '微信登录失败，请再试一次',
   provider_not_configured: '服务器还没配置小程序登录',
   not_signed_in: '请先登录',

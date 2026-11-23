@@ -37,7 +37,7 @@ async function loadShop() {
   try {
     return await (0, import_api.api)("/shop");
   } catch (e) {
-    return { forms: { kit: closed, finished: closed }, shippingFen: 0 };
+    return { forms: { kit: closed, finished: closed }, shippingFen: 0, error: e.code || "network" };
   }
 }
 function tierOf(p, bead) {
