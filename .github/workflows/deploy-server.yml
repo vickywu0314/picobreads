@@ -66,21 +66,33 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -T 30 -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          # The link from GitHub to the server drops now and then ("Connection closed by remote
+          # host"): retry each remote step a few times before giving up.
+          retry() {
+            local n
+            for n in 1 2 3 4 5; do
+              "$@" && return 0
+              echo "::warning::attempt $n failed: $*"
+              sleep $((n * 10))
+            done
+            return 1
+          }
+          retry sh -c 'ssh-keyscan -T 30 -H "$DEPLOY_HOST" > ~/.ssh/known_hosts && [ -s ~/.ssh/known_hosts ]'
           SSH="ssh -i ~/.ssh/deploy_key -o ConnectTimeout=30 -o ServerAliveInterval=15"
           # Upload into a staging folder first, then swap it in with one rsync on the server,
           # so visitors never see a half-uploaded site.
-          rsync -az --delete --timeout=120 -e "$SSH" apps/web/out/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH.staging/"
-          $SSH "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH' && rsync -a --delete '$DEPLOY_PATH.staging/' '$DEPLOY_PATH/'"
+          retry rsync -az --delete --timeout=120 -e "$SSH" apps/web/out/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH.staging/"
+          retry $SSH "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH' && rsync -a --delete '$DEPLOY_PATH.staging/' '$DEPLOY_PATH/'"
           echo "Deployed $(git log -1 --format='%h %s') to $DEPLOY_HOST:$DEPLOY_PATH"
 
           # API (accounts, drafts, share links): one bundled file. Restarted only if the
           # one-time setup in docs/deploy-server.md («后端 API») has been done on the server.
           # Setup kit for the one-time server setup: sudo bash ~/beadspark-deploy/setup-api.sh
-          rsync -az --timeout=120 -e "$SSH" deploy/ apps/api/dist/server.js "$DEPLOY_USER@$DEPLOY_HOST:beadspark-deploy/"
-          if $SSH "$DEPLOY_USER@$DEPLOY_HOST" "test -d '$API_PATH'"; then
-            rsync -az --timeout=120 -e "$SSH" apps/api/dist/server.js "$DEPLOY_USER@$DEPLOY_HOST:$API_PATH/server.js.new"
-            $SSH "$DEPLOY_USER@$DEPLOY_HOST" "mv '$API_PATH/server.js.new' '$API_PATH/server.js' && sudo -n systemctl restart beadspark-api && echo 'API updated and restarted'"
+          retry rsync -az --timeout=120 -e "$SSH" deploy/ apps/api/dist/server.js "$DEPLOY_USER@$DEPLOY_HOST:beadspark-deploy/"
+          api=$(retry $SSH "$DEPLOY_USER@$DEPLOY_HOST" "test -d '$API_PATH' && echo yes || echo no")
+          if [ "$api" = yes ]; then
+            retry rsync -az --timeout=120 -e "$SSH" apps/api/dist/server.js "$DEPLOY_USER@$DEPLOY_HOST:$API_PATH/server.js.new"
+            retry $SSH "$DEPLOY_USER@$DEPLOY_HOST" "mv '$API_PATH/server.js.new' '$API_PATH/server.js' && sudo -n systemctl restart beadspark-api && echo 'API updated and restarted'"
           else
             echo "API not set up on the server yet: run  sudo bash ~/beadspark-deploy/setup-api.sh  there once."
           fi
