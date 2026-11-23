@@ -59,6 +59,10 @@ ask PRICE_FINISHED_LARGE "成品 · 大"
 ask PRICE_SHIPPING "运费（包邮填 0）"
 echo
 ask ADMIN_EMAIL "新订单通知发到哪个邮箱"
+echo
+echo "== 物流轨迹（可选）：快递100 企业版的授权信息，api.kuaidi100.com 后台「授权参数」。不用就直接回车 =="
+ask KUAIDI100_CUSTOMER "快递100 customer"
+ask KUAIDI100_KEY "快递100 授权 key（输入时不显示）" secret
 
 # Password of the order admin page (/admin/): made once, kept after that.
 if [ -z "$(cur ADMIN_TOKEN)" ]; then

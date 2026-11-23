@@ -132,3 +132,20 @@ export async function cancelOrder(id: string): Promise<Order> {
 export async function getOrder(id: string): Promise<Order> {
   return (await api<{ order: Order }>(`/orders/${id}`)).order
 }
+
+export interface Track {
+  /** False when tracking isn't set up or the parcel hasn't shipped: show the tracking number only. */
+  available: boolean
+  state?: string
+  steps?: { time: string; text: string }[]
+  error?: string
+}
+
+/** Where the parcel is. Never throws: without an answer there is simply no timeline. */
+export async function getTracking(id: string): Promise<Track> {
+  try {
+    return await api<Track>(`/orders/${id}/tracking`)
+  } catch {
+    return { available: false }
+  }
+}

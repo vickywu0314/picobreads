@@ -157,9 +157,11 @@ export function AdminOrders() {
     setBusy(true)
     setError(null)
     try {
-      await call(token, `/orders/${open.id}/${path}`, body)
+      const r = await call<{ wechat?: { ok: boolean; error?: string } }>(token, `/orders/${open.id}/${path}`, body)
       setOpen(null)
       await load(token, tab)
+      // Shipping is saved either way; say so when WeChat didn't take the shipping notice.
+      if (r.wechat && !r.wechat.ok) setError(`已标记发货，但通知微信没成功（买家不会收到微信的发货通知）：${r.wechat.error ?? ''}`)
     } catch (e) {
       setError(message(e))
     } finally {

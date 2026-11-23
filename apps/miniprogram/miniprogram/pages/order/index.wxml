@@ -15,6 +15,19 @@
         </view>
         <button class="btn small" hover-class="btn-hover" bindtap="copyTracking">复制单号</button>
       </view>
+      <block wx:if="{{track}}">
+        <view class="track-head"><text class="bold">物流进度</text><text wx:if="{{track.state}}" class="pill sun">{{track.state}}</text></view>
+        <view wx:if="{{track.error}}" class="muted small">{{track.error}}</view>
+        <view wx:elif="{{!track.steps.length}}" class="muted small">快递公司还没有更新物流，稍后下拉刷新。</view>
+        <view wx:for="{{track.steps}}" wx:key="time" class="step {{index === 0 ? 'now' : ''}}">
+          <view class="step-dot"></view>
+          <view class="step-body">
+            <view class="{{index === 0 ? 'bold' : ''}} small">{{item.text}}</view>
+            <view class="muted tiny">{{item.time}}</view>
+          </view>
+        </view>
+      </block>
+      <view wx:else class="muted small mt-sm">微信会发一条发货通知，点开也能查看物流。</view>
     </view>
 
     <view class="card item mt">

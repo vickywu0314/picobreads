@@ -24,6 +24,7 @@ __export(shop_exports, {
   cancelOrder: () => cancelOrder,
   chooseAddress: () => chooseAddress,
   getOrder: () => getOrder,
+  getTracking: () => getTracking,
   loadShop: () => loadShop,
   payOrder: () => payOrder,
   tierOf: () => tierOf,
@@ -102,4 +103,11 @@ async function cancelOrder(id) {
 }
 async function getOrder(id) {
   return (await (0, import_api.api)(`/orders/${id}`)).order;
+}
+async function getTracking(id) {
+  try {
+    return await (0, import_api.api)(`/orders/${id}/tracking`);
+  } catch (e) {
+    return { available: false };
+  }
 }

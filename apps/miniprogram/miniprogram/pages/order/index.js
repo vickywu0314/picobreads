@@ -19,7 +19,8 @@ Page({
     created: "",
     paid: "",
     shipped: "",
-    busy: false
+    busy: false,
+    track: null
   },
   id: "",
   onLoad(q) {
@@ -61,6 +62,7 @@ Page({
       paid: time(o.paidAt),
       shipped: time(o.shippedAt)
     });
+    if (o.status === "shipped") void (0, import_shop.getTracking)(o.id).then((track) => this.setData({ track: track.available ? track : null }));
   },
   async pay() {
     this.setData({ busy: true });

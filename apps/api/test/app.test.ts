@@ -299,7 +299,7 @@ describe('shop: orders and WeChat Pay', () => {
   const address = { name: '小豆', phone: '13800000000', province: '北京市', city: '北京市', county: '朝阳区', detail: '某路 1 号' }
 
   function shop(extra: Record<string, string> = {}) {
-    const state = { trade: 'NOTPAY', prepayBody: null as any, authorized: false, closed: false, refundBody: null as any, refundStatus: 'PROCESSING', prepays: 0 } // eslint-disable-line @typescript-eslint/no-explicit-any
+    const state = { trade: 'NOTPAY', prepayBody: null as any, authorized: false, closed: false, refundBody: null as any, refundStatus: 'PROCESSING', prepays: 0, shipBody: null as any, shipFail: false, kdCalls: 0, kdParam: null as any } // eslint-disable-line @typescript-eslint/no-explicit-any
     const fake = (async (url: string | URL, init?: RequestInit) => {
       const u = String(url)
       const json = (o: object, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json' } })
@@ -309,6 +309,18 @@ describe('shop: orders and WeChat Pay', () => {
         state.prepays++
         state.authorized = String((init?.headers as Record<string, string>).authorization).startsWith('WECHATPAY2-SHA256-RSA2048 mchid="1900000001"')
         return json({ prepay_id: 'PREPAY1' })
+      }
+      if (u.includes('/cgi-bin/token')) return json({ access_token: 'AT', expires_in: 7200 })
+      if (u.includes('get_delivery_list')) return json({ errcode: 0, delivery_list: [{ delivery_id: 'SF', delivery_name: '顺丰速运' }, { delivery_id: 'ZTO', delivery_name: '中通快递' }] })
+      if (u.includes('upload_shipping_info')) {
+        state.shipBody = JSON.parse(String(init?.body))
+        return json(state.shipFail ? { errcode: 10060001, errmsg: 'order not exist' } : { errcode: 0, errmsg: 'ok' })
+      }
+      if (u.includes('kuaidi100')) {
+        state.kdCalls++
+        const f = new URLSearchParams(String(init?.body))
+        state.kdParam = JSON.parse(f.get('param')!)
+        return json({ message: 'ok', state: '5', data: [{ ftime: '2026-11-24 09:00:00', context: '快件正在派送' }, { ftime: '2026-11-23 20:00:00', context: '已揽收' }] })
       }
       if (u.endsWith('/close')) {
         state.closed = true
@@ -447,6 +459,41 @@ describe('shop: orders and WeChat Pay', () => {
     expect(refunded.status).toBe('refunded')
     expect(state.refundBody).toMatchObject({ out_trade_no: id, out_refund_no: `R${id}`, amount: { refund: 4790, total: 4790 } })
     expect((await s.call('POST', `/admin/orders/${id}/refund`, {}, admin)).json.error).toBe('not_refundable')
+  })
+
+  it('reports shipping to WeChat and shows the parcel track to the buyer', async () => {
+    const { s, state } = shop({ KUAIDI100_CUSTOMER: 'CUST', KUAIDI100_KEY: 'KEY' })
+    const auth = await signIn(s)
+    const id = (await s.call('POST', '/orders', { form: 'kit', name: '柯基', pattern, address }, auth)).json.order.id
+    state.trade = 'SUCCESS'
+    await s.call('GET', `/orders/${id}`, undefined, auth)
+    const admin = { 'x-admin-token': 'admin-secret-123456' }
+    // Nothing to track before it ships.
+    expect((await s.call('GET', `/orders/${id}/tracking`, undefined, auth)).json).toEqual({ available: false })
+    const shipped = (await s.call('POST', `/admin/orders/${id}/ship`, { carrier: '顺丰速运', trackingNo: 'SF123' }, admin)).json
+    expect(shipped.wechat).toEqual({ ok: true })
+    expect(state.shipBody).toMatchObject({
+      order_key: { order_number_type: 2, transaction_id: 'TX1' },
+      logistics_type: 1,
+      delivery_mode: 1,
+      shipping_list: [{ tracking_no: 'SF123', express_company: 'SF', contact: { receiver_contact: '138****0000' } }],
+      payer: { openid: 'openid-1' },
+    })
+    expect(state.shipBody.upload_time).toMatch(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}\+08:00$/)
+    const track = (await s.call('GET', `/orders/${id}/tracking`, undefined, auth)).json
+    expect(track).toMatchObject({ available: true, state: '派送中', steps: [{ time: '2026-11-24 09:00:00', text: '快件正在派送' }, { text: '已揽收' }] })
+    expect(state.kdParam).toEqual({ com: 'shunfeng', num: 'SF123', phone: '13800000000' })
+    await s.call('GET', `/orders/${id}/tracking`, undefined, auth)
+    expect(state.kdCalls).toBe(1) // cached: lookups are billed
+    // WeChat refusing the upload doesn't undo the shipment, but is reported.
+    state.shipFail = true
+    const again = (await s.call('POST', `/admin/orders/${id}/ship`, { carrier: '中通快递', trackingNo: 'ZT9' }, admin)).json
+    expect(again.order).toMatchObject({ status: 'shipped', trackingNo: 'ZT9' })
+    expect(again.wechat.ok).toBe(false)
+    expect(again.wechat.error).toContain('10060001')
+    expect((await s.call('POST', `/admin/orders/${id}/ship`, { carrier: '某某小快递', trackingNo: 'X1' }, admin)).json.wechat.error).toContain('找不到')
+    s.resetCookie()
+    expect((await s.call('GET', `/orders/${id}/tracking`)).status).toBe(401)
   })
 
   it('admin is off without a token', async () => {

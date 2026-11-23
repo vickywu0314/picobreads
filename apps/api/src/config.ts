@@ -25,6 +25,8 @@ export interface Config {
   adminEmail: string
   /** Password of the order admin page (/admin/). Empty = admin is off. */
   adminToken: string
+  /** 快递100 (kuaidi100.com) real-time tracking: customer id + key. Empty = no tracking timeline. */
+  kuaidi100: { customer: string; key: string }
   /** Secure cookies (https). Off only for local http testing. */
   secureCookies: boolean
 }
@@ -70,6 +72,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     shippingFen: fen('PRICE_SHIPPING'),
     adminEmail: s('ADMIN_EMAIL'),
     adminToken: s('ADMIN_TOKEN'),
+    kuaidi100: { customer: s('KUAIDI100_CUSTOMER'), key: s('KUAIDI100_KEY') },
     secureCookies: siteUrl.startsWith('https://'),
   }
 }

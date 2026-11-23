@@ -3,7 +3,7 @@ import { errorText } from '../../utils/api'
 import { sizeCm } from '../../utils/config'
 import { palette } from '../../utils/generate'
 import { patternImage } from '../../utils/png'
-import { FORM_NAME, cancelOrder, getOrder, payOrder, yuan, type Order } from '../../utils/shop'
+import { FORM_NAME, cancelOrder, getOrder, getTracking, payOrder, yuan, type Order, type Track } from '../../utils/shop'
 
 const time = (ms: number | null) => (ms ? new Date(ms).toLocaleString('zh-CN', { hour12: false }) : '')
 
@@ -24,6 +24,7 @@ Page({
     paid: '',
     shipped: '',
     busy: false,
+    track: null as Track | null,
   },
   id: '',
 
@@ -66,6 +67,7 @@ Page({
       paid: time(o.paidAt),
       shipped: time(o.shippedAt),
     })
+    if (o.status === 'shipped') void getTracking(o.id).then((track) => this.setData({ track: track.available ? track : null }))
   },
 
   async pay() {

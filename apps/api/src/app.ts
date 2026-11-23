@@ -5,7 +5,7 @@ import type { Config } from './config'
 import { hashPassword, randomId, sha256, shortId, sixDigits, verifyPassword } from './crypto'
 import type { DB } from './db'
 import { codeEmail, type Mailer } from './mail'
-import { timingSafeEqual } from 'node:crypto'
+import { createHash, timingSafeEqual } from 'node:crypto'
 import { closeOrder, decryptNotify, prepay, queryOrder, refundOrder, wxPayReady } from './wxpay'
 import type { ShopForm, ShopTier } from './config'
 import { PROVIDERS, providers as makeProviders, type Profile, type Provider, type ProviderId } from './oauth'
@@ -687,7 +687,103 @@ export function createApp(deps: Deps) {
     const trackingNo = typeof body.trackingNo === 'string' ? body.trackingNo.trim().slice(0, 40) : ''
     if (!carrier || !trackingNo) return fail(c, 400, 'bad_tracking')
     db.prepare("UPDATE orders SET status = 'shipped', carrier = ?, tracking_no = ?, shipped_at = COALESCE(shipped_at, ?), note = ? WHERE id = ?").run(carrier, trackingNo, now(), typeof body.note === 'string' ? body.note.slice(0, 200) : o.note, o.id)
-    return c.json({ order: adminOrder(getOrder(o.id)!) })
+    trackCache.delete(o.id)
+    // Tell WeChat (it notifies the buyer and shows the parcel in their WeChat orders). Shipping
+    // itself is recorded either way; a failure here is reported back so it can be looked at.
+    const wechatError = await uploadShipping(getOrder(o.id)!)
+    return c.json({ order: adminOrder(getOrder(o.id)!), wechat: wechatError ? { ok: false, error: wechatError } : { ok: true } })
+  })
+
+  // --- shipping: WeChat's shipping-info service and parcel tracking -----------------
+  let deliveryList: { at: number; items: { delivery_id: string; delivery_name: string }[] } | null = null
+  /** WeChat's code for a carrier name ("顺丰速运" → "SF"), from its own list. */
+  const deliveryId = async (carrier: string): Promise<string | null> => {
+    if (!deliveryList || now() - deliveryList.at > DAY) {
+      const res = await wx(`https://api.weixin.qq.com/cgi-bin/express/delivery/open_msg/get_delivery_list?access_token=${await accessToken()}`, { method: 'POST', body: '{}' })
+      const r = (await res.json()) as { errcode?: number; errmsg?: string; delivery_list?: { delivery_id: string; delivery_name: string }[] }
+      if (r.errcode || !r.delivery_list) throw new Error(`get_delivery_list ${r.errcode} ${r.errmsg}`)
+      deliveryList = { at: now(), items: r.delivery_list }
+    }
+    const key = carrier.replace(/速运|快递|速递|物流|\s/g, '').slice(0, 2)
+    return deliveryList.items.find((d) => d.delivery_name === carrier)?.delivery_id ?? deliveryList.items.find((d) => key && d.delivery_name.includes(key))?.delivery_id ?? null
+  }
+
+  /** Report a shipped order to WeChat (upload_shipping_info). Returns an error text, or null when it worked / doesn't apply. */
+  const uploadShipping = async (o: OrderRow): Promise<string | null> => {
+    if (!wxmpReady() || !o.tracking_no || !o.carrier) return null
+    const openid = (db.prepare('SELECT openid FROM wx_openids WHERE user_id = ?').get(o.user_id) as { openid: string } | undefined)?.openid
+    if (!openid) return null // not bought in the mini program
+    try {
+      const company = await deliveryId(o.carrier)
+      if (!company) return `微信的快递公司列表里找不到「${o.carrier}」`
+      const phone = String(JSON.parse(o.address).phone ?? '')
+      const masked = phone.length >= 7 ? `${phone.slice(0, 3)}****${phone.slice(-4)}` : phone
+      const t = new Date(now() + 8 * 3600_000).toISOString().replace('Z', '+08:00') // Beijing time, RFC 3339
+      const res = await wx(`https://api.weixin.qq.com/wxa/sec/order/upload_shipping_info?access_token=${await accessToken()}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          order_key: o.transaction_id ? { order_number_type: 2, transaction_id: o.transaction_id } : { order_number_type: 1, mchid: cfg.wxpay.mchId, out_trade_no: o.id },
+          logistics_type: 1, // by courier
+          delivery_mode: 1, // one parcel
+          shipping_list: [{ tracking_no: o.tracking_no, express_company: company, item_desc: `${FORM_NAME[o.form]} ${o.name}`.slice(0, 120), contact: { receiver_contact: masked } }],
+          upload_time: t,
+          payer: { openid },
+        }),
+      })
+      const r = (await res.json()) as { errcode?: number; errmsg?: string }
+      if (r.errcode) {
+        if (r.errcode === 40001 || r.errcode === 42001) wxToken = null
+        console.warn('[wxmp] upload_shipping_info', o.id, r.errcode, r.errmsg)
+        return `微信返回 ${r.errcode}：${r.errmsg ?? ''}`
+      }
+      return null
+    } catch (e) {
+      console.warn('[wxmp] upload_shipping_info', o.id, (e as Error).message)
+      return (e as Error).message
+    }
+  }
+
+  // Parcel tracking through 快递100 (kuaidi100.com). Cached, because each lookup is billed.
+  const KD_CODES: [string, string][] = [['顺丰', 'shunfeng'], ['中通', 'zhongtong'], ['圆通', 'yuantong'], ['韵达', 'yunda'], ['申通', 'shentong'], ['极兔', 'jtexpress'], ['邮政', 'ems'], ['EMS', 'ems'], ['京东', 'jd'], ['德邦', 'debangkuaidi']]
+  const KD_STATE: Record<string, string> = { '0': '运输中', '1': '已揽收', '2': '有异常', '3': '已签收', '4': '已退签', '5': '派送中', '6': '退回中' }
+  interface Track {
+    available: boolean
+    state?: string
+    steps?: { time: string; text: string }[]
+    error?: string
+  }
+  const trackCache = new Map<string, { at: number; track: Track }>()
+  const trackOrder = async (o: OrderRow): Promise<Track> => {
+    const { customer, key } = cfg.kuaidi100
+    if (!customer || !key || !o.tracking_no || !o.carrier) return { available: false }
+    const hit = trackCache.get(o.id)
+    if (hit && now() - hit.at < 30 * MINUTE) return hit.track
+    const com = KD_CODES.find(([name]) => o.carrier!.includes(name))?.[1]
+    if (!com) return { available: false }
+    let track: Track
+    try {
+      const param = JSON.stringify({ com, num: o.tracking_no, phone: String(JSON.parse(o.address).phone ?? '') })
+      const sign = createHash('md5').update(param + key + customer).digest('hex').toUpperCase()
+      const res = await wx('https://poll.kuaidi100.com/poll/query.do', { method: 'POST', body: new URLSearchParams({ customer, sign, param }) })
+      const r = (await res.json()) as { message?: string; state?: string; data?: { time?: string; ftime?: string; context?: string }[]; returnCode?: string }
+      if (!Array.isArray(r.data)) track = { available: true, steps: [], error: r.message || `查询失败 ${r.returnCode ?? ''}` }
+      else track = { available: true, state: KD_STATE[String(r.state)] ?? '', steps: r.data.map((d) => ({ time: d.ftime || d.time || '', text: d.context || '' })) }
+    } catch (e) {
+      console.warn('[kuaidi100]', o.id, (e as Error).message)
+      return { available: true, steps: [], error: '暂时查不到物流' }
+    }
+    if (trackCache.size > 2000) trackCache.clear()
+    trackCache.set(o.id, { at: now(), track })
+    return track
+  }
+
+  /** Where the parcel is (the buyer's own order). */
+  app.get('/orders/:id/tracking', async (c) => {
+    const u = sessionUser(c)
+    if (!u) return fail(c, 401, 'not_signed_in')
+    const o = getOrder(c.req.param('id'))
+    if (!o || o.user_id !== u.id) return fail(c, 404, 'not_found')
+    return c.json(await trackOrder(o))
   })
 
   /** Refund a paid / shipped order in full through WeChat Pay. */

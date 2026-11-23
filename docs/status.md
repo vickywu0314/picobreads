@@ -43,6 +43,13 @@
 
 部署细节、Nginx 配置、手动部署脚本：`docs/deploy-server.md`、`scripts/deploy.sh`。
 
+## 待办（用户侧）
+
+- [ ] 小程序后台绑定客服微信号（订单页「联系客服」按钮才有人接）。
+- [ ] 小程序备案、基础信息、类目、隐私保护指引（提审前）。
+- [ ] 可选：注册快递100 企业版，把 customer / key 用 `set-shop.sh` 填到服务器，订单页才有物流时间线。
+- [ ] 体验版完整测试（不开调试，走 https 域名）；后台「全额退款」和发货通知还没在真实环境跑过。
+
 ## 域名（2026-11-23）
 
 - 正式域名 **beadspark.top**（已备案通过），替代原计划的 pd.scentby.cn。服务器上运行 `sudo bash ~/beadspark-deploy/setup-https.sh` 配 https 证书并把后端地址改成 `https://beadspark.top`。

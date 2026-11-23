@@ -7,3 +7,9 @@
 .info { flex: 1; min-width: 0; }
 .accent { color: var(--accent); font-size: 34rpx; }
 .lines { display: flex; flex-direction: column; gap: 14rpx; }
+.track-head { display: flex; align-items: center; gap: 16rpx; margin-top: 24rpx; padding-top: 20rpx; border-top: 2rpx dashed var(--border); }
+.tiny { font-size: 22rpx; }
+.step { display: flex; gap: 18rpx; padding-top: 18rpx; }
+.step-dot { width: 16rpx; height: 16rpx; border-radius: 50%; background: var(--border); margin-top: 10rpx; flex-shrink: 0; }
+.step.now .step-dot { background: var(--accent); box-shadow: 0 0 0 6rpx var(--accent-soft); }
+.step-body { flex: 1; min-width: 0; }
