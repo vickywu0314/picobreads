@@ -46,7 +46,7 @@ site=$(cur SITE_URL)
 default_notify=""
 case "$site" in https://*) default_notify="$site/api/pay/wechat/notify" ;; esac
 [ -z "$(cur WXPAY_NOTIFY_URL)" ] && [ -n "$default_notify" ] && set_kv WXPAY_NOTIFY_URL "$default_notify"
-ask WXPAY_NOTIFY_URL "支付结果通知地址（必须是 https，例如 https://pd.scentby.cn/api/pay/wechat/notify）"
+ask WXPAY_NOTIFY_URL "支付结果通知地址（必须是 https，例如 https://beadspark.top/api/pay/wechat/notify）"
 
 echo
 echo "== 价格（元）。按图纸大小分三档：小 = 1 个分区，中 = 2～4 个分区，大 = 更多 =="

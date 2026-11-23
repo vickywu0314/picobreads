@@ -101,7 +101,7 @@ Nginx 把 `/api/` 转给它。GitHub Actions 每次部署会把打包好的 `ser
    ```bash
    sudo chown root:ubuntu /etc/beadspark/api.env && sudo chmod 640 /etc/beadspark/api.env
    ```
-   - `SITE_URL`：网站地址，例如 `https://pd.scentby.cn`（还没域名时先填 `http://49.233.85.32`；只有 https 地址才能用第三方登录）。
+   - `SITE_URL`：网站地址，例如 `https://beadspark.top`（还没域名时先填 `http://49.233.85.32`；只有 https 地址才能用第三方登录）。
    - 发验证码邮件：`SMTP_USER` 填发件的 QQ 邮箱地址，`SMTP_PASS` 填 QQ 邮箱「设置 → 账户 → POP3/SMTP 服务」生成的**授权码**（不是 QQ 密码）。换 Gmail：`SMTP_HOST=smtp.gmail.com`，`SMTP_PASS` 用 Google「应用专用密码」。
    - 第三方登录：每个平台填好两三项即可，没填的按钮会显示「即将开放」。回调地址见下表。
 4. **systemd 服务**（仓库里 `deploy/beadspark-api.service`）：
@@ -120,13 +120,13 @@ Nginx 把 `/api/` 转给它。GitHub Actions 每次部署会把打包好的 `ser
 
 ### 第三方登录的回调地址（在各平台后台填写）
 
-把 `https://pd.scentby.cn` 换成你的正式域名（必须是 https）：
+把 `https://beadspark.top` 换成你的正式域名（必须是 https）：
 
 | 平台 | 在哪里创建 | 回调 / 重定向地址 | 填到 api.env |
 |---|---|---|---|
-| Google | Google Cloud Console → API 和服务 → 凭据 → OAuth 客户端 ID（Web 应用） | `https://pd.scentby.cn/api/auth/google/callback` | `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET` |
-| 微信 | 微信开放平台 → 管理中心 → 网站应用（需企业认证，审核通过后才能用） | 授权回调域填 `pd.scentby.cn`（只填域名） | `WECHAT_APP_ID`、`WECHAT_APP_SECRET` |
-| Apple | Apple Developer → Identifiers → Services IDs（开启 Sign in with Apple）+ Keys（Sign in with Apple 的 .p8 密钥） | Return URL：`https://pd.scentby.cn/api/auth/apple/callback`，Domain：`pd.scentby.cn` | `APPLE_CLIENT_ID`（Services ID）、`APPLE_TEAM_ID`、`APPLE_KEY_ID`、`APPLE_PRIVATE_KEY`（.p8 内容，换行写成 `\n`） |
-| Facebook | Meta for Developers → 创建应用 → Facebook 登录 → 设置 | 有效 OAuth 跳转 URI：`https://pd.scentby.cn/api/auth/facebook/callback` | `FACEBOOK_APP_ID`、`FACEBOOK_APP_SECRET` |
+| Google | Google Cloud Console → API 和服务 → 凭据 → OAuth 客户端 ID（Web 应用） | `https://beadspark.top/api/auth/google/callback` | `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET` |
+| 微信 | 微信开放平台 → 管理中心 → 网站应用（需企业认证，审核通过后才能用） | 授权回调域填 `beadspark.top`（只填域名） | `WECHAT_APP_ID`、`WECHAT_APP_SECRET` |
+| Apple | Apple Developer → Identifiers → Services IDs（开启 Sign in with Apple）+ Keys（Sign in with Apple 的 .p8 密钥） | Return URL：`https://beadspark.top/api/auth/apple/callback`，Domain：`beadspark.top` | `APPLE_CLIENT_ID`（Services ID）、`APPLE_TEAM_ID`、`APPLE_KEY_ID`、`APPLE_PRIVATE_KEY`（.p8 内容，换行写成 `\n`） |
+| Facebook | Meta for Developers → 创建应用 → Facebook 登录 → 设置 | 有效 OAuth 跳转 URI：`https://beadspark.top/api/auth/facebook/callback` | `FACEBOOK_APP_ID`、`FACEBOOK_APP_SECRET` |
 
 改完 `api.env` 后 `sudo systemctl restart beadspark-api` 生效。

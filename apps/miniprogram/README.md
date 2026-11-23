@@ -20,7 +20,7 @@
 1. 微信开发者工具 → 导入项目 → 目录选仓库里的 **`apps/miniprogram`**（不是 `miniprogram` 子目录）。
 2. AppID 已经写在 `project.config.json` 里（`wxad095cfa10de6ecd`）。
 3. 本机测试连后端：
-   - `miniprogram/utils/config.ts` 里 `API_BASE` 按版本自动选：开发版（开发者工具 / 预览 / 真机调试）连 `http://49.233.85.32`，体验版和正式版连 `https://pd.scentby.cn`。所以**上传体验版 / 提审前，https 域名必须已经通了**。
+   - `miniprogram/utils/config.ts` 里 `API_BASE` 是 `https://beadspark.top`（开发版、体验版、正式版都用它）。
    - `project.private.config.json` 已经设了「不校验合法域名」，开发者工具和真机预览（打开调试）里可以连 http 的 IP。**正式上传 / 体验版必须用 https 域名**。
 4. 服务器上要填小程序的 AppID 和 AppSecret（见下面「服务器」），否则「微信登录」会提示「服务器还没配置小程序登录」。
 
@@ -38,8 +38,8 @@ pnpm --filter miniprogram build
 ## 上线前要在小程序后台配置
 
 1. **服务器域名**（开发管理 → 开发设置 → 服务器域名）：
-   - request 合法域名：`https://pd.scentby.cn`
-   - downloadFile 合法域名：`https://pd.scentby.cn`（分享海报上的小程序码）
+   - request 合法域名：`https://beadspark.top`
+   - downloadFile 合法域名：`https://beadspark.top`（分享海报上的小程序码）
 2. **用户隐私保护指引**（设置 → 服务内容声明 → 用户隐私保护指引）：声明用到了「选中的照片或视频」（选照片）和「相册（仅写入）」（保存海报）。不填的话这两个功能会被微信拦掉。
 3. **服务类目**：选「工具 > 图片 / 设计」之类与拼豆图纸相符的类目。
 4. 分享到朋友圈：小程序要已发布（或体验版），且页面实现了 `onShareTimeline`（分享页已实现）。朋友圈打开是「单页模式」，只能看作品，点「照着拼」等需要先「前往小程序」。

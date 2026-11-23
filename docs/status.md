@@ -43,6 +43,11 @@
 
 部署细节、Nginx 配置、手动部署脚本：`docs/deploy-server.md`、`scripts/deploy.sh`。
 
+## 域名（2026-11-23）
+
+- 正式域名 **beadspark.top**（已备案通过），替代原计划的 pd.scentby.cn。服务器上运行 `sudo bash ~/beadspark-deploy/setup-https.sh` 配 https 证书并把后端地址改成 `https://beadspark.top`。
+- 之后：小程序后台填 request / downloadFile 合法域名；第三方登录回调、SEO 提交 sitemap 都用这个域名。下文里出现的 pd.scentby.cn 是旧计划。
+
 ## 微信小程序（2026-11-20 起）
 
 - 代码在 `apps/miniprogram`（原生 + TypeScript，用法见该目录 README）：首页、定制（四种效果 + 推荐）、在线拼（立体钉板）、微信登录、草稿、分享（好友 / 朋友圈 / 海报带小程序码）。

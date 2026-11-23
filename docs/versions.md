@@ -67,7 +67,7 @@
 
 ## SEO 与爬虫（2026-11-04）
 
-- 网站地址用环境变量 `NEXT_PUBLIC_SITE_URL`，不填默认 `https://pd.scentby.cn`（`src/config/seo.ts`）。
+- 网站地址用环境变量 `NEXT_PUBLIC_SITE_URL`，不填默认 `https://beadspark.top`（`src/config/seo.ts`）。
 - 页面头部：标题、描述、中英文关键词（`SEO.keywords`）、Open Graph / Twitter 卡片、`robots: index, follow`、JSON-LD（`WebApplication`）。
 - `/robots.txt`（`src/app/robots.ts`）：所有爬虫都可抓；另外点名欢迎搜索引擎（Google、Bing、百度、搜狗、360、神马、字节、Yandex 等）和 AI 爬虫（GPTBot、ChatGPT-User、OAI-SearchBot、ClaudeBot、PerplexityBot、Google-Extended、Applebot-Extended、CCBot、Meta、Amazon、DeepSeek、Kimi 等，名单在 `ALLOWED_BOTS`）。登录、工作台、在线拼、灯箱、定制中间步骤不收录。
 - `/sitemap.xml`（`src/app/sitemap.ts`）：首页、上传页、熨烫实验室。

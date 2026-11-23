@@ -45,7 +45,7 @@ Milestone 0 needs none. See `.env.example`.
 | Name | Purpose |
 |---|---|
 | `NEXT_PUBLIC_BASE_PATH` | Optional sub-path when hosting under a folder (e.g. GitHub Pages). Leave empty on Vercel. |
-| `NEXT_PUBLIC_SITE_URL` | Public address of the site for sitemap.xml / robots.txt / Open Graph. Defaults to `https://pd.scentby.cn`. |
+| `NEXT_PUBLIC_SITE_URL` | Public address of the site for sitemap.xml / robots.txt / Open Graph. Defaults to `https://beadspark.top`. |
 
 ## Deploy (Vercel, free)
 

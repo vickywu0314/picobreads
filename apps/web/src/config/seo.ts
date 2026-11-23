@@ -1,7 +1,7 @@
 // SEO: site address, keywords and descriptions used by metadata, robots.txt, sitemap.xml and llms.txt.
 
 /** Public address of the site (no trailing slash). Set NEXT_PUBLIC_SITE_URL when deploying. */
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://pd.scentby.cn').replace(/\/+$/, '')
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://beadspark.top').replace(/\/+$/, '')
 
 export const SEO = {
   name: 'BeadSpark',
