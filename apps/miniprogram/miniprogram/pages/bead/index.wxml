@@ -16,7 +16,6 @@
       <view class="mode {{mode === 'place' ? 'on' : ''}}" data-m="place" bindtap="setMode">放豆</view>
       <view class="mode {{mode === 'move' ? 'on' : ''}}" data-m="move" bindtap="setMode">移动</view>
     </view>
-    <view wx:if="{{testMode}}" class="test-btn" bindtap="testFinish">测试：一键拼完</view>
     <view class="zoom">
       <view class="zbtn" bindtap="zoomOut">－</view>
       <view class="zbtn" bindtap="zoomIn">＋</view>

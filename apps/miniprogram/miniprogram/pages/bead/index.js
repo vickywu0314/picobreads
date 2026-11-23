@@ -19,9 +19,7 @@ Page({
     canUndo: false,
     hint: "",
     boardW: 300,
-    boardH: 300,
-    /** Development / trial versions only: shows the "finish everything" test button. */
-    testMode: false
+    boardH: 300
   },
   // Working state (not rendered by the template).
   pattern: null,
@@ -55,30 +53,6 @@ Page({
     this.totals = new Map(legend.map((l) => [l.color, l.count]));
     this.finishedShown = this.countDone() === this.countTotal();
     this.refreshPanel();
-    try {
-      this.setData({ testMode: wx.getAccountInfoSync().miniProgram.envVersion !== "release" });
-    } catch (e) {
-    }
-  },
-  /** Test helper (not in the released version): place every remaining bead, as one undoable step. */
-  testFinish() {
-    const p = this.pattern;
-    const filled = [];
-    for (let i = 0; i < p.cells.length; i++) {
-      if (p.cells[i] >= 0 && this.placed[i] !== "1") {
-        this.placed[i] = "1";
-        filled.push(i);
-      }
-    }
-    if (!filled.length) {
-      this.finishedShown = false;
-      this.refreshPanel();
-      return;
-    }
-    this.undoStack.push(filled);
-    this.draw();
-    this.refreshPanel();
-    this.schedulePersist();
   },
   onReady() {
     void this.initCanvas(0);
