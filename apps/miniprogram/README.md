@@ -20,7 +20,7 @@
 1. 微信开发者工具 → 导入项目 → 目录选仓库里的 **`apps/miniprogram`**（不是 `miniprogram` 子目录）。
 2. AppID 已经写在 `project.config.json` 里（`wxad095cfa10de6ecd`）。
 3. 本机测试连后端：
-   - `miniprogram/utils/config.ts` 里 `API_BASE` 现在是 `http://49.233.85.32`（域名还没好）。**上传体验版 / 正式版前改成 `https://pd.scentby.cn`**。
+   - `miniprogram/utils/config.ts` 里 `API_BASE` 按版本自动选：开发版（开发者工具 / 预览 / 真机调试）连 `http://49.233.85.32`，体验版和正式版连 `https://pd.scentby.cn`。所以**上传体验版 / 提审前，https 域名必须已经通了**。
    - `project.private.config.json` 已经设了「不校验合法域名」，开发者工具和真机预览（打开调试）里可以连 http 的 IP。**正式上传 / 体验版必须用 https 域名**。
 4. 服务器上要填小程序的 AppID 和 AppSecret（见下面「服务器」），否则「微信登录」会提示「服务器还没配置小程序登录」。
 

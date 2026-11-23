@@ -4,6 +4,7 @@ import { getCanvas, onColor, rgb } from '../../utils/draw'
 import { patternImage } from '../../utils/png'
 import { beadCount, legendOf, palette } from '../../utils/generate'
 import { getWork } from '../../utils/store'
+import { syncDraft } from '../../utils/actions'
 import { errorText } from '../../utils/api'
 import { FORM_NAME, buy, chooseAddress, loadShop, tierOf, yuan, type Address, type Form, type Shop } from '../../utils/shop'
 
@@ -124,6 +125,8 @@ Page({
     this.setData({ paying: true })
     wx.showLoading({ title: '正在下单…', mask: true })
     try {
+      // A pattern that is being bought belongs under "我的作品" too, beaded or not.
+      void syncDraft(true)
       const { order } = await buy({ form, name: w.name || '我的拼豆', pattern: w.pattern, placed: w.placed, beadSize: w.beadSize, address })
       wx.hideLoading()
       // Paid, still confirming, or cancelled: the order page shows where it stands (and lets them pay later).

@@ -65,10 +65,10 @@ function shareCurrent() {
   if (!w.pattern) return;
   return sharePiece({ name: w.name || "\u6211\u7684\u62FC\u8C46", pattern: w.pattern, placed: w.placed, beadSize: w.beadSize });
 }
-async function syncDraft() {
+async function syncDraft(force = false) {
   var _a;
   const w = (0, import_store.getWork)();
-  if (!w.pattern || !w.placed.includes("1")) return false;
+  if (!w.pattern || !force && !w.placed.includes("1")) return false;
   try {
     if (!(0, import_api.getToken)()) await (0, import_api.login)();
     const id = (_a = w.draftId) != null ? _a : (0, import_store.newDraftId)();

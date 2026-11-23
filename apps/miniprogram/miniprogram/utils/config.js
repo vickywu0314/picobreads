@@ -33,7 +33,14 @@ __export(config_exports, {
   sizeCm: () => sizeCm
 });
 module.exports = __toCommonJS(config_exports);
-const API_BASE = "http://49.233.85.32";
+function envVersion() {
+  try {
+    return wx.getAccountInfoSync().miniProgram.envVersion;
+  } catch (e) {
+    return "release";
+  }
+}
+const API_BASE = envVersion() === "develop" ? "http://49.233.85.32" : "https://pd.scentby.cn";
 const SITE_URL = "https://pd.scentby.cn";
 const PALETTE_ID = "mard-264";
 const BOARD_PEGS = { "2.6mm": 52, "5mm": 29 };

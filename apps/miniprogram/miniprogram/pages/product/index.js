@@ -4,6 +4,7 @@ var import_draw = require("../../utils/draw");
 var import_png = require("../../utils/png");
 var import_generate = require("../../utils/generate");
 var import_store = require("../../utils/store");
+var import_actions = require("../../utils/actions");
 var import_api = require("../../utils/api");
 var import_shop = require("../../utils/shop");
 Page({
@@ -110,6 +111,7 @@ Page({
     this.setData({ paying: true });
     wx.showLoading({ title: "\u6B63\u5728\u4E0B\u5355\u2026", mask: true });
     try {
+      void (0, import_actions.syncDraft)(true);
       const { order } = await (0, import_shop.buy)({ form, name: w.name || "\u6211\u7684\u62FC\u8C46", pattern: w.pattern, placed: w.placed, beadSize: w.beadSize, address });
       wx.hideLoading();
       wx.redirectTo({ url: `/pages/order/index?id=${order.id}` });

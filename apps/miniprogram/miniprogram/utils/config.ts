@@ -1,12 +1,21 @@
 // BeadSpark mini program settings. Same rules as the website (apps/web/src/config/site.ts, v11/config.ts).
 
+/** Which build this is: develop (dev tools / preview), trial (体验版) or release (正式版). */
+function envVersion(): 'develop' | 'trial' | 'release' {
+  try {
+    return wx.getAccountInfoSync().miniProgram.envVersion
+  } catch {
+    return 'release'
+  }
+}
+
 /**
  * The BeadSpark API (same server as the website).
- * TODO before uploading a trial / release version: switch to 'https://pd.scentby.cn' (must be an
- * https domain registered as a request 合法域名 in the mini program admin). For now the server's IP,
- * which the dev tools accept because project.private.config.json turns the domain check off.
+ * - develop: the server's IP over http (works in the dev tools, and on a phone with debugging on).
+ * - trial / release: the https domain — WeChat only lets released mini programs call https domains
+ *   registered as request 合法域名 in the mini program admin.
  */
-export const API_BASE = 'http://49.233.85.32'
+export const API_BASE = envVersion() === 'develop' ? 'http://49.233.85.32' : 'https://pd.scentby.cn'
 
 /** Website address, for share links shown as text. */
 export const SITE_URL = 'https://pd.scentby.cn'

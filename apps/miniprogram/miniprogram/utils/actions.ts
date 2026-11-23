@@ -48,11 +48,13 @@ export function shareCurrent() {
 
 /**
  * Quietly keep the current work on the account (no toasts): everything the user has beaded shows
- * up under "我的" without tapping "存草稿". Does nothing until at least one bead is placed.
+ * up under "我的" without tapping "存草稿". Does nothing until at least one bead is placed,
+ * unless `force` is set.
  */
-export async function syncDraft(): Promise<boolean> {
+export async function syncDraft(force = false): Promise<boolean> {
   const w = getWork()
-  if (!w.pattern || !w.placed.includes('1')) return false
+  // `force`: save even with no bead placed (e.g. the pattern was just ordered).
+  if (!w.pattern || (!force && !w.placed.includes('1'))) return false
   try {
     if (!getToken()) await login()
     const id = w.draftId ?? newDraftId()
