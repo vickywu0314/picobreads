@@ -23,6 +23,8 @@ export interface Config {
   shippingFen: number
   /** Where new paid orders are emailed. */
   adminEmail: string
+  /** Password of the order admin page (/admin/). Empty = admin is off. */
+  adminToken: string
   /** Secure cookies (https). Off only for local http testing. */
   secureCookies: boolean
 }
@@ -67,6 +69,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     prices: { kit: tiers('KIT'), finished: tiers('FINISHED') },
     shippingFen: fen('PRICE_SHIPPING'),
     adminEmail: s('ADMIN_EMAIL'),
+    adminToken: s('ADMIN_TOKEN'),
     secureCookies: siteUrl.startsWith('https://'),
   }
 }

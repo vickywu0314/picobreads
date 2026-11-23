@@ -287,20 +287,29 @@ describe('shop: orders and WeChat Pay', () => {
   const address = { name: '小豆', phone: '13800000000', province: '北京市', city: '北京市', county: '朝阳区', detail: '某路 1 号' }
 
   function shop(extra: Record<string, string> = {}) {
-    const state = { trade: 'NOTPAY', prepayBody: null as any, authorized: false } // eslint-disable-line @typescript-eslint/no-explicit-any
+    const state = { trade: 'NOTPAY', prepayBody: null as any, authorized: false, closed: false, refundBody: null as any, refundStatus: 'PROCESSING', prepays: 0 } // eslint-disable-line @typescript-eslint/no-explicit-any
     const fake = (async (url: string | URL, init?: RequestInit) => {
       const u = String(url)
       const json = (o: object, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json' } })
       if (u.includes('jscode2session')) return json({ openid: 'openid-1' })
       if (u.includes('/v3/pay/transactions/jsapi')) {
         state.prepayBody = JSON.parse(String(init?.body))
+        state.prepays++
         state.authorized = String((init?.headers as Record<string, string>).authorization).startsWith('WECHATPAY2-SHA256-RSA2048 mchid="1900000001"')
         return json({ prepay_id: 'PREPAY1' })
+      }
+      if (u.endsWith('/close')) {
+        state.closed = true
+        return new Response(null, { status: 204 })
+      }
+      if (u.includes('/v3/refund/domestic/refunds')) {
+        state.refundBody = JSON.parse(String(init?.body))
+        return json({ status: state.refundStatus })
       }
       if (u.includes('/v3/pay/transactions/out-trade-no/')) return json({ trade_state: state.trade, transaction_id: 'TX1', amount: { total: state.prepayBody?.amount.total } })
       return new Response('?', { status: 404 })
     }) as typeof fetch
-    const s = setup({ SITE_URL: 'https://bead.test', ...env, ...extra }, fake)
+    const s = setup({ SITE_URL: 'https://bead.test', ADMIN_TOKEN: 'admin-secret-123456', ...env, ...extra }, fake)
     return { s, state }
   }
   const signIn = async (s: ReturnType<typeof setup>) => ({ authorization: `Bearer ${(await s.call('POST', '/auth/wxmp/login', { code: 'c' })).json.token}` })
@@ -357,9 +366,11 @@ describe('shop: orders and WeChat Pay', () => {
       const data = Buffer.concat([c.update(JSON.stringify({ out_trade_no: id, trade_state: 'SUCCESS' })), c.final(), c.getAuthTag()])
       return { resource: { ciphertext: data.toString('base64'), nonce, associated_data: 'transaction' } }
     }
-    state.trade = 'SUCCESS'
+    // A forged notification (wrong key) is refused and changes nothing.
     expect((await s.call('POST', '/pay/wechat/notify', encrypt('x'.repeat(32)))).status).toBe(400)
     expect((await s.call('GET', '/orders', undefined, auth)).json.orders[0].status).toBe('pending')
+    // A genuine one makes the server confirm with WeChat and mark the order paid.
+    state.trade = 'SUCCESS'
     expect((await s.call('POST', '/pay/wechat/notify', encrypt(V3KEY))).json.code).toBe('SUCCESS')
     expect((await s.call('GET', '/orders', undefined, auth)).json.orders[0].status).toBe('paid')
   })
@@ -369,5 +380,81 @@ describe('shop: orders and WeChat Pay', () => {
     const auth = await signIn(s)
     const big = { width: 60, height: 60, paletteId: 'mard-264', cells: Array(3600).fill(1) }
     expect((await s.call('POST', '/orders', { form: 'kit', pattern: big, beadSize: '2.6mm', address }, auth)).json.order).toMatchObject({ tier: 'standard', amountFen: 9900 + 800 })
+  })
+  it('lets an unpaid order be paid again or cancelled', async () => {
+    const { s, state } = shop()
+    const auth = await signIn(s)
+    const id = (await s.call('POST', '/orders', { form: 'kit', pattern, address }, auth)).json.order.id
+    const again = await s.call('POST', `/orders/${id}/pay`, {}, auth)
+    expect(again.json.pay.package).toBe('prepay_id=PREPAY1')
+    expect(state.prepays).toBe(2)
+    expect(state.prepayBody.out_trade_no).toBe(id)
+    const cancelled = await s.call('POST', `/orders/${id}/cancel`, {}, auth)
+    expect(cancelled.json.order.status).toBe('closed')
+    expect(state.closed).toBe(true)
+    expect((await s.call('GET', '/orders', undefined, auth)).json.orders).toHaveLength(0)
+    // A closed order can't be paid.
+    expect((await s.call('POST', `/orders/${id}/pay`, {}, auth)).json.pay).toBeNull()
+  })
+
+  it('does not cancel an order that was paid a moment ago, and expires unpaid ones', async () => {
+    const { s, state } = shop()
+    const auth = await signIn(s)
+    const id = (await s.call('POST', '/orders', { form: 'kit', pattern, address }, auth)).json.order.id
+    state.trade = 'SUCCESS'
+    expect((await s.call('POST', `/orders/${id}/cancel`, {}, auth)).json.order.status).toBe('paid')
+    expect(state.closed).toBe(false)
+    state.trade = 'NOTPAY'
+    const id2 = (await s.call('POST', '/orders', { form: 'kit', pattern, address }, auth)).json.order.id
+    expect((await s.call('GET', `/orders/${id2}`, undefined, auth)).json.order.payUntil).toBeGreaterThan(0)
+    s.tick(3 * 3600_000)
+    expect((await s.call('GET', `/orders/${id2}`, undefined, auth)).json.order.status).toBe('closed')
+  })
+
+  it('admin: lists paid orders, ships with a tracking number, refunds; needs the token', async () => {
+    const { s, state } = shop()
+    const auth = await signIn(s)
+    const id = (await s.call('POST', '/orders', { form: 'finished', pattern, address }, auth)).json.order?.id ?? (await s.call('POST', '/orders', { form: 'kit', pattern, address }, auth)).json.order.id
+    state.trade = 'SUCCESS'
+    await s.call('GET', `/orders/${id}`, undefined, auth)
+    s.resetCookie()
+    const admin = { 'x-admin-token': 'admin-secret-123456' }
+    expect((await s.call('GET', '/admin/orders')).status).toBe(401)
+    expect((await s.call('GET', '/admin/orders', undefined, { 'x-admin-token': 'wrong-secret-123456' })).status).toBe(401)
+    const list = (await s.call('GET', '/admin/orders', undefined, admin)).json
+    expect(list.orders).toHaveLength(1)
+    expect(list.orders[0]).toMatchObject({ id, status: 'paid', address: { phone: '13800000000' } })
+    expect(list.orders[0].shareUrl).toMatch(/\/s\/\?id=/)
+    expect((await s.call('GET', `/admin/orders/${id}`, undefined, admin)).json.order.pattern.cells).toEqual(pattern.cells)
+    expect((await s.call('POST', `/admin/orders/${id}/ship`, { carrier: '' }, admin)).json.error).toBe('bad_tracking')
+    const shipped = (await s.call('POST', `/admin/orders/${id}/ship`, { carrier: '顺丰', trackingNo: 'SF123456' }, admin)).json.order
+    expect(shipped).toMatchObject({ status: 'shipped', carrier: '顺丰', trackingNo: 'SF123456' })
+    // The customer sees the tracking number.
+    expect((await s.call('GET', `/orders/${id}`, undefined, auth)).json.order).toMatchObject({ status: 'shipped', trackingNo: 'SF123456' })
+    const refunded = (await s.call('POST', `/admin/orders/${id}/refund`, { reason: '缺货' }, admin)).json.order
+    expect(refunded.status).toBe('refunded')
+    expect(state.refundBody).toMatchObject({ out_trade_no: id, out_refund_no: `R${id}`, amount: { refund: 4790, total: 4790 } })
+    expect((await s.call('POST', `/admin/orders/${id}/refund`, {}, admin)).json.error).toBe('not_refundable')
+  })
+
+  it('admin is off without a token', async () => {
+    const { s } = shop({ ADMIN_TOKEN: '' })
+    expect((await s.call('GET', '/admin/orders', undefined, { 'x-admin-token': '' })).status).toBe(401)
+  })
+})
+
+describe('database upgrades', () => {
+  it('adds the newer order columns to an older database', async () => {
+    const { DatabaseSync } = await import('node:sqlite')
+    const { mkdtempSync } = await import('node:fs')
+    const { tmpdir } = await import('node:os')
+    const file = `${mkdtempSync(`${tmpdir()}/bs-`)}/old.db`
+    const old = new DatabaseSync(file)
+    old.exec('CREATE TABLE orders (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, form TEXT NOT NULL, tier TEXT NOT NULL, name TEXT NOT NULL, amount_fen INTEGER NOT NULL, status TEXT NOT NULL, data TEXT NOT NULL, address TEXT NOT NULL, share_id TEXT, transaction_id TEXT, created_at INTEGER NOT NULL, paid_at INTEGER)')
+    old.close()
+    const db = openDb(file)
+    const cols = (db.prepare('PRAGMA table_info(orders)').all() as { name: string }[]).map((c) => c.name)
+    expect(cols).toEqual(expect.arrayContaining(['carrier', 'tracking_no', 'shipped_at', 'refunded_at', 'note']))
+    openDb(file) // running it again is fine
   })
 })

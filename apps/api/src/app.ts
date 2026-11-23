@@ -5,7 +5,8 @@ import type { Config } from './config'
 import { hashPassword, randomId, sha256, shortId, sixDigits, verifyPassword } from './crypto'
 import type { DB } from './db'
 import { codeEmail, type Mailer } from './mail'
-import { decryptNotify, prepay, queryOrder, wxPayReady } from './wxpay'
+import { timingSafeEqual } from 'node:crypto'
+import { closeOrder, decryptNotify, prepay, queryOrder, refundOrder, wxPayReady } from './wxpay'
 import type { ShopForm, ShopTier } from './config'
 import { PROVIDERS, providers as makeProviders, type Profile, type Provider, type ProviderId } from './oauth'
 
@@ -445,8 +446,34 @@ export function createApp(deps: Deps) {
     transaction_id: string | null
     created_at: number
     paid_at: number | null
+    carrier: string | null
+    tracking_no: string | null
+    shipped_at: number | null
+    refunded_at: number | null
+    note: string | null
   }
-  const publicOrder = (o: OrderRow) => ({ id: o.id, form: o.form, tier: o.tier, name: o.name, amountFen: o.amount_fen, status: o.status, createdAt: o.created_at, paidAt: o.paid_at, address: JSON.parse(o.address), pattern: JSON.parse(o.data).pattern })
+  /** An unpaid order can be paid for this long (WeChat's prepay lasts 2 hours). */
+  const PAY_WINDOW = 110 * MINUTE
+  const orderSummary = (o: OrderRow) => ({
+    id: o.id,
+    form: o.form,
+    tier: o.tier,
+    name: o.name,
+    amountFen: o.amount_fen,
+    status: o.status,
+    createdAt: o.created_at,
+    paidAt: o.paid_at,
+    shippedAt: o.shipped_at,
+    refundedAt: o.refunded_at,
+    carrier: o.carrier,
+    trackingNo: o.tracking_no,
+    payUntil: o.status === 'pending' ? o.created_at + PAY_WINDOW : null,
+    address: JSON.parse(o.address),
+  })
+  const publicOrder = (o: OrderRow) => {
+    const d = JSON.parse(o.data)
+    return { ...orderSummary(o), pattern: d.pattern, beadSize: d.beadSize }
+  }
 
   /** Mark an order paid (once) and tell the shop owner by email. */
   const markPaid = (o: OrderRow, transactionId?: string) => {
@@ -470,11 +497,13 @@ export function createApp(deps: Deps) {
     if (o.status !== 'pending' || !wxPayReady(cfg.wxpay)) return
     try {
       const st = await queryOrder(cfg.wxpay, wx, o.id)
-      if (st.state === 'SUCCESS' && st.totalFen === o.amount_fen) markPaid(o, st.transactionId)
-      else if (st.state === 'CLOSED') db.prepare("UPDATE orders SET status = 'closed' WHERE id = ? AND status = 'pending'").run(o.id)
+      if (st.state === 'SUCCESS' && st.totalFen === o.amount_fen) return markPaid(o, st.transactionId)
+      if (st.state === 'CLOSED') return void db.prepare("UPDATE orders SET status = 'closed' WHERE id = ? AND status = 'pending'").run(o.id)
     } catch (e) {
       console.warn('[wxpay] query', o.id, (e as Error).message)
     }
+    // Not paid in time: the order is over.
+    if (now() - o.created_at > PAY_WINDOW) db.prepare("UPDATE orders SET status = 'closed' WHERE id = ? AND status = 'pending'").run(o.id)
   }
   const getOrder = (id: string) => db.prepare('SELECT * FROM orders WHERE id = ?').get(id) as OrderRow | undefined
 
@@ -534,10 +563,10 @@ export function createApp(deps: Deps) {
   app.get('/orders', async (c) => {
     const u = sessionUser(c)
     if (!u) return fail(c, 401, 'not_signed_in')
-    let rows = db.prepare("SELECT * FROM orders WHERE user_id = ? AND status != 'closed' ORDER BY created_at DESC LIMIT 50").all(u.id) as unknown as OrderRow[]
-    // Unpaid orders are only interesting for a while.
-    rows = rows.filter((o) => o.status !== 'pending' || now() - o.created_at < 2 * 60 * MINUTE)
-    return c.json({ orders: rows.map(publicOrder) })
+    const mine = () => db.prepare("SELECT * FROM orders WHERE user_id = ? AND status != 'closed' ORDER BY created_at DESC LIMIT 50").all(u.id) as unknown as OrderRow[]
+    // Settle unpaid ones first (paid meanwhile, or out of time).
+    for (const o of mine().filter((x) => x.status === 'pending').slice(0, 5)) await refreshOrder(o)
+    return c.json({ orders: mine().map(publicOrder) })
   })
 
   app.get('/orders/:id', async (c) => {
@@ -548,6 +577,107 @@ export function createApp(deps: Deps) {
     await refreshOrder(o)
     o = getOrder(o.id)!
     return c.json({ order: publicOrder(o) })
+  })
+
+  /** Pay an unpaid order again (the first attempt was cancelled or failed). */
+  app.post('/orders/:id/pay', async (c) => {
+    const u = sessionUser(c)
+    if (!u) return fail(c, 401, 'not_signed_in')
+    let o = getOrder(c.req.param('id'))
+    if (!o || o.user_id !== u.id) return fail(c, 404, 'not_found')
+    await refreshOrder(o)
+    o = getOrder(o.id)!
+    if (o.status !== 'pending') return c.json({ order: publicOrder(o), pay: null }) // paid meanwhile, or closed
+    const openid = (db.prepare('SELECT openid FROM wx_openids WHERE user_id = ?').get(u.id) as { openid: string } | undefined)?.openid
+    if (!openid) return fail(c, 409, 'no_openid')
+    try {
+      const pay = await prepay(cfg.wxpay, wx, { outTradeNo: o.id, description: `BeadSpark ${FORM_NAME[o.form]} · ${o.name}`, amountFen: o.amount_fen, openid })
+      return c.json({ order: publicOrder(o), pay })
+    } catch (e) {
+      console.error('[wxpay] prepay again', e)
+      return fail(c, 502, 'pay_failed')
+    }
+  })
+
+  /** Cancel an unpaid order. */
+  app.post('/orders/:id/cancel', async (c) => {
+    const u = sessionUser(c)
+    if (!u) return fail(c, 401, 'not_signed_in')
+    let o = getOrder(c.req.param('id'))
+    if (!o || o.user_id !== u.id) return fail(c, 404, 'not_found')
+    await refreshOrder(o) // it may have been paid a moment ago
+    o = getOrder(o.id)!
+    if (o.status === 'pending') {
+      try {
+        await closeOrder(cfg.wxpay, wx, o.id)
+      } catch (e) {
+        console.warn('[wxpay] close', o.id, (e as Error).message)
+      }
+      db.prepare("UPDATE orders SET status = 'closed' WHERE id = ? AND status = 'pending'").run(o.id)
+      o = getOrder(o.id)!
+    }
+    return c.json({ order: publicOrder(o) })
+  })
+
+  // --- order admin (the shop owner's page at /admin/) ------------------------------
+  const isAdmin = (c: Context) => {
+    const given = Buffer.from(c.req.header('x-admin-token') ?? '')
+    const want = Buffer.from(cfg.adminToken)
+    return want.length >= 12 && given.length === want.length && timingSafeEqual(given, want)
+  }
+  const adminOrder = (o: OrderRow) => ({ ...orderSummary(o), transactionId: o.transaction_id, note: o.note, shareUrl: o.share_id ? `${cfg.siteUrl}/s/?id=${o.share_id}` : null })
+
+  app.get('/admin/orders', (c) => {
+    if (!isAdmin(c)) return fail(c, 401, 'bad_admin_token')
+    const status = c.req.query('status') ?? ''
+    const rows = (
+      ['paid', 'shipped', 'refunded', 'pending', 'closed'].includes(status)
+        ? db.prepare('SELECT * FROM orders WHERE status = ? ORDER BY created_at DESC LIMIT 200').all(status)
+        : db.prepare("SELECT * FROM orders WHERE status IN ('paid', 'shipped', 'refunded') ORDER BY created_at DESC LIMIT 200").all()
+    ) as unknown as OrderRow[]
+    const counts = Object.fromEntries((db.prepare('SELECT status, COUNT(*) AS n FROM orders GROUP BY status').all() as { status: string; n: number }[]).map((r) => [r.status, r.n]))
+    return c.json({ orders: rows.map(adminOrder), counts })
+  })
+
+  app.get('/admin/orders/:id', (c) => {
+    if (!isAdmin(c)) return fail(c, 401, 'bad_admin_token')
+    const o = getOrder(c.req.param('id'))
+    if (!o) return fail(c, 404, 'not_found')
+    const d = JSON.parse(o.data)
+    return c.json({ order: { ...adminOrder(o), pattern: d.pattern, beadSize: d.beadSize, placed: d.placed } })
+  })
+
+  /** Mark a paid order as shipped (or correct the tracking number of a shipped one). */
+  app.post('/admin/orders/:id/ship', async (c) => {
+    if (!isAdmin(c)) return fail(c, 401, 'bad_admin_token')
+    const o = getOrder(c.req.param('id'))
+    if (!o) return fail(c, 404, 'not_found')
+    if (o.status !== 'paid' && o.status !== 'shipped') return fail(c, 409, 'not_shippable')
+    const body = await c.req.json().catch(() => ({}))
+    const carrier = typeof body.carrier === 'string' ? body.carrier.trim().slice(0, 30) : ''
+    const trackingNo = typeof body.trackingNo === 'string' ? body.trackingNo.trim().slice(0, 40) : ''
+    if (!carrier || !trackingNo) return fail(c, 400, 'bad_tracking')
+    db.prepare("UPDATE orders SET status = 'shipped', carrier = ?, tracking_no = ?, shipped_at = COALESCE(shipped_at, ?), note = ? WHERE id = ?").run(carrier, trackingNo, now(), typeof body.note === 'string' ? body.note.slice(0, 200) : o.note, o.id)
+    return c.json({ order: adminOrder(getOrder(o.id)!) })
+  })
+
+  /** Refund a paid / shipped order in full through WeChat Pay. */
+  app.post('/admin/orders/:id/refund', async (c) => {
+    if (!isAdmin(c)) return fail(c, 401, 'bad_admin_token')
+    const o = getOrder(c.req.param('id'))
+    if (!o) return fail(c, 404, 'not_found')
+    if (o.status !== 'paid' && o.status !== 'shipped') return fail(c, 409, 'not_refundable')
+    const body = await c.req.json().catch(() => ({}))
+    const reason = typeof body.reason === 'string' ? body.reason.trim() : ''
+    try {
+      const st = await refundOrder(cfg.wxpay, wx, { outTradeNo: o.id, outRefundNo: `R${o.id}`, amountFen: o.amount_fen, reason })
+      if (st !== 'SUCCESS' && st !== 'PROCESSING') return fail(c, 502, 'refund_failed')
+    } catch (e) {
+      console.error('[wxpay] refund', o.id, e)
+      return fail(c, 502, 'refund_failed')
+    }
+    db.prepare("UPDATE orders SET status = 'refunded', refunded_at = ?, note = ? WHERE id = ?").run(now(), reason.slice(0, 200) || o.note, o.id)
+    return c.json({ order: adminOrder(getOrder(o.id)!) })
   })
 
   // WeChat calls this when a payment succeeds. Only a holder of the APIv3 key can produce a

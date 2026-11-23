@@ -94,5 +94,15 @@ export function openDb(path: string): DB {
     );
     CREATE INDEX IF NOT EXISTS shares_user ON shares(user_id, created_at);
   `)
+  // Columns added after the first release: add them to existing databases.
+  const addColumn = (table: string, column: string, type: string) => {
+    const cols = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]
+    if (!cols.some((c) => c.name === column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`)
+  }
+  addColumn('orders', 'carrier', 'TEXT')
+  addColumn('orders', 'tracking_no', 'TEXT')
+  addColumn('orders', 'shipped_at', 'INTEGER')
+  addColumn('orders', 'refunded_at', 'INTEGER')
+  addColumn('orders', 'note', 'TEXT')
   return db
 }

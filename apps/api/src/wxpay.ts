@@ -74,6 +74,22 @@ export async function queryOrder(cfg: WxPayConfig, f: typeof fetch, outTradeNo: 
   return { state: String(r.trade_state ?? ''), transactionId: r.transaction_id, totalFen: r.amount?.total }
 }
 
+/** Close an unpaid order at WeChat, so it can no longer be paid. */
+export async function closeOrder(cfg: WxPayConfig, f: typeof fetch, outTradeNo: string) {
+  await call(cfg, f, 'POST', `/v3/pay/transactions/out-trade-no/${encodeURIComponent(outTradeNo)}/close`, { mchid: cfg.mchId })
+}
+
+/** Refund a paid order in full. Returns WeChat's refund status (SUCCESS / PROCESSING / ABNORMAL / CLOSED). */
+export async function refundOrder(cfg: WxPayConfig, f: typeof fetch, o: { outTradeNo: string; outRefundNo: string; amountFen: number; reason: string }): Promise<string> {
+  const r = await call(cfg, f, 'POST', '/v3/refund/domestic/refunds', {
+    out_trade_no: o.outTradeNo,
+    out_refund_no: o.outRefundNo,
+    reason: o.reason.slice(0, 80) || undefined,
+    amount: { refund: o.amountFen, total: o.amountFen, currency: 'CNY' },
+  })
+  return String(r.status ?? '')
+}
+
 /** Decrypt a payment notification's `resource` (AES-256-GCM with the APIv3 key). Throws when it isn't genuine. */
 export function decryptNotify(cfg: WxPayConfig, resource: { ciphertext: string; nonce: string; associated_data?: string }): Record<string, any> { // eslint-disable-line @typescript-eslint/no-explicit-any
   const data = Buffer.from(resource.ciphertext, 'base64')
