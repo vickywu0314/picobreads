@@ -1,95 +1,122 @@
-# 当前进度（交接用）
+# BeadSpark 当前进度（交接用）
 
-> 新开会话时：先读根目录 `CLAUDE.md`（产品说明），再读本文件和 `docs/versions.md`（v1.1 的页面与规则），就能接着做。
-> 更新于 2026-11-05（加了后端：登录注册、草稿同步、分享）。网站名 **BeadSpark**（原 Pipixel）。
+> **新开会话先读这一份**，再按需要看 `docs/versions.md`（网站页面和图纸规则）、`apps/miniprogram/README.md`（小程序）、`docs/deploy-server.md`（服务器）。
+> 根目录 `CLAUDE.md` 是最早的产品说明（北美独立站 + Shopify 的设想），**很多地方已经和现状不一样，以本文件为准**。
+> 更新于 2026-11-23。
 
-## 版本
+## 一句话现状
 
-- **2026-11-04 起只保留 v1.1，放在网站根路径**；v1.0 代码归档到 `archive/v1.0/`；旧地址 `/v1-1/...` 自动跳转。下面的 v1.0 / v1.1 说明是历史记录。
+BeadSpark（原名 Pipixel / Cordelia Morrow）：上传照片 → 生成拼豆图纸 → 在线拼 → 分享 / 买材料包或成品。
+现在有三块：**网站**、**后端 API**、**微信小程序**。小程序功能写完了，正在走上线流程：**等小程序备案 + 体验版测试，然后提交审核**。
 
-- **v1.0**（`/`）：Cordelia Morrow 网站结构，冻结不动。
-- **v1.1 Pipixel**（`/v1-1/`）：所有新开发都在这里。页面清单、图纸规则见 `docs/versions.md`。
-- 两个版本共用图纸引擎 `packages/pattern-engine`、在线拼 / 灯箱 / 实验室组件（`components/bead/BeadEditor.tsx`、`components/LightboxView.tsx`、`components/LabView.tsx`，用 `v11` 参数切换样式和链接）。
-
-## v1.1 已定的规则（摘要，详见 versions.md）
-
-- 豆子：MARD 264 色全色（含特殊系列）；用户选迷你豆 2.6 mm（52×52 钉分区）或标准豆 5 mm（29×29 钉分区）。
-- 尺寸：1 / 4 / 9 个分区三档，按图片细节推荐「能 1 块做清楚就 1 块」（`recommendBoards` + `gridLoss` + `chooseBoards`）。显示的底板数按标配 27×27 cm 底板算（`V11_BOARD_CM`）。
-- 默认去掉纯色背景、自动裁掉空白边。
-- 流程 4 步：上传、裁剪、定制（三张效果图 + 第四张像素风 + 大图预览 + 参数）、购买形式。选中的那张（含像素风）就是在线拼和下载用的图纸。
-- 免费图纸：登录后下载 zip（总览、材料清单、每个分区一张、每格印色号）。测试期不发邮件。
-- 材料包 / 成品：标「即将开放」，不显示价格，下单按钮置灰。确认页、购物袋、结账页已去掉（旧地址跳转）。
-- 在线拼：v1.1 有存草稿；手机端单独布局（大图纸 + 底部色块条 +「更多」）；底板是立体钉板，进去时没放的格子只有淡淡的颜色底纹。
-- 「我的工作台」：草稿列表；右上角用户菜单（我的工作台 / 退出）。
-- v1.1 不出现「原型」字样。
-
-## 登录与数据（2026-11-05 起有真实后端）
-
-- **后端** `apps/api`（Node + Hono + SQLite，跑在北京腾讯云服务器上，Nginx 转发 `/api/`）：邮箱 + 密码注册登录（QQ 邮箱发 6 位验证码）、忘记密码、谷歌 / 微信 / Apple / Facebook 登录（填好各平台密钥才开放）、草稿存到账号（换设备也能找回）、分享链接（`/s/?id=…`，任何人可看）。
-- 分享：链接 + 二维码（微信好友扫码）+ 分享图（1080×1350，带二维码，发朋友圈 / Instagram）+ 手机系统分享菜单。网页没法直接发朋友圈和 Instagram，这是平台限制。
-- 以下是 2026-11-04 之前的旧说明（假登录），已被替换：
-
-- 登录是测试版：任意邮箱 + 任意 6 位数字。登录状态、草稿都只存在浏览器本地（zustand persist，key `picobreads-v1`），不跨设备。
-- 「登录后才能下载」只是界面拦截，没有服务端校验。
-- 还没有任何后端。
-
-## 部署
-
-| 位置 | 地址 | 说明 |
+| | 位置 | 状态 |
 |---|---|---|
-| Vercel | 项目根目录 `apps/web` | 推送 main 自动部署（Vercel 自己的 GitHub 集成） |
-| 北京腾讯云轻量服务器 | `http://49.233.85.32/`（旧地址 `/v1-1/` 自动跳转） | Ubuntu 26.04，Nginx 站点 `/etc/nginx/sites-available/picobreads`（默认站点，`server_name _`），网站目录 `/var/www/picobreads`。推送 main 由 GitHub Actions（`.github/workflows/deploy-server.yml`）在 GitHub 上构建后 SSH 上传；仓库 Secrets：`DEPLOY_HOST` `DEPLOY_USER` `DEPLOY_SSH_KEY`。服务器连 GitHub 不稳定，不要依赖服务器上 `git pull` |
-| 新加坡服务器 | — | 上面有 tuoyuan.ai 等其他网站。pd.scentby.cn 站点已停用（配置还在 sites-available），不要动其他站点 |
+| 网站 | `apps/web`（Next.js 静态导出） | 已上线 https://beadspark.top |
+| 后端 API | `apps/api`（Node + Hono + SQLite） | 已上线，Nginx 转发 `/api/` |
+| 微信小程序 | `apps/miniprogram`（原生 + TypeScript） | 开发版真机测过支付；**体验版还没测，未提审** |
+| 图纸引擎 | `packages/pattern-engine` | 三端共用 |
+| v1.0 旧站 | `archive/v1.0/` | 归档，不构建 |
 
-部署细节、Nginx 配置、手动部署脚本：`docs/deploy-server.md`、`scripts/deploy.sh`。
+## 接下来要做的（按顺序）
 
-## 待办（用户侧）
+**用户在做 / 要做（小程序后台 mp.weixin.qq.com）**
+- [ ] **小程序备案**（未备案，耗时最长，没它不能发布）
+- [ ] 基础信息：名称、头像（`apps/miniprogram/avatar.png`）、介绍（文案已给过）
+- [ ] 服务类目：主营选「商家自营」下贴近拼豆 / 手工 / 玩具的子类目，再加一个「工具」类
+- [x] 服务器域名：request / downloadFile 合法域名 = `https://beadspark.top`（用户说已配）
+- [ ] 用户隐私保护指引（提交审核流程里填）：选中的照片、相册仅写入、收货地址、微信昵称
+- [ ] 绑定客服微信号（订单页「联系客服」按钮才有人接）
+- [ ] 可选：注册快递100 企业版，`set-shop.sh` 里填 customer / key，订单页才有物流时间线
 
-- [ ] 小程序后台绑定客服微信号（订单页「联系客服」按钮才有人接）。
-- [ ] 小程序备案、基础信息、类目、隐私保护指引（提审前）。
-- [ ] 可选：注册快递100 企业版，把 customer / key 用 `set-shop.sh` 填到服务器，订单页才有物流时间线。
-- [ ] 体验版完整测试（不开调试，走 https 域名）；后台「全额退款」和发货通知还没在真实环境跑过。
+**上传体验版并测试（只能用户在微信开发者工具里点 Upload，Claude 做不了）**
+1. `git pull` → 开发者工具「编译」→ Upload（版本 1.0.0）→ 后台「版本管理」选为体验版 → 手机扫码，**不开调试模式**
+2. 测：自动登录 → 上传照片 → 定制 → 在线拼 → 分享 / 保存海报 → 下单支付 → 后台发货 → 退款 → 改昵称
+3. 备案通过后提交审核；被打回就把驳回原因发给 Claude
 
-## 域名（2026-11-23）
+## 哪些验证过，哪些没有（重要）
 
-- 正式域名 **beadspark.top**（已备案通过），替代原计划的 pd.scentby.cn。服务器上运行 `sudo bash ~/beadspark-deploy/setup-https.sh` 配 https 证书并把后端地址改成 `https://beadspark.top`。
-- 之后：小程序后台填 request / downloadFile 合法域名；第三方登录回调、SEO 提交 sitemap 都用这个域名。下文里出现的 pd.scentby.cn 是旧计划。
+- ✅ 测试：图纸引擎 47 个、后端 29 个、小程序 4 个，全部通过（`pnpm test`）
+- ✅ 真机（开发版，当时连 IP + 调试模式）：登录、下单、**微信支付真实扣款成功**、订单显示
+- ✅ 本地浏览器跑过：网站登录注册 / 分享、订单后台（列表、拣货清单、标记发货）
+- ⚠️ **没验证过**：
+  - 小程序走 `https://beadspark.top`（改成域名后还没人在手机上跑过，体验版是第一次）
+  - 后台「全额退款」（真实微信退款接口）
+  - 发货通知 `upload_shipping_info`、物流查询（快递100）、昵称内容安全检测 —— 参数按记忆写的，只用模拟数据测过，真实环境可能要调
+  - 小程序「保存图纸到相册」「保存分享海报」的真机效果
+- Claude 的运行环境**访问不了服务器**（49.233.85.32 / beadspark.top 被网络策略挡住），线上情况只能靠用户反馈和 GitHub Actions 日志
 
-## 微信小程序（2026-11-20 起）
+## 服务器和部署
 
-- 代码在 `apps/miniprogram`（原生 + TypeScript，用法见该目录 README）：首页、定制（四种效果 + 推荐）、在线拼（立体钉板）、微信登录、草稿、分享（好友 / 朋友圈 / 海报带小程序码）。
-- 后端：`/api/auth/wxmp/login`（wx.login）、Bearer token、`/api/wxmp/qrcode/:id`。
-- 上线前：小程序 `API_BASE` 改成 https 域名；小程序后台配 request / downloadFile 合法域名、用户隐私保护指引（选照片、写相册）、服务类目；服务器 `api.env` 填 `WXMP_APP_ID`、`WXMP_APP_SECRET`。
+- 北京腾讯云轻量 `49.233.85.32`，Ubuntu，用户 `ubuntu`，用户本机用 `beijing.pem` 登录（`ssh -i beijing.pem ubuntu@49.233.85.32`）
+- 域名 **beadspark.top**（已备案），https 证书是 certbot 的 Let's Encrypt，自动续期。配了 https 后 **用 IP 访问网站会 404**，都用域名
+- 防火墙（轻量服务器控制台 → 实例 → 防火墙）：22、80、443 已放行
+- 推送 `main` → GitHub Actions（`.github/workflows/deploy-server.yml`）构建 + 测试 → SSH 上传：
+  网站到 `/var/www/picobreads`，后端 `server.js` 到 `/opt/beadspark-api` 并重启，`deploy/` 脚本到 `~/beadspark-deploy/`。
+  SSH 偶尔被断开，已加自动重试。**推送后去 Actions 页确认是绿色对勾再让用户测**
+- 后端：systemd 服务 `beadspark-api`，监听 127.0.0.1:8787，配置和所有密钥在 `/etc/beadspark/api.env`（**密钥只在服务器，不进仓库**），数据库 `/var/lib/beadspark/beadspark.db`（还没设备份，建议开磁盘快照）
+- 看日志：`sudo journalctl -u beadspark-api -n 50 --no-pager`
+- 服务器上的一键脚本（都在 `~/beadspark-deploy/`，`sudo bash` 运行，可重复跑，回车 = 不改）：
+  - `setup-api.sh`：装 Node、建服务、Nginx `/api/`、网站地址、发信邮箱
+  - `setup-https.sh`：域名 + https 证书
+  - `set-wxmp.sh`：小程序 AppID / AppSecret
+  - `set-shop.sh`：微信支付商户资料、价格、订单通知邮箱、快递100、生成后台口令（跑完会显示后台网址和口令）
+- Vercel 上还有一份网站（没有后端，登录 / 分享不可用），可以不管
 
-## 上线前（小程序购买 / 微信支付，2026-11-21）
+## 已经配好的（服务器 `api.env` 里）
 
-1. 微信支付商户号开通，并在商户平台把小程序 AppID `wxad095cfa10de6ecd` 关联上；拿到商户号、APIv3 密钥、API 证书（序列号 + apiclient_key.pem）。
-2. 价格待定：材料包、成品各三档（小 / 中 / 大）+ 运费。
-3. https 域名（支付通知地址必须 https）。
-4. 服务器上传 apiclient_key.pem 到 `/etc/beadspark/`，运行 `sudo bash ~/beadspark-deploy/set-shop.sh`。
-5. 小程序后台隐私指引加「收货地址」。
-6. 2026-11-23：价格和商户资料已在服务器填好，材料包 ¥80 / 180 / 280、成品 ¥100 / 230 / 350、包邮；订单管理后台在 `/admin/`（口令见 `set-shop.sh` 输出）。还没做：部分退款、发货微信通知、物流轨迹。真实支付还没实测过。
+- 网站地址 `https://beadspark.top`；发验证码邮件用 QQ 邮箱 `37009036@qq.com`（发到 Gmail 会进垃圾箱；想改善要用自己域名发信，如腾讯云邮件推送）
+- 小程序 AppID `wxad095cfa10de6ecd` + AppSecret
+- 微信支付：商户号、APIv3 密钥、证书序列号、私钥 `/etc/beadspark/apiclient_key.pem`、通知地址 `https://beadspark.top/api/pay/wechat/notify`
+- 价格（元，包邮）：材料包 80 / 180 / 280，成品 100 / 230 / 350。三档按图纸大小：小 = 1 个分区（迷你豆 52×52 或标准豆 29×29 以内），中 = 2～4 个分区，大 = 更多
+- 订单后台：`https://beadspark.top/admin/`，口令 = `ADMIN_TOKEN`（重跑 `set-shop.sh` 会显示）
+- 没配：谷歌 / 微信网站应用 / Apple / Facebook 登录（代码写好了，各平台建应用后把 ID、密钥填进 `api.env` 即可，回调地址表在 `docs/deploy-server.md`）；快递100
 
-## 上线前（后端 API）
+## 微信小程序（`apps/miniprogram`，详见该目录 README）
 
-1. 服务器一次性配置：登录服务器运行 `sudo bash ~/beadspark-deploy/setup-api.sh`（自动装 Node、写配置、装服务、改 Nginx、发测试邮件）。手动步骤见 `docs/deploy-server.md`「后端 API」。
-2. `api.env` 里要填：`SITE_URL`、发件 QQ 邮箱地址 `SMTP_USER`、QQ 邮箱授权码 `SMTP_PASS`。
-3. 第三方登录：在 Google / 微信开放平台 / Apple / Facebook 后台创建应用、填回调地址（表在 `docs/deploy-server.md`），把 ID 和密钥填进 `api.env`。都需要 https 正式域名（等 `pd.scentby.cn` 接入备案 + HTTPS）。微信网站应用需要企业认证。
-4. 数据库文件 `/var/lib/beadspark/beadspark.db` 开定时备份（磁盘快照即可）。
-5. 只有北京服务器上的网站能登录；Vercel 上那份没有后端，登录 / 分享不可用。
+流程：首页上传照片（选比例裁剪）→ **定制**（迷你豆 / 标准豆、去背景、裁空白边；四张效果图：1 / 4 / 9 块板 + 像素风，自动推荐）→ 下一步 → **购买形式**（免费图纸 / 材料包 / 成品）→ 在线拼 → 拼完页（买成品 → 分享 → 先不了）。
 
-## 进行中 / 待用户提供
+- 页面：`index` 首页、`create` 定制、`product` 购买形式、`bead` 在线拼、`done` 拼完、`order` 订单详情、`mine` 我的、`share` 分享页
+- 登录：打开即静默微信登录；和网站同一套账号（unionid 互通需两边绑同一开放平台）
+- 在线拼：立体钉板；选颜色后点 / 划放豆（靠近格子中心才放），没选颜色时拖动 = 移动画布，工具条「放豆 | 移动」「－ ＋ 全图」；撤销上一步；放过豆自动存到账号
+- 我的：订单；作品分「拼好的 / 拼到一半的」，可继续拼、买材料包、买成品、分享、删除
+- 购买：选形式 → 微信地址簿选地址 → 微信支付 → 订单页；未付款可继续支付 / 取消（110 分钟自动取消）；发货后显示快递公司、运单号、物流时间线（配了快递100 才有）
+- 分享：发好友（卡片）、朋友圈（右上角菜单）、保存海报（带小程序码）
+- 后端地址 `API_BASE = https://beadspark.top`（开发版也用它）
 
-0. **SEO 上线**：域名启用后，确认 `NEXT_PUBLIC_SITE_URL`（默认 `https://pd.scentby.cn`）；到百度搜索资源平台、Google Search Console、Bing 提交 `sitemap.xml`。
+**踩过的坑（改小程序前先看）**
+- 小程序运行的是 `.js`：改了 `miniprogram/` 下的 `.ts` 或图纸引擎后，要跑 `pnpm --filter miniprogram build` 并把生成的 `.js` 一起提交（不依赖开发者工具的 TS 编译）
+- 开发者工具会自己改 `project.config.json`，用户 `git pull` 前要先 `git checkout -- apps/miniprogram/project.config.json`
+- **画布（canvas）会盖住叠在上面的元素，页面返回后还会错位**：所以静态图一律用 `utils/png.ts` 生成 PNG 给 `<image>` 显示；只有在线拼的钉板是 canvas，按钮都放在画布外面；保存图纸 / 海报用的隐藏 canvas 只在生成时 `wx:if` 出来
+- 查节点用 `utils/draw.ts` 的 `queryNode`（`wx.createSelectorQuery().in(page)` 在用户的基础库上会被忽略）；重画用 `setTimeout`，不用 `canvas.requestAnimationFrame`
+- 原生 `<button>` 有固定宽度和 margin，样式里已重置；`wx.cropImage` 在模拟器不可用，失败时改为按比例居中裁
+- 用户看不到 Claude 这边的运行结果，也没法让 Claude 跑小程序：每次改完说明「没在开发者工具里跑过」，让用户发 Console 截图
 
-1. **腾讯云接入备案**：域名 `scentby.cn`（阿里云已备案），正在腾讯云办接入备案。通过后：`pd.scentby.cn` 的 A 记录指向 `49.233.85.32`，Nginx 的 `server_name` 改成域名，`certbot --nginx -d pd.scentby.cn` 配 HTTPS。
-2. **国内版 / 国外版**：用户准备分两个版本上。建议先做国内版（待用户确认），顺序：H5 网站上线 → 手机号 + 短信验证码登录 + 轻量后端（用户、草稿）→ 微信小程序（复用图纸引擎）→ 小程序内下单 + 微信支付（需企业或个体户主体、商户号、订单发货信息上传）。国外版之后做：北美站 + Shopify 登录 / 结账（Shopify 在国内不稳定，只用于国外版）。
-3. **需要用户确认 / 提供**：是否先做国内版；营业执照（公司或个体户）；价格；首页设计稿原始 PNG；其他页面设计稿；四种熨烫的实拍图（可选）；标准豆 5 mm 的标配底板尺寸（现在按 27 cm ≈ 54 钉显示，58×58 会显示成 4 块，待定）。
-4. **已知小问题**：熨烫实验室（`/v1-1/lab/`）里的品牌选择还是 v1.0 的四个品牌，没改成 MARD 264。
+## 网站（`apps/web`，详见 `docs/versions.md`）
 
-## 开发约定（摘自之前的协作）
+- 页面：`/` 首页、`/create/` 上传裁剪、`/create/settings/` 定制、`/create/product/` 购买形式（材料包 / 成品蒙灰「即将开放」，**网站上不能下单，购买只在小程序**）、`/bead/` 在线拼、`/lightbox/`、`/lab/`、`/login/`、`/workbench/`、`/s/?id=` 分享页、`/admin/` 订单后台；`/v1-1/...` 旧地址自动跳转
+- 登录：邮箱 + 密码（邮箱验证码注册 / 找回）；第三方登录按钮在，未配置显示灰色
+- 风格：暖白底、粉色大卡片、细棕色描边、Nunito 圆体；logo 是粉底白拼豆 + 黄色星光
+- SEO：关键词、robots.txt（允许搜索引擎和 AI 爬虫）、sitemap.xml、llms.txt、ai.txt 都有；还没到百度 / Google / Bing 提交 sitemap
 
-- 直接推 `main`；不开 PR，除非用户要求。
-- 中文回复；产品决策先问用户，技术细节自己判断。
-- 改完跑 `pnpm test`、`pnpm typecheck`、`pnpm build`，并用 Playwright（`require('playwright')`，Chromium 已预装）在手机 / 平板尺寸下实际点一遍。
-- 不提交任何密钥（服务器私钥、部署私钥只放在用户电脑和 GitHub Secrets）。
+## 后端接口一览（`apps/api/src/app.ts`）
+
+- 账号：`/api/auth/email/*`（发码、注册、登录、重设）、`/api/auth/me`、`/logout`、`/profile`（昵称过微信内容检测）、`/api/auth/:provider/start|callback`、`/api/auth/wxmp/login`
+- 草稿 `/api/designs`，分享 `/api/shares`，小程序码 `/api/wxmp/qrcode/:id`
+- 商店：`/api/shop`（开卖情况 + 价格）、`/api/orders`（下单、列表、详情、`/pay`、`/cancel`、`/tracking`）、`/api/pay/wechat/notify`
+- 订单后台：`/api/admin/orders`（列表、详情、`/ship`、`/refund`），请求头 `x-admin-token`
+- 会话：网站用 Cookie，小程序用 `Authorization: Bearer`
+
+## 还没做 / 以后可以做
+
+- 部分退款；订单后台的更多功能（搜索、导出）
+- 小程序：图片内容安全检测（现在只检昵称文字，审核若要求再加）、分区图纸下载、灯箱模式、熨烫效果、拼豆笔 / 镊子动画；大图在旧手机上生成要几秒
+- 网站上购买（要接微信 H5 / Native 支付或别的支付方式）
+- 第三方登录接通；发信换成自己域名；数据库备份
+- 效果图现在是纯色方格，没有「熨烫后」的圆角和豆孔质感（小程序）
+
+## 和用户协作的约定
+
+- 中文回复，说人话：用户不是程序员，命令要给完整的、能直接复制的，一条一个代码块
+- 直接推 `main`，不开 PR；提交说明用中文
+- 产品决策和价格先问用户，不要编；密钥不进仓库、不让用户发在聊天里（用户的账号不是完全私人的）
+- 每次改完都要说清楚：测了什么、没测什么
