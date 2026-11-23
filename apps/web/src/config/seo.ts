@@ -90,4 +90,4 @@ export const SITEMAP_PATHS = [
 ]
 
 /** Pages that are personal or only make sense mid-flow: not indexed. */
-export const NOINDEX_PATHS = ['/login/', '/workbench/', '/bead/', '/lightbox/', '/create/settings/', '/create/product/']
+export const NOINDEX_PATHS = ['/admin/', '/login/', '/workbench/', '/bead/', '/lightbox/', '/create/settings/', '/create/product/']

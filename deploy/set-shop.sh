@@ -60,12 +60,21 @@ ask PRICE_SHIPPING "运费（包邮填 0）"
 echo
 ask ADMIN_EMAIL "新订单通知发到哪个邮箱"
 
+# Password of the order admin page (/admin/): made once, kept after that.
+if [ -z "$(cur ADMIN_TOKEN)" ]; then
+  set_kv ADMIN_TOKEN "$(head -c 18 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 20)"
+fi
+
 systemctl restart beadspark-api
 sleep 2
 if out=$(curl -fsS http://127.0.0.1:8787/api/shop); then
   echo "✓ 已保存并重启。现在的开卖情况："
   echo "  $out"
   echo "  （open:true 的形式已经可以在小程序里下单；false 说明价格或商户资料还没填全）"
+  echo
+  echo "订单管理后台：$(cur SITE_URL)/admin/"
+  echo "管理口令：$(cur ADMIN_TOKEN)"
+  echo "（口令只给管订单的人；想换口令，改 $ENV_FILE 里的 ADMIN_TOKEN 再重启）"
 else
   journalctl -u beadspark-api -n 20 --no-pager
   echo "✗ 后端没起来，把上面的日志发给 Claude" >&2
